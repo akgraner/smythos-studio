@@ -19,6 +19,15 @@ export class MemoryReadKeyVal extends Component {
         hint: 'Key to read from memory',
         validate: `maxlength=50`,
         attributes: { 'data-template-vars': 'true' },
+        help: 'Select the key-value store to query (e.g., \'crm_cache\'). <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        validateMessage: 'Enter a non-empty name, not more than 50 characters.',
+      },
+      scope: {
+        type: 'select',
+        label: 'Scope',
+        help: 'Choose session, user, or project for the lookup. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        value: 'Session',
+        options: ['Session'],
       },
       // scope: {
       //   type: 'select',

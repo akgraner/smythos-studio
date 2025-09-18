@@ -19,6 +19,15 @@ export class MemoryDeleteKeyVal extends Component {
         hint: 'Key to delete from memory',
         validate: `maxlength=50`,
         attributes: { 'data-template-vars': 'true' },
+        help: 'Select the key-value store containing the key to delete. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        validateMessage: 'Enter a non-empty name, not more than 50 characters.',
+      },
+      scope: {
+        type: 'select',
+        label: 'Scope',
+        help: 'Choose the scope where the key should be removed. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        value: 'Session',
+        options: ['Session'],
       },
     };
 
