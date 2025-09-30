@@ -7,7 +7,6 @@ import type {
 import {
   apiKeyService,
   enterpriseModelService,
-  recommendedModelsService,
   userModelService,
   vaultService,
 } from '@react/features/vault/vault-business-logic';
@@ -260,23 +259,6 @@ export function useDeleteEnterpriseModel() {
       enterpriseModelService.deleteEnterpriseModel(modelId, provider),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: QUERY_KEYS.ENTERPRISE_MODELS });
-    },
-  });
-}
-
-export function useRecommendedModels() {
-  return useQuery({
-    queryKey: ['recommendedModels'],
-    queryFn: () => recommendedModelsService.getRecommendedModels(),
-  });
-}
-
-export function useUpdateRecommendedModel() {
-  return useMutation({
-    mutationFn: ({ providerId, enabled }: { providerId: string; enabled: boolean }) =>
-      recommendedModelsService.updateRecommendedModels(providerId, enabled),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['recommendedModels'] });
     },
   });
 }
