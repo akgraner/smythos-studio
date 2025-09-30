@@ -81,29 +81,6 @@ pnpm dev
 📖 **Detailed Setup**: See our [Contributing Guide](CONTRIBUTING.md) for complete development setup instructions.
 
 
-
-Get up and running instantly with a single Docker command.
-
-```bash
-# Copy environment configuration
-cp .env.example .env
-# REQUIRED: Edit .env with your database credentials
-
-# Build and run with Docker
-docker build -t smythos-studio .
-docker run -d \
-  --name smythos-studio \
-  -p 5050:5050 \
-  -p 5053:5053 \
-  --env-file .env \
-  -v smythos_data:/home/node/smythos-data \
-  smythos-studio:latest
-```
-
-**Access your application:** http://localhost:5050
-
-🐳 **Full Docker Setup**: See our [Docker Compose Guide](DOCKER_COMPOSE.md) for deploying the app with automatic SSL, database, and caching.
-
 ---
 
 ## Repository Structure
@@ -138,16 +115,6 @@ The execution server that uses (SRE Core Engine)[https://github.com/SmythOS/sre/
 - **Scalable Architecture**: Handles multiple concurrent agent executions
 - **Embodiment Support**: Deploy agents as chatbots, APIs, and integrations
 
-
-## Architecture Highlights
-
-### Multi-Environment Deployment
-
-Your agents work seamlessly across environments:
-
-- **Development**: Visual builder with hot-reload and debugging
-- **Staging**: Full production simulation with monitoring
-- **Production**: Scalable deployment with enterprise security
 
 
 ## Documentation
