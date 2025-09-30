@@ -46,7 +46,7 @@ docker compose up -d
 
 ```
 
-**Access your application:** http://localhost:5050
+**Access your application:** http://localhost
 
 🐳 **Full Docker Setup**: See our [Docker Compose Guide](DOCKER_COMPOSE.md) for production-ready multi-container deployment with automatic SSL, database, and caching.
 
@@ -100,7 +100,7 @@ docker run -d \
   smythos-studio:latest
 ```
 
-**Access your application:** http://localhost
+**Access your application:** http://localhost:5050
 
 🐳 **Full Docker Setup**: See our [Docker Compose Guide](DOCKER_COMPOSE.md) for deploying the app with automatic SSL, database, and caching.
 
