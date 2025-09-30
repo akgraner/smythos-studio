@@ -232,6 +232,11 @@ function createAgent() {
           );
         }
 
+        const attachmentKey = urlParams?.get('attachmentKey');
+        if (attachmentKey) {
+          localStorage.setItem('attachmentKey', attachmentKey);
+        }
+
         resolve(workspace.agent.id);
       } else {
         showOverlay('<span class="text-red-700/70">Could not create agent</span>');
