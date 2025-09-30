@@ -8,7 +8,7 @@ The complete visual interface for building, deploying, and managing intelligent 
 
 [🚀 Getting Started](#quick-start) | [📖 Documentation](#documentation) | [🐳 Docker Setup](#docker-quick-start) | [🤝 Contributing](CONTRIBUTING.md)
 
-## Why SmythOS UI exists
+## Why SmythOS Studio 
 
 1. **Visual Agent Building**: Creating AI agents should be as intuitive as drawing a flowchart.
 2. **No-Code to Pro-Code**: Start with visual building, extend with custom code when needed.
