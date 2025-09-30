@@ -110,9 +110,6 @@ services:
     expose:
       - "5050"
       - "5053"
-    ports:
-      - "5050:5050"
-      - "5053:5053"
     env_file:
       - .env
     environment:
