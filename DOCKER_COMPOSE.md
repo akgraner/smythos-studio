@@ -4,7 +4,7 @@ This guide explains how to run SmythOS Studio using Docker, both with the standa
 
 ## Contents
 
-- [Docker Setup Guide for SmythOS UI](#docker-setup-guide-for-smythos-ui)
+- [Docker Setup Guide for SmythOS Studio](#docker-setup-guide-for-smythos-ui)
   - [Contents](#contents)
   - [Prerequisites](#prerequisites)
   - [Quick Start with Docker Compose (Recommended)](#quick-start-with-docker-compose-recommended)
