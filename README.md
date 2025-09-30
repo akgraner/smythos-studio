@@ -48,7 +48,7 @@ docker compose up -d
 
 **Access your application:** http://localhost
 
-🐳 **Full Docker Setup**: See our [Docker Compose Guide](DOCKER_COMPOSE.md) for production-ready multi-container deployment with automatic SSL, database, and caching.
+🐳 **Full Docker Setup**: See our [Docker Compose Guide](DOCKER_COMPOSE.md) for container deployment with automatic SSL, database, and caching.
 
 ---
 
@@ -153,7 +153,7 @@ Your agents work seamlessly across environments:
 ## Documentation
 
 - **[Contributing Guide](CONTRIBUTING.md)** - Set up your development environment and contribute to the project
-- **[Docker Compose Setup](DOCKER_COMPOSE.md)** - Production-ready deployment with multi-container architecture
+- **[Docker Compose Setup](DOCKER_COMPOSE.md)** - Container deployment with automatic SSL, database, and caching.
 - **[Code of Conduct](CODE_OF_CONDUCT.md)** - Community guidelines and standards
 
 ## Contributing
