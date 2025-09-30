@@ -1,6 +1,6 @@
-# Docker Setup Guide for SmythOS UI
+# Docker Setup Guide for SmythOS Studio
 
-This guide explains how to run SmythOS UI using Docker, both with the standalone Dockerfile and the complete docker compose setup.
+This guide explains how to run SmythOS Studio using Docker, both with the standalone Dockerfile and the complete docker compose setup.
 
 ## Contents
 
