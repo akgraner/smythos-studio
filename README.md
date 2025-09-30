@@ -6,7 +6,7 @@
 
 The complete visual interface for building, deploying, and managing intelligent AI agents. SmythOS UI provides an intuitive drag-and-drop workspace where you can create sophisticated agent workflows without writing code, while still offering the flexibility of custom integrations when needed.
 
-[🚀 Getting Started](#quick-start) | [📖 Documentation](#documentation) | [🐳 Docker Setup](#docker-quick-start) | [🤝 Contributing](CONTRIBUTING.md)
+[🚀 Getting Started](#quick-start) | [📖 Documentation](#documentation) | [🐳 Docker Setup](DOCKER_COMPOSE.md) | [🤝 Contributing](CONTRIBUTING.md)
 
 ## Why SmythOS Studio 
 
