@@ -8,7 +8,8 @@ The complete visual interface for building, deploying, and managing intelligent 
 
 [🚀 Getting Started](#quick-start) | [📖 Documentation](#documentation) | [🐳 Docker Setup](DOCKER_COMPOSE.md) | [🤝 Contributing](CONTRIBUTING.md)
 
-[![SmythOS Studio Presentation](https://img.youtube.com/vi/3JCEK5So6_k/0.jpg)](https://www.youtube.com/watch?v=3JCEK5So6_k)
+
+[![SmythOS Studio Presentation](https://github.com/user-attachments/assets/34ee4e90-57be-4741-b587-f89eeab51667)](https://www.youtube.com/watch?v=3JCEK5So6_k)
 
 ## Why SmythOS Studio 
 
