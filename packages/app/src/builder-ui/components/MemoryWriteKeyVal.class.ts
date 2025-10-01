@@ -11,12 +11,13 @@ export class MemoryWriteKeyVal extends Component {
         validate: `required maxlength=100`,
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
+        help: 'Select the key-value store to write into (e.g., \'crm_cache\'). <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
       },
       key: {
         type: 'input',
         label: 'Key',
         value: '{{Key}}',
-        hint: 'Key to store in memory',
+        help: 'Key for the value; supports dynamic inputs like {{user.id}}. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
         validate: `maxlength=50`,
         attributes: { 'data-template-vars': 'true' },
       },
@@ -24,13 +25,12 @@ export class MemoryWriteKeyVal extends Component {
         type: 'textarea',
         label: 'Value',
         value: '{{Value}}',
-        hint: 'Text value to store in memory',
+        help: 'Data to save: string, number, or JSON. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
         attributes: { 'data-template-vars': 'true' },
       },
       scope: {
         type: 'select',
         label: 'Scope',
-        hint: 'Memory Scope',
         value: 'ttl',
         options: [
           { value: 'ttl', text: 'TTL' },
@@ -47,11 +47,11 @@ export class MemoryWriteKeyVal extends Component {
             else ttl?.classList.add('hidden');
           },
         },
+        help: 'Pick persistence: session, user, or project. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
       },
       ttl: {
         type: 'select',
         label: 'TTL',
-        hint: 'Time to live',
         value: '300',
         options: [
           { value: '300', text: '5 minutes' },
@@ -66,6 +66,7 @@ export class MemoryWriteKeyVal extends Component {
           { value: '86400', text: '1 day' },
           { value: '604800', text: '1 week' },
         ],
+        hint: 'Time to live',
       },
     };
 
