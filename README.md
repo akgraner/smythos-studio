@@ -35,7 +35,10 @@ This approach makes AI agent development **accessible to everyone** - from busin
 - **Collaborative Development**: Share and collaborate on agent projects with your team
 
 ## Quick Start
-[![SmythOS Studio Presentation]([https://img.youtube.com/vi/iEpW5j-h6BM/0.jpg](https://github.com/user-attachments/assets/54c12bb7-e6d2-4f0c-bc0f-77f812920802))](https://www.youtube.com/watch?v=iEpW5j-h6BM)
+
+[![SmythOS Studio Tutorial](https://github.com/user-attachments/assets/54c12bb7-e6d2-4f0c-bc0f-77f812920802)](https://www.youtube.com/watch?v=iEpW5j-h6BM)
+
+
 ### Method 1: Docker Quick Start
 
 Get up and running instantly with Docker Compose.
