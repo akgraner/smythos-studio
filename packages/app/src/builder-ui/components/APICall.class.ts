@@ -1185,16 +1185,16 @@ export class APICall extends Component {
         if (_editor) {
           _editor.style.minHeight = '80px !important';
         }
-        
+
         // Add event listener to the Ace editor for auto-save
-        const body_editor = bodyElm._editor;
+        const body_editor = bodyElm?._editor;
         if (body_editor) {
           body_editor.session.setOption('useWorker', false);
           body_editor.clearSelection();
-          
+
           // Remove any existing event listeners to avoid duplicates
           body_editor.off('change');
-          
+
           // Add event listener to the Ace editor for auto-save
           body_editor.on('change', () => {
             // Trigger the form's input event to activate auto-save
@@ -1202,7 +1202,7 @@ export class APICall extends Component {
             bodyElm.dispatchEvent(inputEvent);
           });
         }
-        
+
         if (value !== this.data.contentType) {
           bodyElm.value = '';
           this.data.body = '';
@@ -1210,7 +1210,9 @@ export class APICall extends Component {
       } else {
         toggleMode(bodyElm, false);
         destroyCodeEditor(bodyElm);
-        bodyElm.classList.remove('hidden');
+        if (bodyElm?.classList?.contains('hidden')) {
+          bodyElm.classList.remove('hidden');
+        }
       }
       if (wrapper && wrapper.classList.contains('focused') && value !== this.data.contentType) {
         bodyElm.value = '';
