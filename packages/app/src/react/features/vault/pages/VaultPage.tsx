@@ -9,9 +9,9 @@ import React, { useMemo } from 'react';
 import { CiExport } from 'react-icons/ci';
 import { ApiKeys } from '../components/api-keys';
 import { EnterpriseModels } from '../components/enterprise-models';
-import LocalModels from '../components/local-models';
 import { OAuthConnections } from '../components/oauth-connections';
 import { RecommendedModels } from '../components/recommended-models';
+import UserCustomModels from '../components/user-custom-models';
 import { UserModels } from '../components/user-models';
 import { useVault } from '../hooks/use-vault';
 
@@ -83,7 +83,7 @@ export default function VaultPage() {
       )}
 
       <UserModels pageAccess={pageAccess} />
-      <LocalModels pageAccess={pageAccess} />
+      <UserCustomModels pageAccess={pageAccess} />
       <EnterpriseModels pageAccess={pageAccess} />
       <OAuthConnections />
 
