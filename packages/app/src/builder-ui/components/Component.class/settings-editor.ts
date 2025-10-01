@@ -183,31 +183,34 @@ function onTemplateCreateLoad(sidebar) {
 
   //if properties.template is present, it means that we are editing a template,
   //otherwise we are creating a new one
-  if (component.properties.template) {
+  if (component?.properties?.template) {
     creatingTemplate = false;
   }
 
-  const titleElement = sidebar.querySelector('.title');
-  const actionElement = sidebar.querySelector('.dialog-actions');
-  const titleRightActions = sidebar.querySelector('.title-right-buttons');
-  const titleLeftActions = sidebar.querySelector('.title-left-buttons');
+  const actionElement = sidebar?.querySelector('.dialog-actions');
+  const titleRightActions = sidebar?.querySelector('.title-right-buttons');
+  const titleLeftActions = sidebar?.querySelector('.title-left-buttons');
 
-  const closeButton: HTMLButtonElement = titleRightActions.querySelector('button.close-btn');
-  closeButton.classList.remove('hidden');
-
-  const deleteButton: HTMLButtonElement = actionElement.querySelector('button.del-btn');
-  deleteButton.classList.add('hidden');
+  const closeButton: HTMLButtonElement = titleRightActions?.querySelector('button.close-btn');
+  if (closeButton) {
+    closeButton.classList.remove('hidden');
+  }
+  const deleteButton: HTMLButtonElement = actionElement?.querySelector('button.del-btn');
+  if (deleteButton) {
+    deleteButton.classList.add('hidden');
+  }
   //deleteButton.onclick = component.delete.bind(this, false);
 
-  const helpBtn: HTMLButtonElement = titleLeftActions.querySelector('.action-help');
-  helpBtn.classList.add('hidden');
+  const helpBtn: HTMLButtonElement = titleLeftActions?.querySelector('.action-help');
+  if (helpBtn) {
+    helpBtn.classList.add('hidden');
+  }
 
-  const templateData = component.data._templateVars;
-  const templateInfo = component.properties?.template?.templateInfo;
-  const settingsForm = sidebar.querySelector('form.Settings');
+  const templateInfo = component?.properties?.template?.templateInfo;
+  const settingsForm = sidebar?.querySelector('form.Settings');
 
   if (settingsForm) {
-    const fields = [...settingsForm.querySelectorAll('.form-box')] as HTMLElement[];
+    const fields = [...settingsForm?.querySelectorAll('.form-box')] as HTMLElement[];
 
     const fieldChangeCheck = (element, e?) => {
       let regex = /{{([A-Z]+):([\w\s]+):\[(.*?)\]}}/gm;
