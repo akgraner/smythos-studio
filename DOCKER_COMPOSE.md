@@ -124,6 +124,7 @@ For custom configurations, you can use the Dockerfile directly.
 ### Running the Container
 
 ```bash
+cp .env.example .env
 # Run with environment file
 docker run -d \
   --name smythos-app \
@@ -131,7 +132,7 @@ docker run -d \
   -p 5053:5053 \
   --env-file .env \
   -v smythos_data:/home/node/smythos-data \
-  smythos-ui:latest
+  smythos/smythos-studio:alpha
 ```
 
 ## Environment Variables
