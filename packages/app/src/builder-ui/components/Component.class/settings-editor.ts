@@ -11,6 +11,7 @@ import {
 import { setReadonlyMode } from '../../ui/dom';
 import { readFormValues, syncCompositeValues } from '../../ui/form';
 import { delay, dispatchSubmitEvent } from '../../utils';
+import { getComponentDocumentation } from './component-documentation';
 
 async function onComponentLoad(sidebar) {
   const component = this;
@@ -19,6 +20,61 @@ async function onComponentLoad(sidebar) {
   const actionElement = sidebar.querySelector('.dialog-actions');
   const titleRightActions = sidebar.querySelector('.title-right-buttons');
   const titleLeftActions = sidebar.querySelector('.title-left-buttons');
+
+  // Add component description below title if available
+  const componentDoc = getComponentDocumentation(component.constructor.name);
+  if (componentDoc) {
+    const contentElement = sidebar.querySelector('.dialog-content');
+    if (contentElement) {
+      const descriptionDiv = document.createElement('div');
+      descriptionDiv.className = 'component-description px-4 pb-3 border-b border-gray-100';
+
+      // Split description into sentences and check if it's longer than 2 sentences
+      const sentences = componentDoc.description.split(/(?<=[.!?])\s+/);
+      const isLongDescription = sentences.length > 2;
+      const shortDescription = sentences.slice(0, 2).join(' ');
+      const fullDescription = componentDoc.description;
+
+      if (isLongDescription) {
+        descriptionDiv.innerHTML = `
+          <p class="text-sm text-gray-600 leading-relaxed">
+            <span class="description-short">${shortDescription}</span>
+            <span class="description-full hidden">${fullDescription}</span>
+            <button class="see-more-btn text-blue-600 hover:text-blue-800 text-xs ml-1 cursor-pointer">See more</button>
+            <button class="see-less-btn text-blue-600 hover:text-blue-800 text-xs ml-1 cursor-pointer hidden">See less</button>
+          </p>
+          ${componentDoc.docsLink ? `<a href="${componentDoc.docsLink}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block">View Documentation →</a>` : ''}
+        `;
+
+        // Add event listeners for see more/less functionality
+        const seeMoreBtn = descriptionDiv.querySelector('.see-more-btn');
+        const seeLessBtn = descriptionDiv.querySelector('.see-less-btn');
+        const shortSpan = descriptionDiv.querySelector('.description-short');
+        const fullSpan = descriptionDiv.querySelector('.description-full');
+
+        seeMoreBtn.addEventListener('click', () => {
+          shortSpan.classList.add('hidden');
+          fullSpan.classList.remove('hidden');
+          seeMoreBtn.classList.add('hidden');
+          seeLessBtn.classList.remove('hidden');
+        });
+
+        seeLessBtn.addEventListener('click', () => {
+          shortSpan.classList.remove('hidden');
+          fullSpan.classList.add('hidden');
+          seeMoreBtn.classList.remove('hidden');
+          seeLessBtn.classList.add('hidden');
+        });
+      } else {
+        descriptionDiv.innerHTML = `
+          <p class="text-sm text-gray-600 leading-relaxed">${componentDoc.description}</p>
+          ${componentDoc.docsLink ? `<a href="${componentDoc.docsLink}" target="_blank" class="text-xs text-blue-600 hover:text-blue-800 mt-1 inline-block">View Documentation →</a>` : ''}
+        `;
+      }
+
+      contentElement.insertBefore(descriptionDiv, contentElement.firstChild);
+    }
+  }
 
   const deleteButton: HTMLButtonElement = actionElement.querySelector('button.del-btn');
   deleteButton.classList.remove('hidden');
@@ -127,31 +183,34 @@ function onTemplateCreateLoad(sidebar) {
 
   //if properties.template is present, it means that we are editing a template,
   //otherwise we are creating a new one
-  if (component.properties.template) {
+  if (component?.properties?.template) {
     creatingTemplate = false;
   }
 
-  const titleElement = sidebar.querySelector('.title');
-  const actionElement = sidebar.querySelector('.dialog-actions');
-  const titleRightActions = sidebar.querySelector('.title-right-buttons');
-  const titleLeftActions = sidebar.querySelector('.title-left-buttons');
+  const actionElement = sidebar?.querySelector('.dialog-actions');
+  const titleRightActions = sidebar?.querySelector('.title-right-buttons');
+  const titleLeftActions = sidebar?.querySelector('.title-left-buttons');
 
-  const closeButton: HTMLButtonElement = titleRightActions.querySelector('button.close-btn');
-  closeButton.classList.remove('hidden');
-
-  const deleteButton: HTMLButtonElement = actionElement.querySelector('button.del-btn');
-  deleteButton.classList.add('hidden');
+  const closeButton: HTMLButtonElement = titleRightActions?.querySelector('button.close-btn');
+  if (closeButton) {
+    closeButton.classList.remove('hidden');
+  }
+  const deleteButton: HTMLButtonElement = actionElement?.querySelector('button.del-btn');
+  if (deleteButton) {
+    deleteButton.classList.add('hidden');
+  }
   //deleteButton.onclick = component.delete.bind(this, false);
 
-  const helpBtn: HTMLButtonElement = titleLeftActions.querySelector('.action-help');
-  helpBtn.classList.add('hidden');
+  const helpBtn: HTMLButtonElement = titleLeftActions?.querySelector('.action-help');
+  if (helpBtn) {
+    helpBtn.classList.add('hidden');
+  }
 
-  const templateData = component.data._templateVars;
-  const templateInfo = component.properties?.template?.templateInfo;
-  const settingsForm = sidebar.querySelector('form.Settings');
+  const templateInfo = component?.properties?.template?.templateInfo;
+  const settingsForm = sidebar?.querySelector('form.Settings');
 
   if (settingsForm) {
-    const fields = [...settingsForm.querySelectorAll('.form-box')] as HTMLElement[];
+    const fields = [...settingsForm?.querySelectorAll('.form-box')] as HTMLElement[];
 
     const fieldChangeCheck = (element, e?) => {
       let regex = /{{([A-Z]+):([\w\s]+):\[(.*?)\]}}/gm;
