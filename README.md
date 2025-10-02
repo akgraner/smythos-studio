@@ -116,7 +116,7 @@ Core API services and database management for the SmythOS UI platform.
 
 ### ⚡ Runtime Package - `packages/runtime`
 
-The execution server that uses (SRE Core Engine)[https://github.com/SmythOS/sre/tree/main] to execute the agents.
+The execution server that uses [SRE Core Engine](https://github.com/SmythOS/sre/tree/main) to execute the agents.
 
 **Features:**
 
