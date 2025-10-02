@@ -647,7 +647,9 @@ export const userCustomModelService = {
         name: value.name,
         modelId: value.modelId,
         baseUrl: value.baseUrl,
+        provider: value.provider,
         fallbackLLM: value.fallbackLLM,
+        features: value.features,
       }));
 
       return models;
@@ -687,7 +689,9 @@ export const userCustomModelService = {
         name: result.data.name,
         modelId: modelDetails.modelId,
         baseUrl: modelDetails.baseUrl,
+        provider: modelDetails.provider,
         fallbackLLM: modelDetails.fallbackLLM,
+        features: modelDetails.features,
       };
     } catch (error) {
       console.error('Error creating user custom model:', error);
@@ -726,7 +730,9 @@ export const userCustomModelService = {
         name: result.data.name,
         modelId: updatedFields.modelId || '',
         baseUrl: updatedFields.baseUrl || '',
+        provider: updatedFields.provider || '',
         fallbackLLM: updatedFields.fallbackLLM || '',
+        features: updatedFields.features,
       };
     } catch (error) {
       console.error('Error updating user custom model:', error);
