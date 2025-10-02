@@ -4,7 +4,6 @@
  * Based on: https://docs.google.com/document/d/1d6onoVfFS6QHMOlI-ZpbB7OaJuwtCMijpI6x0BC8csA/edit?usp=sharing
  */
 
-
 export interface ComponentDocumentation {
   description: string;
   docsLink?: string;
@@ -19,99 +18,99 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
   // Base Components
   APIEndpoint: {
     description:
-      'Define a reusable skill your agent can call across workflows. Describe what it does, the inputs it needs, and the result it returns so assistants pick it at the right time. For patterns, naming, and step-by-step builds, see the skill guidelines.',
+      'Define a reusable skill your agent can call across workflows. Describe what it does, the inputs it needs, and the result it returns so assistants pick it at the right time.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/agent-skill/?utm_source=studio&utm_medium=tooltip&utm_campaign=agent-skill&utm_content=component-header',
   },
 
   APIOutput: {
     description:
-      'Set the final return for your workflow as clean JSON. Choose a format and map fields so callers always get the same structure in production. For examples, see the output guide.',
+      'Set the final return for your workflow as clean JSON. Choose a format and map fields so callers always get the same structure in production.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/api-output/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-output&utm_content=component-header#step-2-select-an-output-format',
   },
 
   Note: {
     description:
-      'Add annotations and lightweight docs on the Canvas to explain decisions, label sections, and help teammates move faster. For quick tips and examples, see the Note guide.',
+      'Add annotations and lightweight docs on the Canvas to explain decisions, label sections, and help teammates move faster.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/note/?utm_source=studio&utm_medium=tooltip&utm_campaign=note&utm_content=component-header',
   },
 
   Classifier: {
     description:
-      'Sort unstructured text into clear categories using a simple prompt. Pick a suitable model, define labels, and test edge cases for consistency. For examples, see the Classification guide.',
+      'Sort unstructured text into clear categories using a simple prompt. Pick a suitable model, define labels, and test edge cases for consistency.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/classifier/?utm_source=studio&utm_medium=tooltip&utm_campaign=classifier&utm_content=component-header#step-2-write-or-update-the-prompt',
   },
 
   ImageGenerator: {
     description:
-      'Create images from text or edit existing ones with model controls for size, quality, and style. Write specific prompts and iterate quickly using the image generation guide.',
+      'Create images from text or edit existing ones with model controls for size, quality, and style.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/image-generator/#step-1-select-a-model-and-configure-settings',
   },
 
   GenAILLM: {
     description:
-      'Give your agent language skills for summarising, generating, extracting, and classifying text. Pick a model, write a clear prompt, connect inputs, then tune settings for length, quality, and cost. For proven prompts, model tips, and steps, see the GenAI LLM guide.',
+      'Give your agent language skills for summarising, generating, extracting, and classifying text. Pick a model, write a clear prompt, connect inputs, then tune settings for length, quality, and cost.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=component-header',
   },
 
   // Advanced Components
-  Sleep: {
+  FSleep: {
     description:
-      'Use Sleep to pause a workflow for a set time so you can respect API rate limits, wait for slow external work, or add natural pacing. Set the delay in seconds, then the flow resumes and passes its input through unchanged. If you need examples, see delay tips and best practices.',
+      'Use Sleep to pause a workflow for a set time so you can respect API rate limits, wait for slow external work, or add natural pacing. Set the delay in seconds, then the flow resumes and passes its input through unchanged.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/sleep/?utm_source=studio&utm_medium=tooltip&utm_campaign=sleep&utm_content=component-header#best-practices',
   },
 
   LLMAssistant: {
     description:
-      'Build a chat assistant that remembers the conversation and gives coherent replies across turns. Pick a model, set the behaviour, wire the inputs, then choose how replies stream. For help in understanding, see the LLM Assistant guide.',
+      'Build a chat assistant that remembers the conversation and gives coherent replies across turns. Pick a model, set the behaviour, wire the inputs, then choose how replies stream.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/llm-assistant/?utm_source=studio&utm_medium=tooltip&utm_campaign=llm-assistant&utm_content=component-header',
   },
 
   Await: {
     description:
-      'Use Await to pause your flow until background jobs finish so you can use their results. Set how many jobs to wait for and a time limit so the flow stays responsive. For examples, race rules, and partial results, see wait conditions and timeouts.',
+      'Use Await to pause your flow until background jobs finish so you can use their results. Set how many jobs to wait for and a time limit so the flow stays responsive.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/await/?utm_source=studio&utm_medium=tooltip&utm_campaign=await&utm_content=component-header#step-1-set-wait-conditions',
   },
 
   ForEach: {
     description:
-      'Use ForEach to loop through a list and run the same steps for each item. It aggregates every run into one result you can pass to the next step. For steps and output response details, see the For Each guide.',
+      'Use ForEach to loop through a list and run the same steps for each item. It aggregates every run into one result you can pass to the next step.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/for-each/?utm_source=studio&utm_medium=tooltip&utm_campaign=for-each&utm_content=for-each-header#',
   },
 
   JSONFilter: {
     description:
-      'Use JSON Filter to keep only the parts of a JSON object you need and drop the rest. This trims noisy API responses, speeds later steps, and saves tokens when sending data to an LLM. For path syntax, nested keys, and arrays, see examples.',
+      'Use JSON Filter to keep only the parts of a JSON object you need and drop the rest. This trims noisy API responses, speeds later steps, and saves tokens when sending data to an LLM.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/json-filter/?utm_source=studio&utm_medium=tooltip&utm_campaign=json-filter&utm_content=fields#step-1-define-filter-parameters',
   },
 
   FileStore: {
     description:
-      'Use Filestore to save binary data and get a public link you can share. Name the file as users will download it, then set how long the link should stay valid. For input rules, file naming, and TTL limits, see Filestore inputs and TTL.',
+      'Use Filestore to save binary data and get a public link you can share. Name the file as users will download it, then set how long the link should stay valid.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/filestore/?utm_source=studio&utm_medium=tooltip&utm_campaign=filestore&utm_content=component-header',
   },
 
   Code: {
     description:
-      'Use the Code component to run JavaScript inside your workflow. Transform inputs, validate data, and add custom logic without an external service. Set _output to pass results and use _error for safe failures. If you want to understand the code template and variable rules, see the Code guide.',
+      'Use the Code component to run JavaScript inside your workflow. Transform inputs, validate data, and add custom logic without an external service. Set _output to pass results and use _error for safe failures.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/code/?utm_source=studio&utm_medium=tooltip&utm_campaign=code&utm_content=variables',
   },
 
   APICall: {
     description:
-      'Use API Call to connect your flow to any HTTP API. Set the method, URL, headers, body, and auth, then test and reuse the result in later steps. For step-by-step setup with examples, see the API Call guide.',
+      'Use API Call to connect your flow to any HTTP API. Set the method, URL, headers, body, and auth, then test and reuse the result in later steps.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=component-header',
   },
@@ -119,14 +118,14 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
   // Tools Components
   ComputerUse: {
     description:
-      'Gives your agent a virtual computer that can browse, click, type, and gather data from the web. Describe the task in plain steps and the result you expect, then the agent runs it and returns structured output. For prompt tips and real examples, see the Computer Use guide.',
+      'Gives your agent a virtual computer that can browse, click, type, and gather data from the web. Describe the task in plain steps and the result you expect, then the agent runs it and returns structured output.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/tools/computer-use/?utm_source=studio&utm_medium=tooltip&utm_campaign=computer-use&utm_content=header',
   },
 
   ServerlessCode: {
     description:
-      'Run custom JavaScript with NPM packages in a safe, serverless runtime. Use it when built-in steps are not enough and you need full control. For code structure, inputs, and package tips, see the NodeJS guide.',
+      'Run custom JavaScript with NPM packages in a safe, serverless runtime. Use it when built-in steps are not enough and you need full control.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/tools/node-js/?utm_source=studio&utm_medium=tooltip&utm_campaign=nodejs&utm_content=component-header',
   },
@@ -137,14 +136,14 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
 
   WebScrape: {
     description:
-      'Pull clean content from webpages into your flow. Choose the format you need and turn on extras for sites that load data with JavaScript or on scroll. For setup tips and examples, see Web Scrape guide.',
+      'Pull clean content from webpages into your flow. Choose the format you need and turn on extras for sites that load data with JavaScript or on scroll.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/tools/web-scrape/?utm_source=studio&utm_medium=tooltip&utm_campaign=web-scrape&utm_content=component-header#step-1-configure-scraper-settings',
   },
 
   MCPClient: {
     description:
-      'Connect your agent to an MCP server so it can use external tools through one standard interface. Enter the server URL, write a clear prompt, and choose the model that will call tools. For URL format and setup steps, see MCP setup.',
+      'Connect your agent to an MCP server so it can use external tools through one standard interface. Enter the server URL, write a clear prompt, and choose the model that will call tools.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/tools/mcp-client/?utm_source=studio&utm_medium=tooltip&utm_campaign=mcp-client&utm_content=component-header#step-2-configure-the-connection',
   },
@@ -152,21 +151,21 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
   // Crypto Components
   FHash: {
     description:
-      'Create a fixed-size fingerprint of your data for checks and IDs. Pick an algorithm, choose an output encoding, then pass the hash downstream. For quick picks and examples, see F:Hash guide.',
+      'Create a fixed-size fingerprint of your data for checks and IDs. Pick an algorithm, choose an output encoding, then pass the hash downstream.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/crypto/hash/?utm_source=studio&utm_medium=tooltip&utm_campaign=hash&utm_content=component-header',
   },
 
   FEncDec: {
     description:
-      'Converts data between text and binary encodings for safe storage, transport, and API compatibility. Supports Base64, Base64URL, hex, UTF-8, and Latin-1 with encode or decode actions. For quick picks and examples, see encoding basics.',
+      'Converts data between text and binary encodings for safe storage, transport, and API compatibility. Supports Base64, Base64URL, hex, UTF-8, and Latin-1 with encode or decode actions.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/crypto/encode-decode/?utm_source=studio&utm_medium=tooltip&utm_campaign=encode-decode&utm_content=component-header',
   },
 
   FSign: {
     description:
-      'Generates a digital signature with HMAC or RSA for webhook payloads and API requests. Verifiers must use the same method, key, hash, and encoding to match. For method tradeoffs and examples, see signing basics.',
+      'Generates a digital signature with HMAC or RSA for webhook payloads and API requests. Verifiers must use the same method, key, hash, and encoding to match.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/crypto/sign/?utm_source=studio&utm_medium=tooltip&utm_campaign=sign&utm_content=component-header#step-1-select-a-signature-method-and-settings',
   },
@@ -178,21 +177,21 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
   // RAG Data Components
   DataSourceLookup: {
     description:
-      'Retrieves relevant text from indexed knowledge using semantic search. Searches a chosen namespace and returns top matches with optional metadata and scores. For setup and tuning, see RAG Search guide.',
+      'Retrieves relevant text from indexed knowledge using semantic search. Searches a chosen namespace and returns top matches with optional metadata and scores.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/rag-data/rag-search/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-search&utm_content=component-header',
   },
 
   DataSourceIndexer: {
     description:
-      "Adds or updates content in the agent's knowledge base. Stores text and optional metadata in a selected namespace with a stable source ID, enabling later search, updates, or deletion. Designed for incremental, traceable knowledge updates. For quick tips, see RAG Remember guide.",
+      "Adds or updates content in the agent's knowledge base. Stores text and optional metadata in a selected namespace with a stable source ID, enabling later search, updates, or deletion. Designed for incremental, traceable knowledge updates.",
     docsLink:
       'https://smythos.com/docs/agent-studio/components/rag-data/rag-remember/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-remember&utm_content=component-header',
   },
 
   DataSourceCleaner: {
     description:
-      'Deletes a specific source from a selected namespace using its exact source identifier. Operation is permanent and intended for data hygiene and compliance workflows. For quick tips, see RAG Forget guide.',
+      'Deletes a specific source from a selected namespace using its exact source identifier. Operation is permanent and intended for data hygiene and compliance workflows.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/rag-data/rag-forget/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-forget&utm_content=source-identifier',
   },
@@ -214,26 +213,26 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
     description: 'Read key-value data from memory stores.',
   },
 
-  MemoryDeleteKey: {
+  MemoryDeleteKeyVal: {
     description: 'Delete keys from memory stores.',
   },
 
   // Legacy Components
-  LLMPrompt: {
+  PromptGenerator: {
     description:
       'Generates a single, stateless completion from a text prompt using the selected model. Supports templated variables and an optional passthrough of the original input. This is a legacy component; for multi-turn chat or newer controls, see LLM Assistant and GenAI LLM.',
   },
 
   MultimodalLLM: {
     description:
-      'Runs a single-turn prompt on a multimodal model that reads text plus images, audio, or video. Accepts media inputs and returns a result ready for downstream steps. See setup, limits, and file types.',
+      'Runs a single-turn prompt on a multimodal model that reads text plus images, audio, or video. Accepts media inputs and returns a result ready for downstream steps.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/legacy/multimodal-llm/?utm_source=app&utm_medium=tooltip&utm_campaign=docs&utm_content=multimodal-llm-overview',
   },
 
   VisionLLM: {
     description:
-      'Processes images with a vision model to extract text, detect objects, or describe scenes. Accepts one or more image inputs and returns a structured result. See supported formats and steps.',
+      'Processes images with a vision model to extract text, detect objects, or describe scenes. Accepts one or more image inputs and returns a structured result.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/legacy/vision-llm/?utm_source=app&utm_medium=tooltip&utm_campaign=docs&utm_content=vision-llm-overview',
   },
