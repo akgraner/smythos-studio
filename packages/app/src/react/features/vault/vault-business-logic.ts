@@ -646,9 +646,9 @@ export const userCustomModelService = {
         id: value.id || id,
         name: value.name,
         modelId: value.modelId,
-        baseUrl: value.baseUrl,
+        baseURL: value.baseURL,
         provider: value.provider,
-        fallbackLLM: value.fallbackLLM,
+        fallbackLLM: value.fallbackLLM || '', // Provide default empty string for backward compatibility with cached data
         features: value.features,
       }));
 
@@ -688,7 +688,7 @@ export const userCustomModelService = {
         id: result.data.id,
         name: result.data.name,
         modelId: modelDetails.modelId,
-        baseUrl: modelDetails.baseUrl,
+        baseURL: modelDetails.baseURL,
         provider: modelDetails.provider,
         fallbackLLM: modelDetails.fallbackLLM,
         features: modelDetails.features,
@@ -729,7 +729,7 @@ export const userCustomModelService = {
         id: modelId,
         name: result.data.name,
         modelId: updatedFields.modelId || '',
-        baseUrl: updatedFields.baseUrl || '',
+        baseURL: updatedFields.baseURL || '',
         provider: updatedFields.provider || '',
         fallbackLLM: updatedFields.fallbackLLM || '',
         features: updatedFields.features,
