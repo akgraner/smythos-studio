@@ -21,8 +21,12 @@ async function onComponentLoad(sidebar) {
   const titleRightActions = sidebar.querySelector('.title-right-buttons');
   const titleLeftActions = sidebar.querySelector('.title-left-buttons');
 
-  // Add component description below title if available
-  const componentDoc = getComponentDocumentation(component.constructor.name);
+  const isIntegrationComponent = !!component.properties?.template;
+
+  // Add component/integration description below title if available
+  const componentDoc = isIntegrationComponent
+    ? getIntegrationDocumentation(component)
+    : getComponentDocumentation(component.constructor.name);
   if (componentDoc) {
     const contentElement = sidebar.querySelector('.dialog-content');
     if (contentElement) {
@@ -175,6 +179,17 @@ async function onComponentLoad(sidebar) {
   // Keep dynamic draft updates handled by sidebarEditValues(onDraft). Do not write to component data on input/change.
 
   component.emit('settingsOpened', sidebar, this);
+}
+
+function getIntegrationDocumentation(component: Component) {
+  const description = component.properties?.template?.templateInfo?.sidebarDescription || '';
+  const docsLink = component.properties?.template?.templateInfo?.docPath || '';
+  return description
+    ? {
+        description: description,
+        docsLink: docsLink,
+      }
+    : null;
 }
 
 function onTemplateCreateLoad(sidebar) {
@@ -657,6 +672,11 @@ export async function editSettings(component: Component) {
       label: 'Description',
       value:
         component.properties?.template?.templateInfo?.description || component.description || '',
+    },
+    sidebarDescription: {
+      type: 'textarea',
+      label: 'Sidebar Description',
+      value: component.properties?.template?.templateInfo?.sidebarDescription || '',
     },
     icon: {
       type: 'textarea',
