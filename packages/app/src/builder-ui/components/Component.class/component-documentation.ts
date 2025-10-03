@@ -80,6 +80,13 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
       'https://smythos.com/docs/agent-studio/components/advanced/await/?utm_source=studio&utm_medium=tooltip&utm_campaign=await&utm_content=component-header#step-1-set-wait-conditions',
   },
 
+  Async: {
+    description:
+      'Start long running work in a background branch while the main flow continues; returns a JobID, passes your inputs to that branch, and pairs with Await to get results in the same run.',
+    docsLink:
+      'https://smythos.com/docs/agent-studio/components/advanced/async/?utm_source=studio&utm_medium=tooltip&utm_campaign=async&utm_content=component-header',
+  },
+
   ForEach: {
     description:
       'Use ForEach to loop through a list and run the same steps for each item. It aggregates every run into one result you can pass to the next step.',
@@ -103,7 +110,7 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
 
   Code: {
     description:
-      'Use the Code component to run JavaScript inside your workflow. Transform inputs, validate data, and add custom logic without an external service. Set _output to pass results and use _error for safe failures.',
+      'Use the Code component to run JavaScript, transform data, add logic, and return results with _output or errors with _error without any external service.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/advanced/code/?utm_source=studio&utm_medium=tooltip&utm_campaign=code&utm_content=variables',
   },
@@ -184,7 +191,7 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
 
   DataSourceIndexer: {
     description:
-      "Adds or updates content in the agent's knowledge base. Stores text and optional metadata in a selected namespace with a stable source ID, enabling later search, updates, or deletion. Designed for incremental, traceable knowledge updates.",
+      'Adds or updates content in the agent’s knowledge base. Stores text and optional metadata in a selected namespace with a stable source ID, enabling later search, updates, or deletion.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/rag-data/rag-remember/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-remember&utm_content=component-header',
   },
