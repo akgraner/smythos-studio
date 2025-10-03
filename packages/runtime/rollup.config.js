@@ -54,6 +54,7 @@ const devCJSConfig = {
       targets: [
         { src: 'src/data/*', dest: 'dist/data' },
         { src: 'src/static/*', dest: 'dist/static' },
+        // swagger-ui-dist package
         { src: 'node_modules/swagger-ui-dist/*.{js,css,html,.js.map}', dest: 'dist' },
       ],
     }),
@@ -87,6 +88,8 @@ const devESConfig = {
       targets: [
         { src: 'src/data/*', dest: 'dist/data' },
         { src: 'src/static/*', dest: 'dist/static' },
+        // swagger-ui-dist package
+        { src: 'node_modules/swagger-ui-dist/*.{js,css,html,.js.map}', dest: 'dist' },
       ],
     }),
   ],
@@ -126,8 +129,10 @@ const prodConfig = {
     terser(),
     copy({
       targets: [
-        { src: 'src/data/*', dest: 'dist/data' },
-        { src: 'src/static/*', dest: 'dist/static' },
+        { src: './src/modules/embodiment/data/*', dest: 'dist/data' },
+        { src: './static/*', dest: 'dist/static' },
+        // swagger-ui-dist package
+        { src: 'node_modules/swagger-ui-dist/*.{js,css,html,.js.map}', dest: 'dist' },
       ],
     }),
   ],
