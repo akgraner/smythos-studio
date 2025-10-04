@@ -187,7 +187,14 @@ export function createInfoButton(
   },
   entryIndex = 0,
 ) {
+  // Calculate width based on text length, but allow more space for tooltips with links
+  const hasLinks = text.includes('<a ');
   let estimatedWidth = text.length * 2 > 48 ? 48 : text.length * 2;
+
+  // If tooltip contains links, use a more generous width calculation
+  if (hasLinks) {
+    estimatedWidth = Math.min(60, Math.max(40, text.length * 1.8));
+  }
   // TODO: This is a temporary fix to avoid the tooltip being cutoff in the sidebar and showing it on the top.
   // if (entryIndex < 2) {
   //   position = position || 'bottom';
@@ -221,7 +228,7 @@ export function createInfoButton(
         }),
         placement: position as any,
         className:
-          clsHint + ' whitespace-normal text-xs ' + (tooltipClasses || `w-${estimatedWidth}`),
+          clsHint + ' whitespace-normal text-xs ' + (tooltipClasses || (hasLinks ? `min-w-52 max-w-96` : `w-${estimatedWidth}`)) + ' [&_a]:whitespace-nowrap [&_a]:inline-block',
         style: 'dark',
         arrow: true,
       },
@@ -348,9 +355,10 @@ export function createToggle(label: string, value: boolean | string, hintOnSelec
     'checked:bg-none checked:text-blue-600 checked:border-blue-600 checked:bg-blue-600',
     'focus:ring-0 focus:ring-offset-0 focus:ring-offset-transparent',
     'before:inline-block before:w-4 before:h-4 before:bg-white',
-    'checked:before:bg-blue-200 before:translate-x-0 checked:before:translate-x-full',
     'before:rounded-full before:shadow before:transform before:ring-0',
     'before:transition before:ease-in-out before:duration-200 before:mt-[1px]',
+    'before:ml-[1px] before:translate-x-px checked:before:translate-x-full',
+    'checked:before:bg-blue-200 checked:before:ml-0',
   ].join(' ');
 
   return toggle;
