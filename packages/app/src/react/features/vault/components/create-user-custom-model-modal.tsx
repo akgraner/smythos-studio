@@ -228,7 +228,7 @@ export function CreateUserCustomModelModal({
               max="2000000"
               value={formData.contextWindow || ''}
               onChange={(e) => handleNumericInputChange('contextWindow', e.target.value)}
-              placeholder="e.g., 128000"
+              placeholder="128000"
               fullWidth
               className="w-full"
             />
@@ -248,7 +248,7 @@ export function CreateUserCustomModelModal({
               max="200000"
               value={formData.maxOutputTokens || ''}
               onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
-              placeholder="e.g., 4096"
+              placeholder="4096"
               fullWidth
               className="w-full"
             />
