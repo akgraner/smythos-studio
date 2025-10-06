@@ -673,14 +673,16 @@ export const userCustomModelService = {
       }
 
       // Convert the user custom LLM data to our UserCustomModel format
+      // Handle both new field names (contextWindow, maxOutputTokens) and old ones (tokens, completionTokens)
       const models = Object.entries(result.data || {}).map(([id, value]: [string, any]) => ({
         id: value.id || id,
         name: value.name,
         modelId: value.modelId,
         baseURL: value.baseURL,
         provider: value.provider,
-        contextWindow: value.contextWindow,
-        maxOutputTokens: value.maxOutputTokens,
+        // Check for new field name first, then fall back to old field name
+        contextWindow: value.contextWindow !== undefined ? value.contextWindow : value.tokens,
+        maxOutputTokens: value.maxOutputTokens !== undefined ? value.maxOutputTokens : value.completionTokens,
         fallbackLLM: value.fallbackLLM || '', // Provide default empty string for backward compatibility with cached data
         features: value.features,
       }));

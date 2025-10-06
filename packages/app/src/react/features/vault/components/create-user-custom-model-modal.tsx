@@ -119,12 +119,31 @@ export function CreateUserCustomModelModal({
     }));
   };
 
+  /**
+   * Handles numeric input changes for context window and max output tokens
+   * @param field - The field name to update
+   * @param value - The string value from the input
+   */
   const handleNumericInputChange = (field: string, value: string) => {
-    const numValue = value === '' ? undefined : parseInt(value, 10);
-    setFormData((prev) => ({
-      ...prev,
-      [field]: numValue,
-    }));
+    // If empty string, set to undefined
+    if (value === '') {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: undefined,
+      }));
+      return;
+    }
+
+    // Parse the number
+    const numValue = parseInt(value, 10);
+
+    // Only update if it's a valid number (not NaN)
+    if (!isNaN(numValue)) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: numValue,
+      }));
+    }
   };
 
   /**
@@ -256,7 +275,7 @@ export function CreateUserCustomModelModal({
               min="2048"
               max="2000000"
               step="4"
-              value={formData.contextWindow || ''}
+              value={formData.contextWindow !== undefined ? String(formData.contextWindow) : ''}
               onChange={(e) => handleNumericInputChange('contextWindow', e.target.value)}
               placeholder="128000"
               fullWidth
@@ -277,7 +296,7 @@ export function CreateUserCustomModelModal({
               min="256"
               max="200000"
               step="4"
-              value={formData.maxOutputTokens || ''}
+              value={formData.maxOutputTokens !== undefined ? String(formData.maxOutputTokens) : ''}
               onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
               placeholder="4096"
               fullWidth
