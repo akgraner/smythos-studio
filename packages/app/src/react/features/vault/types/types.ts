@@ -192,10 +192,21 @@ export interface UserCustomModel {
    * Provider / Compatible SDK (e.g., 'OpenAI', 'Ollama')
    */
   provider: string;
+
   /**
-   * Fallback LLM ID from builtin LLMs
+   * Context Window size in tokens (optional)
    */
-  fallbackLLM: string;
+  contextWindow?: number;
+
+  /**
+   * Maximum output tokens that can be generated (optional)
+   */
+  maxOutputTokens?: number;
+
+  /**
+   * Fallback LLM ID from builtin LLMs (optional)
+   */
+  fallbackLLM?: string;
 
   /**
    * List of features supported by the model (e.g., 'text', 'tools')

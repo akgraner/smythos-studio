@@ -30,7 +30,9 @@ export interface UserCustomLLMInputParams {
   modelId: string;
   baseURL: string;
   provider: string;
-  fallbackLLM: string;
+  contextWindow?: number;
+  maxOutputTokens?: number;
+  fallbackLLM?: string;
   features?: string[];
 }
 
@@ -58,7 +60,9 @@ const userCustomLLMValidationSchema = Joi.object({
     .uri({ scheme: ['http', 'https'] })
     .max(500),
   provider: Joi.string().trim().required().valid('OpenAI', 'Ollama'),
-  fallbackLLM: Joi.string().trim().required().min(1).max(100),
+  contextWindow: Joi.number().integer().min(2048).max(2000000).optional(),
+  maxOutputTokens: Joi.number().integer().min(256).max(200000).optional(),
+  fallbackLLM: Joi.string().trim().optional().allow('').max(100),
   features: Joi.array().items(Joi.string()).optional(),
 });
 //#endregion - Validation Schema
@@ -98,9 +102,11 @@ async function saveUserCustomLLM(req: Request, params: UserCustomLLMInputParams)
       name: trimmedParams.name,
       modelId: trimmedParams.modelId,
       baseURL: trimmedParams.baseURL,
+      provider: trimmedParams.provider,
+      contextWindow: trimmedParams.contextWindow,
+      maxOutputTokens: trimmedParams.maxOutputTokens,
       fallbackLLM: trimmedParams.fallbackLLM,
       features: trimmedParams.features,
-      provider: trimmedParams.provider,
     };
 
     // Save to team settings

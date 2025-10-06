@@ -54,6 +54,8 @@ export function CreateUserCustomModelModal({
     modelId: '',
     baseURL: '',
     provider: '',
+    contextWindow: undefined as number | undefined,
+    maxOutputTokens: undefined as number | undefined,
     fallbackLLM: '',
     features: ['text'],
   });
@@ -76,6 +78,8 @@ export function CreateUserCustomModelModal({
         modelId: editModel.modelId,
         baseURL: editModel.baseURL,
         provider: editModel.provider,
+        contextWindow: editModel.contextWindow,
+        maxOutputTokens: editModel.maxOutputTokens,
         fallbackLLM: editModel.fallbackLLM || '',
         features: editModel.features || ['text'],
       });
@@ -85,6 +89,8 @@ export function CreateUserCustomModelModal({
         modelId: '',
         baseURL: '',
         provider: '',
+        contextWindow: undefined,
+        maxOutputTokens: undefined,
         fallbackLLM: '',
         features: ['text'],
       });
@@ -98,8 +104,7 @@ export function CreateUserCustomModelModal({
       !formData.name?.trim() ||
       !formData.modelId?.trim() ||
       !formData.baseURL?.trim() ||
-      !formData.provider?.trim() ||
-      !formData.fallbackLLM?.trim()
+      !formData.provider?.trim()
     ) {
       return;
     }
@@ -114,12 +119,19 @@ export function CreateUserCustomModelModal({
     }));
   };
 
+  const handleNumericInputChange = (field: string, value: string) => {
+    const numValue = value === '' ? undefined : parseInt(value, 10);
+    setFormData((prev) => ({
+      ...prev,
+      [field]: numValue,
+    }));
+  };
+
   const isFormValid =
     formData.name?.trim() &&
     formData.modelId?.trim() &&
     formData.baseURL?.trim() &&
-    formData.provider?.trim() &&
-    formData.fallbackLLM?.trim();
+    formData.provider?.trim();
 
   // Filter features to only show Text Completion and Function calling/Tool Use
   const userCustomModelFeatures = CUSTOM_LLM_FEATURES.filter(
@@ -206,8 +218,48 @@ export function CreateUserCustomModelModal({
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="contextWindow" className="text-base font-normal mr-2 text-[#1E1E1E]">
+              Context Window
+            </Label>
+            <Input
+              id="contextWindow"
+              type="number"
+              min="2048"
+              max="2000000"
+              value={formData.contextWindow || ''}
+              onChange={(e) => handleNumericInputChange('contextWindow', e.target.value)}
+              placeholder="e.g., 128000"
+              fullWidth
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500">
+              Optional. Maximum number of tokens in the context window (2,048 - 2,000,000)
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxOutputTokens" className="text-base font-normal mr-2 text-[#1E1E1E]">
+              Maximum Output Tokens
+            </Label>
+            <Input
+              id="maxOutputTokens"
+              type="number"
+              min="256"
+              max="200000"
+              value={formData.maxOutputTokens || ''}
+              onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
+              placeholder="e.g., 4096"
+              fullWidth
+              className="w-full"
+            />
+            <p className="text-xs text-gray-500">
+              Optional. Maximum number of tokens that can be generated (256 - 200,000)
+            </p>
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="fallbackLLM">
-              Fallback Model <span className="text-red-500">*</span>
+              Fallback Model
             </Label>
             <p className="text-xs text-gray-500">
               The model used when the custom model is unavailable.

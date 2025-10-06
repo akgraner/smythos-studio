@@ -679,6 +679,8 @@ export const userCustomModelService = {
         modelId: value.modelId,
         baseURL: value.baseURL,
         provider: value.provider,
+        contextWindow: value.contextWindow,
+        maxOutputTokens: value.maxOutputTokens,
         fallbackLLM: value.fallbackLLM || '', // Provide default empty string for backward compatibility with cached data
         features: value.features,
       }));
@@ -721,6 +723,8 @@ export const userCustomModelService = {
         modelId: modelDetails.modelId,
         baseURL: modelDetails.baseURL,
         provider: modelDetails.provider,
+        contextWindow: modelDetails.contextWindow,
+        maxOutputTokens: modelDetails.maxOutputTokens,
         fallbackLLM: modelDetails.fallbackLLM,
         features: modelDetails.features,
       };
@@ -762,6 +766,8 @@ export const userCustomModelService = {
         modelId: updatedFields.modelId || '',
         baseURL: updatedFields.baseURL || '',
         provider: updatedFields.provider || '',
+        contextWindow: updatedFields.contextWindow,
+        maxOutputTokens: updatedFields.maxOutputTokens,
         fallbackLLM: updatedFields.fallbackLLM || '',
         features: updatedFields.features,
       };
