@@ -127,6 +127,35 @@ export function CreateUserCustomModelModal({
     }));
   };
 
+  /**
+   * Handles toggling of feature checkboxes
+   * @param featureValue - The feature value to toggle ('text', 'tools', etc.)
+   */
+  const handleFeatureToggle = (featureValue: string) => {
+    setFormData((prev) => {
+      const currentFeatures = prev.features;
+      const isCurrentlySelected = currentFeatures.includes(featureValue);
+      
+      // If feature is selected, remove it; otherwise, add it
+      const newFeatures = isCurrentlySelected
+        ? currentFeatures.filter((f) => f !== featureValue)
+        : [...currentFeatures, featureValue];
+      
+      // Ensure at least one feature is selected; default to 'text' if none
+      if (newFeatures.length === 0) {
+        return {
+          ...prev,
+          features: ['text'],
+        };
+      }
+      
+      return {
+        ...prev,
+        features: newFeatures,
+      };
+    });
+  };
+
   const isFormValid =
     formData.name?.trim() &&
     formData.modelId?.trim() &&
@@ -226,6 +255,7 @@ export function CreateUserCustomModelModal({
               type="number"
               min="2048"
               max="2000000"
+              step="4"
               value={formData.contextWindow || ''}
               onChange={(e) => handleNumericInputChange('contextWindow', e.target.value)}
               placeholder="128000"
@@ -246,6 +276,7 @@ export function CreateUserCustomModelModal({
               type="number"
               min="256"
               max="200000"
+              step="4"
               value={formData.maxOutputTokens || ''}
               onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
               placeholder="4096"
@@ -288,11 +319,11 @@ export function CreateUserCustomModelModal({
                 <div key={feature.value} className="flex items-center space-x-2">
                   <Checkbox
                     id={feature.value}
-                    disabled={true}
                     checked={formData.features.includes(feature.value)}
+                    onCheckedChange={() => handleFeatureToggle(feature.value)}
                     className="data-[state=checked]:bg-[#3C89F9] data-[state=checked]:border-[#3C89F9] data-[state=checked]:text-[#FFFF] shadow-none"
                   />
-                  <Label htmlFor={feature.value} className="text-sm font-normal">
+                  <Label htmlFor={feature.value} className="text-sm font-normal cursor-pointer">
                     {feature.text}
                   </Label>
                 </div>
