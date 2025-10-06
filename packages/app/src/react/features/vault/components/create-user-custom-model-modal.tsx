@@ -233,7 +233,7 @@ export function CreateUserCustomModelModal({
               className="w-full"
             />
             <p className="text-xs text-gray-500">
-              Optional. Maximum number of tokens in the context window (2,048 - 2,000,000)
+              The total number of tokens the model can process, including input and output.
             </p>
           </div>
 
@@ -253,7 +253,7 @@ export function CreateUserCustomModelModal({
               className="w-full"
             />
             <p className="text-xs text-gray-500">
-              Optional. Maximum number of tokens that can be generated (256 - 200,000)
+              The maximum number of tokens the model can generate in a single response.
             </p>
           </div>
 
