@@ -577,6 +577,37 @@ export const vaultService = {
   },
 };
 
+export const recommendedModelsService = {
+  getNameByProviderId: (providerId: string) => {
+    return globalModelKeyNameMap?.[providerId?.toLowerCase()] || providerId;
+  },
+  getRecommendedModels: async (): Promise<Record<string, { enabled: boolean }>> => {
+    try {
+      const res = await fetch('/api/page/vault/recommended-models');
+      const resJson = await res.json();
+      return resJson?.data || {};
+    } catch (error) {
+      console.error('Error fetching recommended models:', error);
+      throw new Error('Failed to get recommended models');
+    }
+  },
+  updateRecommendedModels: async (providerId: string, enabled: boolean) => {
+    try {
+      const res = await fetch(`/api/page/vault/recommended-models/${providerId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ enabled }),
+      });
+      return res.json();
+    } catch (error) {
+      console.error('Error updating recommended models:', error);
+      throw new Error('Failed to update recommended models');
+    }
+  },
+};
+
 interface CustomModel {
   llm: string;
   label: string;
