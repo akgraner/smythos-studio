@@ -880,7 +880,7 @@ function generateTooltip(entry, elm, entryIndex) {
     entry?.help,
     {
       cls: 'btn-info ' + entry?.tooltipIconClasses || '',
-      clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-center',
+      clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-left normal-case',
       position: entry?.hintPosition,
       arrowClasses: entry?.arrowClasses || '',
       tooltipClasses: entry?.tooltipClasses || '',
