@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { Tooltip } from 'flowbite-react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
@@ -217,6 +218,11 @@ export function createInfoButton(
     src: '/img/icons/Info.svg',
   });
 
+  // Sanitize the HTML content to prevent XSS attacks
+  // DOMPurify's default configuration already allows all safe HTML tags
+  // and blocks dangerous elements like <script>, event handlers, etc.
+  const sanitizedText = DOMPurify.sanitize(text);
+
   // Render the Tooltip component
   const root = createRoot(tooltipContainer);
   root.render(
@@ -224,11 +230,14 @@ export function createInfoButton(
       Tooltip,
       {
         content: React.createElement('div', {
-          dangerouslySetInnerHTML: { __html: text },
+          dangerouslySetInnerHTML: { __html: sanitizedText },
         }),
         placement: position as any,
         className:
-          clsHint + ' whitespace-normal text-xs ' + (tooltipClasses || (hasLinks ? `min-w-52 max-w-96` : `w-${estimatedWidth}`)) + ' [&_a]:whitespace-nowrap [&_a]:inline-block',
+          clsHint +
+          ' whitespace-normal text-xs ' +
+          (tooltipClasses || (hasLinks ? `min-w-52 max-w-96` : `w-${estimatedWidth}`)) +
+          ' [&_a]:whitespace-nowrap [&_a]:inline-block',
         style: 'dark',
         arrow: true,
       },
@@ -373,10 +382,21 @@ export function createTagInput({ maxTags, value }: { maxTags: number; value: str
   return input;
 }
 
+/**
+ * Creates a hint element with sanitized HTML content
+ * @param text - The HTML text content to display in the hint
+ * @returns HTMLElement - The hint element with sanitized content
+ */
 export function createHint(text: string) {
   const elm = document.createElement('small');
   elm.classList.add('field-hint');
-  elm.innerHTML = text;
+
+  // Sanitize the HTML content to prevent XSS attacks
+  // DOMPurify's default configuration already allows all safe HTML tags
+  // and blocks dangerous elements like <script>, event handlers, etc.
+  const sanitizedText = DOMPurify.sanitize(text);
+
+  elm.innerHTML = sanitizedText;
 
   return elm;
 }

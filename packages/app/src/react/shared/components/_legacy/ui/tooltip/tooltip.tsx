@@ -1,3 +1,4 @@
+import DOMPurify from 'dompurify';
 import { PropsWithChildren, ReactNode, useEffect, useRef, useState } from 'react';
 
 /**
@@ -150,7 +151,7 @@ export default function ToolTip({
           {content !== undefined ? (
             content
           ) : html ? (
-            <div dangerouslySetInnerHTML={{ __html: html }} />
+            <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(html) }} />
           ) : isMultiLine && Array.isArray(text) ? (
             text?.filter((txt) => txt?.trim()).map((txt, i) => <p key={i}>{txt}</p>)
           ) : (
