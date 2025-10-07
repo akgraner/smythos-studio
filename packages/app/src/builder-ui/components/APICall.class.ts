@@ -232,7 +232,7 @@ export class APICall extends Component {
         label: 'Authentication Service',
         section: 'OAuth',
         sectionHelp:
-          'SmythOS supports OAuth 2.0 with OpenID Connect (OIDC) for secure user authentication and authorization.',
+          'Sign in once and let tokens attach to your calls automatically. <a href="https://smythos.com/docs/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=url#step-3-add-authentication" target="_blank" class="text-blue-600 hover:text-blue-800">See OAuth setup</a>',
         sectionTooltipClasses: 'w-64',
         sectionArrowClasses: '-ml-11',
         options: [...OAUTH_SERVICES],
@@ -338,6 +338,7 @@ export class APICall extends Component {
         type: 'textarea',
         label: 'Proxy URLs',
         section: 'Advanced',
+        help: 'Send calls through a proxy if your network or vendor asks for it.',
         validateMessage: `Enter your proxy URLs in the following format:<br/>
                 [scheme]://[username]:[password]@[host]:[port]<br/><br/>
                 For multiple URLs, place each one in a new line.<br/><br/>

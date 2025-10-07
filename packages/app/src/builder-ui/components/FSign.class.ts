@@ -26,7 +26,7 @@ export class FSign extends FunctionComponent {
         type: 'textarea',
         label: 'Key / Secret',
         attributes: { 'data-template-vars': 'true', 'data-vault': `APICall,ALL_NON_GLOBAL_KEYS` },
-        help: 'Provide the signing secret or private key; store in Vault, not in code.',
+        help: 'Provide the signing secret or private key; store in <a href="/vault" target="_blank" class="text-blue-600 hover:text-blue-800">Vault</a>, not in code.',
         value: '',
       },
       keyMessage: {
@@ -91,15 +91,17 @@ export class FSign extends FunctionComponent {
     this.drawSettings.color = '#0083ff';
     // #endregion
 
-    this.properties.title = `${this.data.signMethod.toUpperCase()}-${this.data.hashType.toUpperCase()} :: ${this.data.encoding
-      }`;
+    this.properties.title = `${this.data.signMethod.toUpperCase()}-${this.data.hashType.toUpperCase()} :: ${
+      this.data.encoding
+    }`;
     this.drawSettings.displayName = 'F:Sign';
   }
   protected async run() {
     if (!this.domElement.style.width) this.domElement.style.width = '130px';
     this.addEventListener('settingsSaved', async () => {
-      this.title = `${this.data.signMethod.toUpperCase()}-${this.data.hashType.toUpperCase()} :: ${this.data.encoding
-        }`;
+      this.title = `${this.data.signMethod.toUpperCase()}-${this.data.hashType.toUpperCase()} :: ${
+        this.data.encoding
+      }`;
       this.domElement.querySelector('.title .text').textContent = this.title;
     });
 

@@ -172,7 +172,8 @@ export function createForm(entriesObject, displayType = 'block'): FormHTMLElemen
         if (sectionsHelp[sectionName]) {
           const infoBtn = createInfoButton(sectionsHelp[sectionName].help, {
             cls: 'mr-2 btn-info',
-            clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-center',
+            clsHint:
+              'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-left normal-case',
             position: sectionsHelp[sectionName]?.hintPosition || 'bottom',
             tooltipClasses: sectionsHelp[sectionName]?.tooltipClasses || '',
             arrowClasses: sectionsHelp[sectionName]?.arrowClasses || '',
