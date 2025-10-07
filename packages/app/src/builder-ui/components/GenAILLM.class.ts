@@ -341,7 +341,7 @@ export class GenAILLM extends Component {
       model: {
         type: 'select',
         label: 'Select a Model',
-        help: 'Choose the model that will generate and interpret text. <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=model#step-1-choose-a-model" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Choose the <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=model#step-1-choose-a-model" target="_blank" class="text-blue-600 hover:text-blue-800">model</a> that will generate and interpret text.',
         hintPosition: 'after_label',
         tooltipClasses: 'w-56 ',
         arrowClasses: '-ml-11',
