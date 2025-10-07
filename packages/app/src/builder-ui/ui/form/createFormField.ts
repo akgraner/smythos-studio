@@ -590,7 +590,8 @@ export default function createFormField(entry, displayType = 'block', entryIndex
   if (entry.validateMessage) {
     const span = document.createElement('span');
     span.classList.add('invalid_feedback');
-    span.innerHTML = entry.validateMessage;
+    // Use textContent instead of innerHTML for validation messages (no HTML needed)
+    span.textContent = entry.validateMessage;
     div.appendChild(span);
   }
 
