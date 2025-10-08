@@ -30,7 +30,7 @@
   "openai": {
     "defaultTemperature": 1,
     "maxTemperature": 2,
-    "minMaxTokens": 4,
+    "minMaxTokens": 1024,
     "defaultMaxTokens": 8192,
     "defaultThinkingTokens": 4096,
     "defaultTopP": 1,
