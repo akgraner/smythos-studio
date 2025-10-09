@@ -1,20 +1,20 @@
 import { Checkbox } from '@src/react/shared/components/ui/checkbox';
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
 } from '@src/react/shared/components/ui/dialog';
 import { Input } from '@src/react/shared/components/ui/input';
 import { Label } from '@src/react/shared/components/ui/label';
 import ConfirmModal from '@src/react/shared/components/ui/modals/ConfirmModal';
 import { Button as CustomButton } from '@src/react/shared/components/ui/newDesign/button';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
 } from '@src/react/shared/components/ui/select';
 import { Spinner } from '@src/react/shared/components/ui/spinner';
 import { CUSTOM_LLM_FEATURES } from '@src/shared/constants/custom-llm.constants';
@@ -195,162 +195,166 @@ export function CreateUserCustomModelModal({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-[#1E1E1E]">
-            {editModel ? 'Edit Custom Model' : 'Setup Custom Model'}
-          </DialogTitle>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="name" className="text-base font-normal mr-2 text-[#1E1E1E]">
-              Name <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="name"
-              type="text"
-              value={formData.name}
-              onChange={(e) => handleInputChange('name', e.target.value)}
-              placeholder="My Custom Model"
-              fullWidth
-              className="w-full"
-            />
-          </div>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+        <div className="px-6 pt-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-[#1E1E1E]">
+              {editModel ? 'Edit Custom Model' : 'Setup Custom Model'}
+            </DialogTitle>
+          </DialogHeader>
+        </div>
+        <form onSubmit={handleSubmit} className="flex flex-col flex-1 overflow-hidden">
+          <div className="overflow-y-auto px-6 py-4 space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                Name <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="name"
+                type="text"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="My Custom Model"
+                fullWidth
+                className="w-full"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="modelId" className="text-base font-normal mr-2 text-[#1E1E1E]">
-              Model ID <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="modelId"
-              type="text"
-              value={formData.modelId}
-              onChange={(e) => handleInputChange('modelId', e.target.value)}
-              placeholder="qwen2.5-7b-instruct-1m"
-              fullWidth
-              className="w-full"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="modelId" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                Model ID <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="modelId"
+                type="text"
+                value={formData.modelId}
+                onChange={(e) => handleInputChange('modelId', e.target.value)}
+                placeholder="qwen2.5-7b-instruct-1m"
+                fullWidth
+                className="w-full"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="baseURL" className="text-base font-normal mr-2 text-[#1E1E1E]">
-              Base URL <span className="text-red-500">*</span>
-            </Label>
-            <Input
-              id="baseURL"
-              type="url"
-              value={formData.baseURL}
-              onChange={(e) => handleInputChange('baseURL', e.target.value)}
-              placeholder="http://127.0.0.1:1234/v1"
-              fullWidth
-              className="w-full"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="baseURL" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                Base URL <span className="text-red-500">*</span>
+              </Label>
+              <Input
+                id="baseURL"
+                type="url"
+                value={formData.baseURL}
+                onChange={(e) => handleInputChange('baseURL', e.target.value)}
+                placeholder="http://127.0.0.1:1234/v1"
+                fullWidth
+                className="w-full"
+              />
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="provider" className="text-base font-normal mr-2 text-[#1E1E1E]">
-              Provider / Compatible SDK <span className="text-red-500">*</span>
-            </Label>
-            <Select
-              value={formData.provider}
-              onValueChange={(value) => handleInputChange('provider', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a provider" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="OpenAI">OpenAI</SelectItem>
-                <SelectItem value="Ollama">Ollama</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="provider" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                Provider / Compatible SDK <span className="text-red-500">*</span>
+              </Label>
+              <Select
+                value={formData.provider}
+                onValueChange={(value) => handleInputChange('provider', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a provider" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="OpenAI">OpenAI</SelectItem>
+                  <SelectItem value="Ollama">Ollama</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="contextWindow" className="text-base font-normal mr-2 text-[#1E1E1E]">
-              Context Window
-            </Label>
-            <Input
-              id="contextWindow"
-              type="number"
-              min="2048"
-              max="2000000"
-              step="4"
-              value={formData.contextWindow !== undefined ? String(formData.contextWindow) : ''}
-              onChange={(e) => handleNumericInputChange('contextWindow', e.target.value)}
-              placeholder="128000"
-              fullWidth
-              className="w-full"
-            />
-            <p className="text-xs text-gray-500">
-              The total number of tokens the model can process, including input and output.
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="contextWindow" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                Context Window
+              </Label>
+              <Input
+                id="contextWindow"
+                type="number"
+                min="2048"
+                max="2000000"
+                step="4"
+                value={formData.contextWindow !== undefined ? String(formData.contextWindow) : ''}
+                onChange={(e) => handleNumericInputChange('contextWindow', e.target.value)}
+                placeholder="128000"
+                fullWidth
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500">
+                The total number of tokens the model can process, including input and output.
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="maxOutputTokens" className="text-base font-normal mr-2 text-[#1E1E1E]">
-              Maximum Output Tokens
-            </Label>
-            <Input
-              id="maxOutputTokens"
-              type="number"
-              min="256"
-              max="200000"
-              step="4"
-              value={formData.maxOutputTokens !== undefined ? String(formData.maxOutputTokens) : ''}
-              onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
-              placeholder="4096"
-              fullWidth
-              className="w-full"
-            />
-            <p className="text-xs text-gray-500">
-              The maximum number of tokens the model can generate in a single response.
-            </p>
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="maxOutputTokens" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                Maximum Output Tokens
+              </Label>
+              <Input
+                id="maxOutputTokens"
+                type="number"
+                min="256"
+                max="200000"
+                step="4"
+                value={formData.maxOutputTokens !== undefined ? String(formData.maxOutputTokens) : ''}
+                onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
+                placeholder="4096"
+                fullWidth
+                className="w-full"
+              />
+              <p className="text-xs text-gray-500">
+                The maximum number of tokens the model can generate in a single response.
+              </p>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="fallbackLLM">
-              Fallback Model
-            </Label>
-            <p className="text-xs text-gray-500">
-              The model used when the custom model is unavailable.
-            </p>
-            <Select
-              value={formData.fallbackLLM}
-              onValueChange={(value) => handleInputChange('fallbackLLM', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select a model" />
-              </SelectTrigger>
-              <SelectContent>
-                {fallbackOptions.map((model) => (
-                  <SelectItem key={model.id} value={model.id}>
-                    {model.name}
-                  </SelectItem>
+            <div className="space-y-2">
+              <Label htmlFor="fallbackLLM">
+                Fallback Model
+              </Label>
+              <p className="text-xs text-gray-500">
+                The model used when the custom model is unavailable.
+              </p>
+              <Select
+                value={formData.fallbackLLM}
+                onValueChange={(value) => handleInputChange('fallbackLLM', value)}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {fallbackOptions.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-3">
+              <Label className="text-base font-normal text-[#1E1E1E]">Features</Label>
+              <div className="grid grid-cols-2 gap-4 ml-2">
+                {userCustomModelFeatures.map((feature) => (
+                  <div key={feature.value} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={feature.value}
+                      checked={formData.features.includes(feature.value)}
+                      onCheckedChange={() => handleFeatureToggle(feature.value)}
+                      className="data-[state=checked]:bg-[#3C89F9] data-[state=checked]:border-[#3C89F9] data-[state=checked]:text-[#FFFF] shadow-none"
+                    />
+                    <Label htmlFor={feature.value} className="text-sm font-normal cursor-pointer">
+                      {feature.text}
+                    </Label>
+                  </div>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-3">
-            <Label className="text-base font-normal text-[#1E1E1E]">Features</Label>
-            <div className="grid grid-cols-2 gap-4 ml-2">
-              {userCustomModelFeatures.map((feature) => (
-                <div key={feature.value} className="flex items-center space-x-2">
-                  <Checkbox
-                    id={feature.value}
-                    checked={formData.features.includes(feature.value)}
-                    onCheckedChange={() => handleFeatureToggle(feature.value)}
-                    className="data-[state=checked]:bg-[#3C89F9] data-[state=checked]:border-[#3C89F9] data-[state=checked]:text-[#FFFF] shadow-none"
-                  />
-                  <Label htmlFor={feature.value} className="text-sm font-normal cursor-pointer">
-                    {feature.text}
-                  </Label>
-                </div>
-              ))}
+              </div>
             </div>
           </div>
 
-          <div className="flex justify-between gap-4 pt-4">
+          <div className="flex justify-between gap-4 px-6 py-4 border-t border-gray-200 bg-white">
             <CustomButton
               type="button"
               variant="secondary"
