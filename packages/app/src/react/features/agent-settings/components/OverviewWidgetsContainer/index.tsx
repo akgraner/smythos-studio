@@ -23,6 +23,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
 import { FaCheck } from 'react-icons/fa';
@@ -52,6 +53,7 @@ interface WidgetsContextType {
     app_LLM_selected: string | null;
     setPostHogEvent: Dispatch<SetStateAction<{ app_LLM_selected: string | null }>>;
   };
+  updateCurrentFormValues: (values: FormValues) => void;
 }
 
 // Create the context with a default value
@@ -90,6 +92,18 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
   >([]);
   const [defaultModel, setDefaultModel] = useState<string>('');
 
+  const initialValues: FormValues = {
+    chatGptModel: '',
+    behavior: '',
+    name: '',
+    shortDescription: '',
+  };
+
+  // Contains the current form values
+  const currentFormValues = useRef<FormValues>(initialValues);
+  // Contains the previous form values to compare with the current form values
+  const initialFormValues = useRef<FormValues>(initialValues);
+
   // Memoized validation schema that uses dynamic models
   const validationSchema = useMemo(
     () =>
@@ -111,6 +125,25 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       }),
     [llmModels], // Only recreate when models change
   );
+
+  const formik = useFormik({
+    initialValues: initialValues,
+    validationSchema: validationSchema,
+    onSubmit: async (_, { setSubmitting }) => {
+      await handleSave();
+
+      setSubmitting(false);
+    },
+    enableReinitialize: false, // Don't reinitialize form when initialValues change
+  });
+
+  formik.handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    currentFormValues.current = {
+      ...currentFormValues.current,
+      [e.target.name]: e.target.value,
+    };
+    formik.setFieldValue(e.target.name, e.target.value, false);
+  };
 
   // Initialize LLM models store on component mount
   useEffect(() => {
@@ -166,27 +199,9 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     return chatbotEmbodiment;
   }, [agentEmbodiments.data]);
 
-  const initialValues: FormValues = {
-    chatGptModel: '',
-    behavior: '',
-    name: '',
-    shortDescription: '',
-  };
-
-  const formik = useFormik({
-    initialValues: initialValues,
-    validationSchema: validationSchema,
-    onSubmit: async (values, { setSubmitting }) => {
-      await handleSave();
-
-      setSubmitting(false);
-    },
-    enableReinitialize: false, // Don't reinitialize form when initialValues change
-  });
-
   // Populate form with API data once it's available
   useEffect(() => {
-    const isInitialMount = !formik.values.chatGptModel;
+    const isInitialMount = !formik.values.chatGptModel && !formik.values.name;
     if (agentQuery.data && settingsQuery.data && isInitialMount) {
       const values = {
         chatGptModel:
@@ -199,6 +214,8 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       };
 
       formik.setValues(values);
+      currentFormValues.current = values;
+      initialFormValues.current = values;
     }
   }, [agentQuery.data, settingsQuery.data, chatbotEmbodiment, workspace, defaultModel, formik]);
 
@@ -208,15 +225,15 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
       return {
         ...oldData,
-        name: formik.values.name.trim(),
+        name: currentFormValues.current.name.trim(),
         data: {
           ...(oldData.data || {}),
-          shortDescription: formik.values.shortDescription.trim(),
-          behavior: formik.values.behavior.trim(),
+          shortDescription: currentFormValues.current.shortDescription.trim(),
+          behavior: currentFormValues.current.behavior.trim(),
         },
       };
     });
-  }, [queryClient, formik.values.name, formik.values.shortDescription, formik.values.behavior]);
+  }, [queryClient]);
 
   const updateAgentSettingsCache = useCallback(
     (model: string) => {
@@ -238,7 +255,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       // Immediately update form with workspace values
       formik.resetForm({
         values: {
-          chatGptModel: formik.values.chatGptModel, // Keep existing model
+          chatGptModel: currentFormValues.current.chatGptModel, // Keep existing model
           behavior: workspace.agent.data.behavior,
           name: workspace.agent.name,
           shortDescription: workspace.agent.data.shortDescription,
@@ -248,11 +265,11 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       // Then refetch settings for completeness
       settingsQuery.refetch().then((values) => {
         if (values?.data?.settings?.chatGptModel) {
-          formik.setFieldValue('chatGptModel', values.data.settings.chatGptModel);
+          formik.setFieldValue('chatGptModel', values.data.settings.chatGptModel, false);
         }
       });
     }
-  }, [workspace, formik, settingsQuery]);
+  }, [workspace, formik, settingsQuery, currentFormValues]);
 
   const handleSave = useCallback(async (): Promise<void> => {
     setSavingStatus('saving');
@@ -264,26 +281,22 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     const promises = [];
     const failedFields = [];
 
-    const initialChatGptModelValue =
-      settingsQuery.data?.settings?.chatGptModel ||
-      chatbotEmbodiment?.properties?.chatGptModel ||
-      defaultModel;
-    const initialBehaviorValue = workspace
-      ? workspace.agent.data.behavior
-      : agentQuery.data?.data?.behavior || '';
-
-    const nameChanged: boolean = formik.values.name?.trim() !== agentQuery.data?.name;
+    const nameChanged: boolean =
+      currentFormValues.current.name?.trim() !== initialFormValues.current.name;
     const descriptionChanged: boolean =
-      formik.values.shortDescription?.trim() !== agentQuery.data?.data?.shortDescription;
+      currentFormValues.current.shortDescription?.trim() !==
+      initialFormValues.current.shortDescription;
 
-    const chatGptModelChanged: boolean = formik.values.chatGptModel !== initialChatGptModelValue;
-    const behaviorChanged: boolean = formik.values.behavior?.trim() !== initialBehaviorValue;
+    const chatGptModelChanged: boolean =
+      currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel;
+    const behaviorChanged: boolean =
+      currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
 
     if (chatGptModelChanged) {
       promises.push(
         saveAgentSettingByKey(
           SETTINGS_KEYS.chatGptModel,
-          formik.values.chatGptModel,
+          currentFormValues.current.chatGptModel,
           agentId,
         ).catch((e) => {
           errorToast('Failed to save model');
@@ -296,21 +309,24 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       if (workspace) {
         // Only update changed fields in workspace
         if (nameChanged) {
-          workspace.agent.name = formik.values.name?.trim();
+          workspace.agent.name = currentFormValues.current.name?.trim();
         }
         if (descriptionChanged) {
-          workspace.agent.data.shortDescription = formik.values.shortDescription?.trim();
+          workspace.agent.data.shortDescription =
+            currentFormValues.current.shortDescription?.trim();
         }
 
         if (behaviorChanged) {
-          workspace.agent.data.behavior = formik.values.behavior?.trim();
+          workspace.agent.data.behavior = currentFormValues.current.behavior?.trim();
         }
 
         if (nameChanged || descriptionChanged || behaviorChanged) {
           const data = await workspace.export();
           const id = workspace.agent.id || agentId;
 
-          promises.push(workspace.saveAgent(formik.values.name?.trim(), null, data, id));
+          promises.push(
+            workspace.saveAgent(currentFormValues.current.name?.trim(), null, data, id),
+          );
         }
       } else {
         const lockResponse = await agentSettingsUtils.accquireLock(agentId);
@@ -324,20 +340,20 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
         // Only include changed fields in the update
         if (nameChanged) {
-          updatedData.name = formik.values.name?.trim();
+          updatedData.name = currentFormValues.current.name?.trim();
         }
 
         if (descriptionChanged) {
           updatedData.data = {
             ...agentQuery.data?.data,
-            shortDescription: formik.values.shortDescription?.trim() || '',
+            shortDescription: currentFormValues.current.shortDescription?.trim() || '',
           };
         }
 
         if (behaviorChanged) {
           updatedData.data = {
             ...agentQuery.data?.data,
-            behavior: formik.values.behavior?.trim() || '',
+            behavior: currentFormValues.current.behavior?.trim() || '',
           };
         }
 
@@ -356,15 +372,17 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
       await Promise.all(promises);
 
-      if (postHogEvent.app_LLM_selected) {
+      if (postHogEvent.app_LLM_selected && chatGptModelChanged) {
         await PostHog.track(EVENTS.AGENT_SETTINGS_EVENTS.app_LLM_selected, {
-          model: formik.values.chatGptModel,
+          model: currentFormValues.current.chatGptModel,
         });
         setPostHogEvent((prev) => ({ ...prev, app_LLM_selected: null }));
       }
 
-      updateAgentSettingsCache(formik.values.chatGptModel);
+      updateAgentSettingsCache(currentFormValues.current.chatGptModel);
       updateAgentDataSettingsCache();
+
+      initialFormValues.current = { ...currentFormValues.current };
 
       setSavingStatus('saved');
       const timeout = setTimeout(() => {
@@ -393,14 +411,10 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     agentQuery.isLoading,
     agentQuery.isSuccess,
     agentId,
-    formik,
     postHogEvent.app_LLM_selected,
     workspace,
     updateAgentDataSettingsCache,
     updateAgentSettingsCache,
-    defaultModel,
-    chatbotEmbodiment?.properties?.chatGptModel,
-    settingsQuery.data?.settings?.chatGptModel,
   ]);
 
   const handleModalClose = () => {
@@ -455,43 +469,38 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     // Skip auto-save on initial mount
     if (!agentQuery.data || agentQuery.isFetching || settingsQuery.isFetching) return;
 
-    const chatGptModel =
-      settingsQuery.data?.settings?.chatGptModel ||
-      chatbotEmbodiment?.properties?.chatGptModel ||
-      defaultModel;
-    const behavior = workspace
-      ? workspace.agent.data.behavior
-      : agentQuery.data?.data?.behavior || '';
-
     // Check if fields have actually changed
     const hasChanges =
-      formik.values.name?.trim() !== agentQuery.data?.name ||
-      formik.values.shortDescription?.trim() !== agentQuery.data?.data?.shortDescription ||
-      formik.values.chatGptModel !== chatGptModel ||
-      formik.values.behavior?.trim() !== behavior;
+      currentFormValues.current.name?.trim() !== initialFormValues.current.name ||
+      currentFormValues.current.shortDescription?.trim() !==
+        initialFormValues.current.shortDescription ||
+      currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel ||
+      currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
 
     if (!hasChanges || !isWriteAccess || savingStatus !== 'idle') return;
 
     // Debounce the save by 500ms
     const timeoutId = setTimeout(() => {
+      console.log('triggering timeout');
       formik.submitForm();
     }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [
     formik,
-    formik.values,
     isWriteAccess,
     savingStatus,
     agentQuery.data,
     handleSave,
     defaultModel,
     workspace,
-    chatbotEmbodiment?.properties?.chatGptModel,
-    settingsQuery.data?.settings?.chatGptModel,
     settingsQuery.isFetching,
     agentQuery.isFetching,
   ]);
+
+  const updateCurrentFormValues = useCallback((values: FormValues) => {
+    currentFormValues.current = { ...currentFormValues.current, ...values };
+  }, []);
 
   // Create the context value
   const contextValue = useMemo<WidgetsContextType>(
@@ -514,6 +523,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
         app_LLM_selected: postHogEvent.app_LLM_selected,
         setPostHogEvent,
       },
+      updateCurrentFormValues,
     }),
     [
       formik,
@@ -525,6 +535,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       postHogEvent,
       isLLMModelsLoading,
       llmModels,
+      updateCurrentFormValues,
     ],
   );
 
