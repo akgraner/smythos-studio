@@ -252,13 +252,14 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
   const handleWorkSpaceChange = useCallback(() => {
     if (workspace?.agent?.data) {
+      console.log('syncing workspace with form');
       // Immediately update form with workspace values
       formik.resetForm({
         values: {
           chatGptModel: currentFormValues.current.chatGptModel, // Keep existing model
-          behavior: workspace.agent.data.behavior,
-          name: workspace.agent.name,
-          shortDescription: workspace.agent.data.shortDescription,
+          behavior: currentFormValues.current.behavior,
+          name: currentFormValues.current.name,
+          shortDescription: currentFormValues.current.shortDescription,
         },
       });
 
@@ -291,6 +292,10 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel;
     const behaviorChanged: boolean =
       currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
+
+    // store the initial form values in a temporary variable
+    const tempInitialFormValues = { ...initialFormValues.current };
+    initialFormValues.current = { ...currentFormValues.current };
 
     if (chatGptModelChanged) {
       promises.push(
@@ -382,8 +387,6 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       updateAgentSettingsCache(currentFormValues.current.chatGptModel);
       updateAgentDataSettingsCache();
 
-      initialFormValues.current = { ...currentFormValues.current };
-
       setSavingStatus('saved');
       const timeout = setTimeout(() => {
         setSavingStatus('idle');
@@ -400,6 +403,8 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
         errorToast('Failed to save settings');
       }
 
+      initialFormValues.current = { ...tempInitialFormValues };
+      currentFormValues.current = { ...tempInitialFormValues };
       setSavingStatus('idle');
     } finally {
       if (lockId) {
@@ -483,17 +488,16 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     const timeoutId = setTimeout(() => {
       console.log('triggering timeout');
       formik.submitForm();
+      clearTimeout(timeoutId);
     }, 500);
 
     return () => clearTimeout(timeoutId);
   }, [
     formik,
+    formik.setValues,
     isWriteAccess,
     savingStatus,
     agentQuery.data,
-    handleSave,
-    defaultModel,
-    workspace,
     settingsQuery.isFetching,
     agentQuery.isFetching,
   ]);
