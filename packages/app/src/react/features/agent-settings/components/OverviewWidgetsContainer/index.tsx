@@ -143,6 +143,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       [e.target.name]: e.target.value,
     };
     formik.setFieldValue(e.target.name, e.target.value, false);
+    formik.validateField(e.target.name);
   };
 
   // Initialize LLM models store on component mount
@@ -249,28 +250,6 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     },
     [queryClient, agentId],
   );
-
-  const handleWorkSpaceChange = useCallback(() => {
-    if (workspace?.agent?.data) {
-      console.log('syncing workspace with form');
-      // Immediately update form with workspace values
-      formik.resetForm({
-        values: {
-          chatGptModel: currentFormValues.current.chatGptModel, // Keep existing model
-          behavior: currentFormValues.current.behavior,
-          name: currentFormValues.current.name,
-          shortDescription: currentFormValues.current.shortDescription,
-        },
-      });
-
-      // Then refetch settings for completeness
-      settingsQuery.refetch().then((values) => {
-        if (values?.data?.settings?.chatGptModel) {
-          formik.setFieldValue('chatGptModel', values.data.settings.chatGptModel, false);
-        }
-      });
-    }
-  }, [workspace, formik, settingsQuery, currentFormValues]);
 
   const handleSave = useCallback(async (): Promise<void> => {
     setSavingStatus('saving');
@@ -426,17 +405,6 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     setIsModalOpen(false);
   };
 
-  useEffect(() => {
-    if (workspace) {
-      workspace.on('AgentSaved', handleWorkSpaceChange);
-
-      // Cleanup subscription on unmount
-      return () => {
-        workspace.off('AgentSaved', handleWorkSpaceChange);
-      };
-    }
-  }, [workspace, handleWorkSpaceChange]);
-
   useEffect(
     function migration() {
       // MIGRATION: if agent settings "chatGptModel" is not set,
@@ -472,7 +440,9 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
   // Auto-save with debouncing
   useEffect(() => {
     // Skip auto-save on initial mount
-    if (!agentQuery.data || agentQuery.isFetching || settingsQuery.isFetching) return;
+    if (!agentQuery.data || !settingsQuery.data) {
+      return;
+    }
 
     // Check if fields have actually changed
     const hasChanges =
@@ -482,25 +452,18 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel ||
       currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
 
-    if (!hasChanges || !isWriteAccess || savingStatus !== 'idle') return;
+    if (!hasChanges || !isWriteAccess || savingStatus !== 'idle') {
+      return;
+    }
 
     // Debounce the save by 500ms
     const timeoutId = setTimeout(() => {
-      console.log('triggering timeout');
       formik.submitForm();
       clearTimeout(timeoutId);
     }, 500);
 
     return () => clearTimeout(timeoutId);
-  }, [
-    formik,
-    formik.setValues,
-    isWriteAccess,
-    savingStatus,
-    agentQuery.data,
-    settingsQuery.isFetching,
-    agentQuery.isFetching,
-  ]);
+  }, [formik, isWriteAccess, savingStatus, agentQuery.data, settingsQuery.data]);
 
   const updateCurrentFormValues = useCallback((values: FormValues) => {
     currentFormValues.current = { ...currentFormValues.current, ...values };
@@ -560,7 +523,7 @@ export default OverviewWidgetsContainer;
 const FloatingButtonContainer = ({ savingState }: { savingState: 'idle' | 'saving' | 'saved' }) => {
   return (
     <div
-      className={`sticky bottom-0 right-0 ml-auto flex justify-end w-fit bg-gray-50 p-3 rounded-full border border-solid border-gray-200 ${
+      className={`sticky bottom-2 right-2 flex items-center justify-end ml-auto  w-fit bg-gray-50 p-3 rounded-full border border-solid border-gray-200 ${
         savingState !== 'idle' ? 'block' : 'hidden'
       }`}
     >
