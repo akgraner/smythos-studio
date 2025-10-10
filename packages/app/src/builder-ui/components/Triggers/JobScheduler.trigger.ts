@@ -10,20 +10,11 @@ declare var Metro;
  * All OAuth logic has been extracted to the oAuthSettings() helper class
  * for better separation of concerns and reusability.
  */
-export class GmailTrigger extends Trigger {
+export class JobSchedulerTrigger extends Trigger {
+  public schema: any = {
+    job: 'object',
+  };
   private oauth: oAuthSettings | undefined;
-
-  protected async prepare(): Promise<boolean> {
-    try {
-      // Initialize OAuth settings helper
-      this.oauth = new oAuthSettings(this);
-      await this.oauth.initialize();
-      return true;
-    } catch (error) {
-      console.error('Error preparing Gmail trigger:', error);
-      return false;
-    }
-  }
 
   protected async init(): Promise<void> {
     await super.init();
@@ -42,11 +33,13 @@ export class GmailTrigger extends Trigger {
         validateMessage: 'Allowed range 1 to 720',
         desc: 'Interval in minutes',
       },
-      ...this.oauth?.configure(),
     };
 
-    this.drawSettings.iconCSSClass = 'svg-icon ' + this.constructor.name;
-    this.drawSettings.color = '#ff00f2';
+    this.drawSettings.icon = `/img/triggers/job-scheduler.svg`;
+
+    this.drawSettings.color = '#00ff00';
+    this.drawSettings.componentDescription = 'Poll Job Scheduler for new incoming jobs';
+    this.drawSettings.displayName = '<i class="fa-solid fa-bolt"></i> JobScheduler';
   }
 
   public async checkSettings(): Promise<void> {
@@ -57,11 +50,6 @@ export class GmailTrigger extends Trigger {
    * Clean up event listeners and resources
    */
   destroy(): void {
-    // Clean up OAuth helper
-    if (this.oauth) {
-      this.oauth.destroy();
-    }
-
     super.destroy?.();
   }
 }

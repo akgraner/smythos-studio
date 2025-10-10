@@ -155,7 +155,7 @@ export class APIEndpoint extends Component {
         type: 'textarea',
         label: 'Description',
         value: '',
-        help: 'Provide a short overview for teammates and AI to understand the skill\'s purpose.',
+        help: "Provide a short overview for teammates and AI to understand the skill's purpose.",
         tooltipClasses: 'w-56 ',
         arrowClasses: '-ml-11',
         validate: `maxlength=1000`,
@@ -267,6 +267,28 @@ export class APIEndpoint extends Component {
           attributes: {
             placeholder: `Describe input behavior, formatting (e.g., MM-DD-YY), and requirements`,
           },
+        },
+      },
+
+      triggerBinding: {
+        type: 'string',
+        default: '',
+        allowDefaultEdit: true,
+
+        editConfig: {
+          type: 'textarea',
+          label: 'Triggers Binding',
+          class: 'm-2 p-2 bg-emerald-50 rounded-lg',
+          fieldCls:
+            'bg-white border text-gray-900 rounded block w-full outline-none focus:outline-none focus:ring-0 focus:ring-offset-0 focus:ring-shadow-none text-sm font-normal placeholder:text-sm placeholder:font-normal py-2 px-3 transition-all duration-150 ease-in-out border-gray-300 border-b-gray-500 focus:border-b-2 focus:border-b-blue-500 focus-visible:border-b-2 focus-visible:border-b-blue-500',
+          attributes: {
+            'data-trigger-vars': 'true',
+            'data-auto-size': 'true',
+            rows: '2',
+            placeholder: `Map the triggers variables to this input`,
+          }, // Enable auto-size for consistent UX with 2-line default
+          //section: 'Advanced_Options',
+          hintPosition: 'after_label',
         },
       },
     };
@@ -465,6 +487,7 @@ export class APIEndpoint extends Component {
       if (prop === 'name') {
         const oldName = oldValue;
         const newName = newValue;
+        const newOutputName = `_.${newName}`;
         const inputName = inputDiv.getAttribute('smt-name');
         const outputName = outputDiv.getAttribute('smt-name');
 
@@ -473,9 +496,9 @@ export class APIEndpoint extends Component {
           inputDiv.querySelector('.name').innerText = newName;
         }
 
-        if (outputName != newName) {
-          outputDiv.setAttribute('smt-name', newName);
-          outputDiv.querySelector('.name').innerText = newName;
+        if (outputName != newOutputName) {
+          outputDiv.setAttribute('smt-name', newOutputName);
+          outputDiv.querySelector('.name').innerText = newOutputName;
 
           // Update the expression attribute to use the new name
           if (outputDiv?.hasAttribute('smt-expression')) {
@@ -499,6 +522,22 @@ export class APIEndpoint extends Component {
       }
     });
 
+    this.addEventListener('inputEditorReady', (dialog) => {
+      //try to find the triggerBinding field by name
+      const triggerBinding = dialog.querySelector('.form-box [name="triggerBinding"]');
+      if (!triggerBinding) return;
+
+      const connectedToTriggers = this.workspace.agent.data.connections
+        .filter((c) => c.targetId === this.uid)
+        .map((c) => c.sourceId);
+      if (connectedToTriggers.length > 0) {
+        triggerBinding.classList.remove('hidden');
+        triggerBinding.setAttribute('data-triggers', connectedToTriggers.join(','));
+      } else {
+        triggerBinding.classList.add('hidden');
+        triggerBinding.removeAttribute('data-triggers');
+      }
+    });
     await delay(50);
     this.advancedModeActions(this.isOnAdvancedMode);
   }
@@ -509,7 +548,7 @@ export class APIEndpoint extends Component {
       this.updateFormPreviewButton();
       return result;
     }
-    if (this.properties.defaultOutputs.includes(name)) return super.addInput(parent, name);
+    //if (this.properties.defaultOutputs.includes(name)) return super.addInput(parent, name);
 
     const inputDiv: any = await super.addInput(parent, name, inputProperties);
     const outputParent = parent.parentElement.querySelector('.output-container');
@@ -521,7 +560,7 @@ export class APIEndpoint extends Component {
 
     const outputDiv: any = await super.addOutput(
       outputParent,
-      name,
+      `_.${name}`,
       {
         expression: `body.${name}`,
       },

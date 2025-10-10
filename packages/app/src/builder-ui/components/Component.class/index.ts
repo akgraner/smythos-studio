@@ -174,6 +174,7 @@ export class Component extends EventEmitter {
     displayName: this.constructor.name,
     cssClass: '',
     iconCSSClass: 'mif-cog',
+    icon: '',
     showSettings: true,
     addOutputButton: 'Outputs',
     addInputButton: 'Inputs',
@@ -1007,6 +1008,8 @@ export class Component extends EventEmitter {
             titleElm.appendChild(buttonElm);
           }
 
+          this.emit('inputEditorReady', dialog);
+
           // requires a tiny delay to make sure the input is focused
           delay(50).then(() => focusField(nameElm));
         },
@@ -1423,6 +1426,8 @@ export class Component extends EventEmitter {
             buttonElm.classList.remove('hidden');
             titleElm.appendChild(buttonElm);
           }
+
+          this.emit('inputEditorReady', dialog);
 
           // requires a tiny delay to make sure the input is focused
           delay(50).then(() => focusField(nameElm));
@@ -1951,7 +1956,7 @@ export class Component extends EventEmitter {
     const titleBar = document.createElement('div');
     titleBar.className = 'title-bar';
 
-    const iconCss = this.drawSettings.iconCSSClass || '';
+    const iconCss = this.drawSettings.icon || this.drawSettings.iconCSSClass || '';
 
     if (iconCss.startsWith('<svg')) {
       const color = this.drawSettings.color || '#000';
@@ -1969,6 +1974,15 @@ export class Component extends EventEmitter {
       if (!pathFill) {
         allPathes.forEach((p) => p.setAttribute('fill', color));
       }
+    } else if (iconCss.startsWith('/img/')) {
+      titleBar.innerHTML = `<div class="flex flex-row items-center gap-1 title-bar-top">
+        <span class="icon h-full">
+        <img src="${iconCss}" />
+        </span>
+        <span class="title font-semibold">${this.title}</span>
+      </div>
+      <span class="description">${this.description}</span>
+      `;
     } else {
       titleBar.innerHTML = `<div class="flex flex-row items-center gap-1 title-bar-top">
         <span class="icon ${iconCss} h-full"></span>
@@ -2777,6 +2791,8 @@ export class Component extends EventEmitter {
           titleElm.appendChild(buttonElm);
         }
 
+        this.emit('inputEditorReady', dialog);
+
         // requires a tiny delay to make sure the input is focused
         delay(50).then(() => focusField(nameElm));
       },
@@ -2885,6 +2901,8 @@ export class Component extends EventEmitter {
           buttonElm.classList.remove('hidden');
           titleElm.appendChild(buttonElm);
         }
+
+        this.emit('inputEditorReady', dialog);
 
         // requires a tiny delay to make sure the input is focused
         delay(50).then(() => focusField(nameElm));
