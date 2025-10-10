@@ -1,20 +1,20 @@
 import { Checkbox } from '@src/react/shared/components/ui/checkbox';
 import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from '@src/react/shared/components/ui/dialog';
 import { Input } from '@src/react/shared/components/ui/input';
 import { Label } from '@src/react/shared/components/ui/label';
 import ConfirmModal from '@src/react/shared/components/ui/modals/ConfirmModal';
 import { Button as CustomButton } from '@src/react/shared/components/ui/newDesign/button';
 import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from '@src/react/shared/components/ui/select';
 import { Spinner } from '@src/react/shared/components/ui/spinner';
 import { CUSTOM_LLM_FEATURES } from '@src/shared/constants/custom-llm.constants';
@@ -296,7 +296,7 @@ export function CreateUserCustomModelModal({
               <Input
                 id="maxOutputTokens"
                 type="number"
-                min="256"
+                min="1024"
                 max="200000"
                 step="4"
                 value={formData.maxOutputTokens !== undefined ? String(formData.maxOutputTokens) : ''}
