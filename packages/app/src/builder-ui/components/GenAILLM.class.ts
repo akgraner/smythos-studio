@@ -516,7 +516,7 @@ export class GenAILLM extends Component {
         cls: 'mb-0',
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
         },
         section: 'Advanced',
         help: 'The total context window size includes both the request prompt length and output completion length.',
@@ -550,7 +550,7 @@ export class GenAILLM extends Component {
         validateMessage: `Allowed range 0 to ${maxTemperature}`,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.anthropicThinkingModels,
             ...this.gpt5Models,
@@ -575,7 +575,7 @@ export class GenAILLM extends Component {
         validateMessage: `Allowed range ${minMaxTokens} to ${allowedCompletionTokens}`,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
         },
         section: 'Advanced',
         help: 'Limit reply length to manage cost and avoid cutoffs. <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=context-window-size#step-4-configure-advanced-settings" target="_blank" class="text-blue-600 hover:text-blue-800">See token limits</a>',
@@ -589,7 +589,7 @@ export class GenAILLM extends Component {
         value: '',
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,TogetherAI,VertexAI,Bedrock,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
           'data-excluded-models': [
             ...this.gpt5Models,
             ...this.gptO3andO4Models,
@@ -614,7 +614,7 @@ export class GenAILLM extends Component {
         validateMessage: `Allowed range ${minTopP} to ${maxTopP}`,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.openaiReasoningModels,
             ...this.gpt5Models,
@@ -639,7 +639,7 @@ export class GenAILLM extends Component {
         validate: `min=${minTopK} max=${maxTopK}`,
         validateMessage: `Allowed range ${minTopK} to ${maxTopK}`,
         attributes: {
-          'data-supported-models': 'GoogleAI,VertexAI,Anthropic,TogetherAI,Perplexity,cohere',
+          'data-supported-models': 'GoogleAI,VertexAI,Anthropic,TogetherAI,Perplexity,cohere,Ollama,xAI,Groq',
           'data-excluded-models': this.anthropicThinkingModels.join(','),
         },
         section: 'Advanced',
@@ -657,7 +657,7 @@ export class GenAILLM extends Component {
         validate: `min=0 max=${maxFrequencyPenalty}`,
         validateMessage: `Allowed range 0 to ${maxFrequencyPenalty}`,
         attributes: {
-          'data-supported-models': 'OpenAI,TogetherAI,Perplexity,cohere',
+          'data-supported-models': 'OpenAI,TogetherAI,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.gpt5Models,
             ...this.gptO3andO4Models,
@@ -679,7 +679,7 @@ export class GenAILLM extends Component {
         validate: `min=0 max=${maxPresencePenalty}`,
         validateMessage: `Allowed range 0 to ${maxPresencePenalty}`,
         attributes: {
-          'data-supported-models': 'OpenAI,Perplexity,cohere',
+          'data-supported-models': 'OpenAI,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.gpt5Models,
             ...this.gptO3andO4Models,
@@ -714,7 +714,7 @@ export class GenAILLM extends Component {
         value: false,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Echo',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama,Echo',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
         help: 'Stream the response live to chat, or turn off for batch runs. <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=passthrough#step-4-configure-advanced-settings" target="_blank" class="text-blue-600 hover:text-blue-800">See passthrough details</a>',
         section: 'Advanced',
@@ -729,7 +729,7 @@ export class GenAILLM extends Component {
         value: false,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
         help: 'Apply the agent\'s rules and tone to this call for consistency.',
         section: 'Advanced',
@@ -742,7 +742,7 @@ export class GenAILLM extends Component {
         value: false,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
         help: 'Include recent chat history when responses depend on prior turns.',
         section: 'Advanced',
