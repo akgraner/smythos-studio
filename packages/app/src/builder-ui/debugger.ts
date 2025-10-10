@@ -345,7 +345,8 @@ export async function init() {
     });
     workspace.saveAgent();
     setTimeout(() => {
-      workspace.redraw();
+      //workspace.redraw();
+      repaintDebugComponentsAfter();
       updateDebugControlsOnSelection();
     }, 500);
   });
@@ -361,7 +362,8 @@ export async function init() {
       workspace.domElement.classList.add('debug-enabled');
     });
     setTimeout(() => {
-      workspace.redraw();
+      //workspace.redraw();
+      repaintDebugComponentsAfter();
       if (workspace?.agent?.id) {
         //force stop any existing debug session to avoid conflicts
         stopDebugSession();
@@ -456,9 +458,10 @@ export async function init() {
     });
 
     try {
-      const sessionID = await runDebugStep(agent.id);
+      const debugStepResult: any = await runDebugStep(agent.id);
+      const sessionID = debugStepResult?.sessionID;
       if (sessionID) {
-        const result = await readDebugStep(agent.id);
+        const result = await processDebugStep(debugStepResult?.result?.newState, agent.id);
 
         // Show deploy agent toast if the workflow executed successfully until the last component
         if (!result?.errorOccurred && result?.states?.sessionClosed) {
@@ -618,7 +621,11 @@ export async function runDebug() {
     const agent = workspace.agent;
     if (!debugSessions?.[agent.id]?.sessionID) break;
 
-    if (processComponents) sessionID = await runDebugStep(agent.id);
+    let debugStepResult;
+    if (processComponents) {
+      debugStepResult = await runDebugStep(agent.id);
+      sessionID = debugStepResult?.sessionID;
+    }
 
     if (!sessionID) {
       errorToast(
@@ -630,7 +637,8 @@ export async function runDebug() {
       break;
     }
 
-    result = await readDebugStep(agent.id);
+    //if newState is included no need to send a read request
+    result = await processDebugStep(debugStepResult?.result?.newState, agent.id);
     const activeComponents = Object.values(result.states.state).filter((c: any) => c.active);
     console.log(activeComponents);
     processComponents = activeComponents.length > 0;
@@ -895,7 +903,7 @@ async function _attachLiveDebugSession(agentID) {
   const SessionID = result.dbgSession;
 
   if (SessionID) {
-    const dbgResult = await readDebugStep(workspace.agent.id, SessionID);
+    const dbgResult = await processDebugStep(null, workspace.agent.id, SessionID);
     if (!dbgResult.attached) {
       warningToast(
         'Cannot attach to this session.<br />Make sure that the session ID is valid and that the corresponding agent is loaded',
@@ -1339,7 +1347,7 @@ function showOutputInfo(outputEndpoint, outputContent, compName?) {
 
   if (endpoint && dbgTextarea && !endpoint.classList.contains('pinned')) {
     // Clear selection when mouse leaves the endpoint (hover window closes)
-    const clearSelectionHandler = () => {
+    const clearSelectionHandler = async () => {
       // Only clear if selection is within this debug textarea
       const selection = window.getSelection();
       if (
@@ -1355,7 +1363,7 @@ function showOutputInfo(outputEndpoint, outputContent, compName?) {
     endpoint.addEventListener('mouseleave', clearSelectionHandler);
 
     // Also clear selection when clicking outside the debug element
-    document.addEventListener('click', (e) => {
+    document.addEventListener('click', async (e) => {
       if (!div.contains(e.target as Node) && !endpoint.classList.contains('pinned')) {
         const selection = window.getSelection();
         if (
@@ -1446,8 +1454,8 @@ function showInputInfo(inputEndpoint, inputContent) {
 let lastStepData: any = {};
 
 const DEBUG_LOG_MAX_LENGTH = 10000;
-export async function readDebugStep(agentID, sessionID?, IDFilter?: any[]) {
-  console.log('readDebugStep', agentID, sessionID);
+export async function processDebugStep(debugInfo, agentID, sessionID?, IDFilter?: any[]) {
+  console.log('processDebugStep', agentID, sessionID);
 
   if (!sessionID) sessionID = debugSessions?.[agentID]?.sessionID;
 
@@ -1460,7 +1468,7 @@ export async function readDebugStep(agentID, sessionID?, IDFilter?: any[]) {
   if (!debugSessions[agentID]) debugSessions[agentID] = {};
   debugSessions[agentID].sessionID = sessionID;
 
-  const result = await readDebugInfo(agentID, sessionID);
+  const result = debugInfo || (await readDebugInfo(agentID, sessionID));
 
   lastStepData = result;
   let attached = sessionID ? false : true;
@@ -2094,7 +2102,7 @@ export function startDebugListener(agentID, sessionID, callback) {
   if (!sessionID) return;
 
   debugSessions[agentID][sessionID] = setInterval(async () => {
-    const result = await readDebugStep(agentID, sessionID);
+    const result = await processDebugStep(null, agentID, sessionID);
     if (typeof callback === 'function') callback(result);
   }, 5000);
 }
@@ -2122,7 +2130,7 @@ export async function injectComponentDebugInfo(agentID, componentID, { input, ou
   // attachBtn.setAttribute('disabled', 'true');
 
   const sessionID = debugSessions?.[agentID]?.sessionID || '';
-  const dbgUrl = DEBUG_ENDPOINT;
+  const dbgUrl = DEBUG_ENDPOINT + '?includeNewState=true';
   const headers = {
     'Content-type': 'application/json; charset=UTF-8',
     'X-AGENT-ID': agentID,
@@ -2233,7 +2241,7 @@ export async function runDebugStep(agentID, sessionID?) {
     }
   }
 
-  const dbgUrl = DEBUG_ENDPOINT + '?run';
+  const dbgUrl = DEBUG_ENDPOINT + '?run&includeNewState=true';
   const headers = {
     'Content-type': 'application/json; charset=UTF-8',
     'X-AGENT-ID': agentID,
@@ -2263,7 +2271,7 @@ export async function runDebugStep(agentID, sessionID?) {
     return null;
   }
 
-  return sessionID;
+  return { result, sessionID };
 }
 
 export async function clearDebuggerSession(agentID, sessionID?) {
@@ -2294,23 +2302,25 @@ export async function clearDebuggerSession(agentID, sessionID?) {
   return true;
 }
 
-async function waitPendingAsyncComponents() {
-  const agent = workspace.agent;
-  if (!debugSessions?.[agent.id]?.sessionID) return;
-  const sessionID = await runDebugStep(agent.id);
-  if (!sessionID) return;
-  let asyncRunning = [];
-  do {
-    asyncRunning = [...document.querySelectorAll('.dbg-async')].map((c) => c.id);
-    console.log('asyncRunning', asyncRunning, asyncRunning.length);
-    if (asyncRunning.length > 0) {
-      await readDebugStep(agent.id, sessionID);
-    }
-    await delay(3000);
-  } while (asyncRunning.length > 0);
-}
+// async function waitPendingAsyncComponents() {
+//   const agent = workspace.agent;
+//   if (!debugSessions?.[agent.id]?.sessionID) return;
+//   const debugStepResult = await runDebugStep(agent.id);
+//   const sessionID = debugStepResult?.sessionID;
+//   if (!sessionID) return;
+//   let asyncRunning = [];
+//   do {
+//     asyncRunning = [...document.querySelectorAll('.dbg-async')].map((c) => c.id);
+//     console.log('asyncRunning', asyncRunning, asyncRunning.length);
+//     if (asyncRunning.length > 0) {
+//       await readDebugStep(agent.id, sessionID);
+//     }
+//     await delay(3000);
+//   } while (asyncRunning.length > 0);
+// }
 
 function stopDebugUI(clearInfo = true) {
+  repaintDebugComponentsAfter();
   lastStepData = {};
   workspace.domElement.classList.remove('debugging');
   workspace.domElement.querySelectorAll('.btn-debug').forEach((el: HTMLElement) => {
@@ -2371,6 +2381,7 @@ function clearDebugUIInfo() {
   });
 }
 export async function stopDebugSession(resetUI = true) {
+  repaintDebugComponentsAfter();
   stopDebugUI(resetUI);
 
   const sessionID = getDebugSessionID();
@@ -3222,7 +3233,8 @@ function resetComponentsState({
 
   // Redraw workspace on next tick to ensure DOM updates are complete
   requestAnimationFrame(() => {
-    workspace.redraw();
+    //workspace.redraw();
+    //TODO: redraw the active components
   });
 }
 
@@ -3271,4 +3283,18 @@ function showDeployAgentToast() {
       }
     },
   });
+}
+
+function repaintDebugComponentsAfter(ms = 300) {
+  const components = [
+    ...workspace.container.querySelectorAll(
+      '.component.state-success, .component.dbg-active, .component.state-error',
+    ),
+  ];
+
+  setTimeout(() => {
+    components.forEach((component) => {
+      workspace.jsPlumbInstance.repaint(component);
+    });
+  }, ms);
 }

@@ -3001,8 +3001,18 @@ export class Component extends EventEmitter {
 
             debugBtn.classList.add('active');
 
-            await this.workspace.debugger.injectComponentDebugInfo(agent.id, this._uid, data);
-            const stepResponse = await this.workspace.debugger.readDebugStep(agent.id);
+            const injResult = await this.workspace.debugger.injectComponentDebugInfo(
+              agent.id,
+              this._uid,
+              data,
+            );
+            const stepResponse = await this.workspace.debugger.processDebugStep(
+              injResult.newState,
+              agent.id,
+            );
+
+            //console.log('Step Response', stepResponse);
+            //console.log('Inj Result', injResult.newState);
 
             resolve({ status: 'success' });
             return stepResponse;

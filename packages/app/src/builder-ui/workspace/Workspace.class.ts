@@ -995,13 +995,19 @@ export class Workspace extends EventEmitter {
       const parent = zoom.parentElement;
 
       workspaceContainer.addEventListener('pointerdown', (event) => {
+        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
         this.panzoom.handleDown(event);
       });
       document.addEventListener('pointermove', (event) => {
+        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
         if (event.ctrlKey || event.metaKey) return;
+
         this.panzoom.handleMove(event);
       });
-      document.addEventListener('pointerup', this.panzoom.handleUp);
+      document.addEventListener('pointerup', (event) => {
+        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
+        this.panzoom.handleUp(event);
+      });
 
       // Completely custom wheel handling for better touchpad experience
       parent.addEventListener('wheel', (event) => {
