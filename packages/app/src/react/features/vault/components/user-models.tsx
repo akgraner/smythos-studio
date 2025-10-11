@@ -190,10 +190,12 @@ export function UserModels({ pageAccess }: { pageAccess: { write: boolean } }) {
 
   const [copiedKeyId, setCopiedKeyId] = useState<string | null>(null);
 
-  const handleCopy = async (apiKey: string) => {
+  const handleCopy = async (id: string) => {
     try {
-      await copyTextToClipboard(apiKey);
-      setCopiedKeyId(apiKey);
+      const foundModel = models?.find((model) => model?.id === id);
+      if (!foundModel) return;
+      await copyTextToClipboard(foundModel?.apiKey);
+      setCopiedKeyId(id);
       setTimeout(() => {
         setCopiedKeyId(null);
       }, 2000);
@@ -259,12 +261,8 @@ export function UserModels({ pageAccess }: { pageAccess: { write: boolean } }) {
                   </div>
                   {hasKey ? (
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleCopy(model?.apiKey || '')}
-                      >
-                        {copiedKeyId === model?.apiKey ? (
+                      <Button variant="ghost" size="sm" onClick={() => handleCopy(model?.id || '')}>
+                        {copiedKeyId === model?.id ? (
                           <Check className="h-4 w-4 text-green-500" />
                         ) : (
                           <Copy className="h-4 w-4" />

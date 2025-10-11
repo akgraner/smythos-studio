@@ -918,7 +918,7 @@ code.language-plan.done::before {
 
 /* Success border for components */
 .component.state-success {
-  border: 1px solid #45c9a9 !important;
+  /*border: 1px solid #45c9a9 !important;*/
   border-bottom: 5px solid #45c9a9 !important;
 }
 

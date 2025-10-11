@@ -12,6 +12,7 @@ export class MemoryWriteObject extends Component {
         validate: `required maxlength=100`,
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
+        help: 'Groups all saved keys under one namespace for consistent reads and deletes.',
       },
       scope: {
         type: 'select',
@@ -23,6 +24,7 @@ export class MemoryWriteObject extends Component {
           //{ value: 'session', text: 'Session' },
           { value: 'request', text: 'Request' },
         ],
+        help: 'Controls lifespan and visibility, Request for this run or TTL to persist until expiry.',
         events: {
           change: (event) => {
             console.log('change', event);
@@ -37,7 +39,7 @@ export class MemoryWriteObject extends Component {
       ttl: {
         type: 'select',
         label: 'TTL',
-        hint: 'Time to live',
+        help: 'Sets how long a TTL value remains available before automatic deletion.',
         value: '300',
         options: [
           { value: '300', text: '5 minutes' },

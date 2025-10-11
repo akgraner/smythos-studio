@@ -590,7 +590,8 @@ export default function createFormField(entry, displayType = 'block', entryIndex
   if (entry.validateMessage) {
     const span = document.createElement('span');
     span.classList.add('invalid_feedback');
-    span.innerHTML = entry.validateMessage;
+    // Use textContent instead of innerHTML for validation messages (no HTML needed)
+    span.textContent = entry.validateMessage;
     div.appendChild(span);
   }
 
@@ -880,7 +881,7 @@ function generateTooltip(entry, elm, entryIndex) {
     entry?.help,
     {
       cls: 'btn-info ' + entry?.tooltipIconClasses || '',
-      clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-center',
+      clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-left normal-case',
       position: entry?.hintPosition,
       arrowClasses: entry?.arrowClasses || '',
       tooltipClasses: entry?.tooltipClasses || '',

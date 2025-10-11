@@ -34,6 +34,7 @@ import {
   CUSTOM_LLM_FEATURES,
   CUSTOM_LLM_PROVIDERS,
 } from '@src/shared/constants/custom-llm.constants';
+import DOMPurify from 'dompurify';
 import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaCircleExclamation } from 'react-icons/fa6';
@@ -122,7 +123,7 @@ export function CreateEnterpriseModal({
   const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
 
   const step1Form = useForm<CreateEnterpriseModelStep1>({
-    resolver: zodResolver(step1Schema),
+    resolver: zodResolver(step1Schema as any),
     defaultValues: {
       name: editModel?.name || '',
       provider: editModel?.provider || CUSTOM_LLM_PROVIDERS[0].value,
@@ -131,7 +132,7 @@ export function CreateEnterpriseModal({
   });
 
   const step2Form = useForm<CreateEnterpriseModelStep2>({
-    resolver: zodResolver(getStep2Schema(selectedProvider?.id || 'Bedrock')),
+    resolver: zodResolver(getStep2Schema(selectedProvider?.id || 'Bedrock') as any),
     defaultValues: {
       modelName: editModel?.modelName || '',
       customModelName: editModel?.settings?.customModel || '',
@@ -250,16 +251,18 @@ export function CreateEnterpriseModal({
         }
       }}
     >
-      <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="text-xl text-[#1E1E1E]">
-            {editModel ? 'Edit Enterprise Model' : 'Add Enterprise Model'}
-          </DialogTitle>
-        </DialogHeader>
+      <DialogContent className="sm:max-w-[600px] max-h-[90vh] flex flex-col p-0">
+        <div className="px-6 pt-6">
+          <DialogHeader>
+            <DialogTitle className="text-xl text-[#1E1E1E]">
+              {editModel ? 'Edit Enterprise Model' : 'Add Enterprise Model'}
+            </DialogTitle>
+          </DialogHeader>
+        </div>
 
         {step === 1 ? (
-          <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="space-y-6">
-            <div className="space-y-4">
+          <form onSubmit={step1Form.handleSubmit(handleStep1Submit)} className="flex flex-col flex-1 overflow-hidden">
+            <div className="overflow-y-auto px-6 py-4 space-y-4">
               <div>
                 <div className="w-full">
                   <div className=" min-w-[80px] mb-2">
@@ -272,7 +275,7 @@ export function CreateEnterpriseModal({
                       placement="right"
                     >
                       <div
-                        dangerouslySetInnerHTML={{ __html: infoIcon }}
+                        dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(infoIcon) }}
                         className="w-4 h-4 text-gray-400"
                       />
                     </ToolTip>
@@ -362,7 +365,7 @@ export function CreateEnterpriseModal({
               </div>
             </div>
 
-            <div className="flex justify-end">
+            <div className="flex justify-end px-6 py-4 border-t border-gray-200 bg-white">
               <CustomButton
                 variant="primary"
                 type="submit"
@@ -372,8 +375,8 @@ export function CreateEnterpriseModal({
             </div>
           </form>
         ) : (
-          <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="space-y-6">
-            <div className="space-y-4">
+          <form onSubmit={step2Form.handleSubmit(handleStep2Submit)} className="flex flex-col flex-1 overflow-hidden">
+            <div className="overflow-y-auto px-6 py-4 space-y-4">
               <ModelNameField form={step2Form} selectedProvider={selectedProvider} />
               <CustomModelNameField form={step2Form} />
 
@@ -395,7 +398,7 @@ export function CreateEnterpriseModal({
               <RegionField form={step2Form} selectedProvider={selectedProvider} />
             </div>
 
-            <div className="flex justify-between gap-4">
+            <div className="flex justify-between gap-4 px-6 py-4 border-t border-gray-200 bg-white">
               <CustomButton
                 type="button"
                 variant="secondary"
