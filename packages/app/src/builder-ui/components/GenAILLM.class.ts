@@ -1,19 +1,39 @@
 // TODO: Refactor this file (specially setting fields for different providers)
 import { LLMRegistry } from '../../shared/services/LLMRegistry.service';
-import { REASONING_EFFORTS } from '../constants';
+import { LLM_PROVIDERS, REASONING_EFFORTS } from '../constants';
 import { LLMFormController } from '../helpers/LLMFormController.helper';
 import llmParams from '../params/LLM.params.json';
 import { createBadge } from '../ui/badges';
+import { registerDatalistOptions } from '../ui/form/fields';
 import { IconArrowRight, IconConfigure } from '../ui/icons';
 import { refreshLLMModels, saveApiKey, setupSidebarTooltips } from '../utils';
 import { delay } from '../utils/general.utils';
 import { Component } from './Component.class';
 
-// Since getWebSearchFields is called multiple times, using a static import is more efficient than a lazy import.
+// Import modules statically - this happens at module load but doesn't process arrays yet
 import ianaTimezones from '../params/IANA-time-zones';
 import isoCountryCodes from '../params/ISO-country-code';
 
 declare var Metro;
+
+/**
+ * Register datalist options with lazy functions.
+ * The arrays are imported but only processed when the datalist is actually needed (on first focus).
+ * This prevents blocking during field generation.
+ */
+registerDatalistOptions('country-datalist', () =>
+  isoCountryCodes.map((country) => ({
+    value: country.value,
+    text: `${country.value} - ${country.text}`, // Show "US - United States"
+  })),
+);
+registerDatalistOptions('xai-country-datalist', () =>
+  isoCountryCodes.map((country) => ({
+    value: country.value,
+    text: `${country.value} - ${country.text}`, // Show "US - United States"
+  })),
+);
+registerDatalistOptions('timezone-datalist', () => ianaTimezones.map((tz) => ({ text: tz, value: tz })));
 
 /*
  * Here field name like model, apiKey, temperature is very important
@@ -225,15 +245,13 @@ export class GenAILLM extends Component {
     await delay(200);
     await setupSidebarTooltips(sidebar, this);
 
-    const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
-    if (useWebSearchElm) {
-      this.toggleWebSearchNestedFields(useWebSearchElm, form);
-    }
-
-    const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
-    if (useSearchElm) {
-      this.toggleSearchNestedFields(useSearchElm, form);
-    }
+    // Auto-set search options based on current model's provider
+    const modelSelect = form?.querySelector('#model') as HTMLSelectElement;
+    const currentModel = modelSelect?.value || this.data.model;
+    const provider = LLMRegistry.getModelProvider(currentModel);
+    
+    // Automatically switch search options based on provider
+    this.autoSwitchSearchOptions(provider, form);
 
     const useReasoningElm = form?.querySelector('#useReasoning') as HTMLInputElement;
     if (useReasoningElm) {
@@ -368,28 +386,20 @@ export class GenAILLM extends Component {
             }
             // #endregion
 
-            // #region Toggle web search nested fields on model change
+            // #region Auto-set search options based on provider
             const form = currentElement.closest('form');
-            const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
-
-            if (useWebSearchElm) {
-              this.toggleWebSearchNestedFields(useWebSearchElm, form);
-            }
-            // #endregion
-
-            // #region Toggle search nested fields on model change
-            const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
-            if (useSearchElm) {
-              this.toggleSearchNestedFields(useSearchElm, form);
-            }
+            const provider = LLMRegistry.getModelProvider(currentElement.value);
+            
+            // Automatically switch search options based on provider
+            this.autoSwitchSearchOptions(provider, form);
             // #endregion
 
             // #region Hide provider-specific fields when switching models
-            const provider = LLMRegistry.getModelProvider(currentElement.value);
-            if (provider.toLowerCase() !== 'xai') {
+            const providerLower = provider.toLowerCase();
+            if (providerLower !== LLM_PROVIDERS.XAI.toLowerCase()) {
               this.hideXAISpecificFields(form);
             }
-            if (provider.toLowerCase() !== 'openai') {
+            if (providerLower !== LLM_PROVIDERS.OPENAI.toLowerCase()) {
               this.hideOpenAIWebSearchFields(form);
             }
             // #endregion
@@ -835,7 +845,7 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Reasoning Effort',
       },
 
-      ...(await this.getWebSearchFields()),
+      ...this.getWebSearchFields(),
     };
   }
 
@@ -855,22 +865,19 @@ export class GenAILLM extends Component {
     }
   }
 
-  private async getWebSearchFields() {
-    const countryOptions = [{ text: 'Select a Country', value: '' }, ...isoCountryCodes];
-    const timezoneOptions = [{ text: 'Select a Timezone', value: '' }, ...ianaTimezones];
-
+  private getWebSearchFields() {
     // Include all search models, but exclude xAI for the generic useWebSearch field
     const webSearchSupportedModels = [...this.searchModels].join(',');
     const openAISearchModels = this.searchModels
       .filter((model) => {
         const provider = LLMRegistry.getModelProvider(model);
-        return provider.toLowerCase() !== 'xai';
+        return provider.toLowerCase() !== LLM_PROVIDERS.XAI.toLowerCase();
       })
       .join(',');
     const xAISearchModels = this.searchModels
       .filter((model) => {
         const provider = LLMRegistry.getModelProvider(model);
-        return provider.toLowerCase() === 'xai';
+        return provider.toLowerCase() === LLM_PROVIDERS.XAI.toLowerCase();
       })
       .join(',');
 
@@ -898,6 +905,16 @@ export class GenAILLM extends Component {
           change: (event) => {
             const target = event.target as HTMLInputElement;
             const form = target.closest('form');
+
+            // Make useWebSearch and useSearch mutually exclusive
+            if (target.checked) {
+              const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
+              if (useSearchElm && useSearchElm.checked) {
+                useSearchElm.checked = false;
+                // Hide useSearch nested fields
+                this.toggleSearchNestedFields(useSearchElm, form);
+              }
+            }
 
             this.toggleWebSearchNestedFields(target, form);
           },
@@ -950,15 +967,22 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Location',
       },
       webSearchCountry: {
-        type: 'select',
+        type: 'datalist',
         label: 'Country',
         value: '',
-        attributes: openAIAttributes,
+        datalistId: 'country-datalist',
+        attributes: {
+          ...openAIAttributes,
+          placeholder: 'Type to search countries (e.g., US)',
+          autocomplete: 'off',
+          maxlength: '2',
+        },
         class: 'hidden',
-        options: countryOptions,
-        help: "Country: a two-letter ISO country code, like 'US'.",
+        help: "Country: a two-letter ISO country code, like 'US'. Type to search.",
         section: 'Advanced',
         fieldsGroup: 'Location',
+        validate: 'maxlength=2',
+        validateMessage: 'Country code must be 2 characters',
       },
       webSearchRegion: {
         type: 'text',
@@ -973,13 +997,17 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Location',
       },
       webSearchTimezone: {
-        type: 'select',
+        type: 'datalist',
         label: 'Timezone',
         value: '',
-        attributes: openAIAttributes,
+        datalistId: 'timezone-datalist',
+        attributes: {
+          ...openAIAttributes,
+          placeholder: 'Type to search timezones (e.g., America/Chicago)',
+          autocomplete: 'off',
+        },
         class: 'hidden',
-        options: timezoneOptions,
-        help: 'Timezone: an IANA timezone like America/Chicago.',
+        help: 'Timezone: an IANA timezone like America/Chicago. Type to search.',
         section: 'Advanced',
         fieldsGroup: 'Location',
       },
@@ -996,6 +1024,16 @@ export class GenAILLM extends Component {
           change: (event) => {
             const target = event.target as HTMLInputElement;
             const form = target.closest('form');
+
+            // Make useSearch and useWebSearch mutually exclusive
+            if (target.checked) {
+              const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
+              if (useWebSearchElm && useWebSearchElm.checked) {
+                useWebSearchElm.checked = false;
+                // Hide useWebSearch nested fields
+                this.toggleWebSearchNestedFields(useWebSearchElm, form);
+              }
+            }
 
             this.toggleSearchNestedFields(target, form);
           },
@@ -1120,15 +1158,22 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Data Sources',
       },
       searchCountry: {
-        type: 'select',
+        type: 'datalist',
         label: 'Country',
         value: '',
-        attributes: xAIAttributes,
+        datalistId: 'xai-country-datalist',
+        attributes: {
+          ...xAIAttributes,
+          placeholder: 'Type to search countries (e.g., US)',
+          autocomplete: 'off',
+          maxlength: '2',
+        },
         class: 'hidden',
-        options: countryOptions,
-        help: 'Select a country to limit search results to.',
+        help: 'Country code to limit search results to (e.g., US). Type to search.',
         section: 'Advanced',
         fieldsGroup: 'Data Sources',
+        validate: 'maxlength=2',
+        validateMessage: 'Country code must be 2 characters',
       },
       excludedWebsites: {
         type: 'tag',
@@ -1281,13 +1326,56 @@ export class GenAILLM extends Component {
   }
 
   /**
+   * Enforces mutually exclusive search options based on the model's provider.
+   * Only disables incompatible search options, doesn't automatically enable them.
+   *
+   * @param provider - The LLM provider name
+   * @param form - The form element containing the search checkboxes
+   */
+  private autoSwitchSearchOptions(provider: string, form: HTMLFormElement): void {
+    const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
+    const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
+
+    const providerLower = provider.toLowerCase();
+
+    if (providerLower === LLM_PROVIDERS.OPENAI.toLowerCase()) {
+      // OpenAI models: disable useSearch (keep useWebSearch as is)
+      if (useSearchElm && useSearchElm.checked) {
+        useSearchElm.checked = false;
+      }
+    } else if (providerLower === LLM_PROVIDERS.XAI.toLowerCase()) {
+      // XAI models: disable useWebSearch (keep useSearch as is)
+      if (useWebSearchElm && useWebSearchElm.checked) {
+        useWebSearchElm.checked = false;
+      }
+    } else {
+      // Other providers: disable both
+      if (useWebSearchElm && useWebSearchElm.checked) {
+        useWebSearchElm.checked = false;
+      }
+      if (useSearchElm && useSearchElm.checked) {
+        useSearchElm.checked = false;
+      }
+    }
+
+    // Toggle visibility of nested fields
+    if (useWebSearchElm) {
+      this.toggleWebSearchNestedFields(useWebSearchElm, form);
+    }
+    if (useSearchElm) {
+      this.toggleSearchNestedFields(useSearchElm, form);
+    }
+  }
+
+  /**
    * Get the provider-specific fields based on the current model
-   * @param provider - The LLM provider (e.g., 'openai', 'xai')
+   * @param provider - The LLM provider (e.g., 'OpenAI', 'xAI')
    * @returns Array of field names to show for the provider
    */
   private getProviderWebSearchFields(provider: string): string[] {
-    const providerFieldMap = {
-      openai: [
+    const providerLower = provider.toLowerCase();
+    const providerFieldMap: Record<string, string[]> = {
+      [LLM_PROVIDERS.OPENAI.toLowerCase()]: [
         'webSearchContextSize',
         'locationTitle',
         'webSearchCity',
@@ -1295,7 +1383,7 @@ export class GenAILLM extends Component {
         'webSearchRegion',
         'webSearchTimezone',
       ],
-      xai: [
+      [LLM_PROVIDERS.XAI.toLowerCase()]: [
         'searchMode',
         'returnCitations',
         'maxSearchResults',
@@ -1315,7 +1403,7 @@ export class GenAILLM extends Component {
       // Add other providers as needed
     };
 
-    return providerFieldMap[provider.toLowerCase()] || [];
+    return providerFieldMap[providerLower] || [];
   }
 
   /**
