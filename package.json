@@ -7,9 +7,7 @@
   "author": "Ahmed Essam",
   "license": "ISC",
   "packageManager": "pnpm@10.12.2",
-
   "scripts": {
-   
     "dev": "pnpm --parallel --recursive dev",
     "build": "pnpm --parallel --recursive build",
     "start": "pnpm --parallel --recursive start"
@@ -18,7 +16,7 @@
     "packages/*"
   ],
   "devDependencies": {
-    "typescript": "^5.8.3",
-    "concurrently": "^9.1.0"
+    "concurrently": "^9.1.0",
+    "typescript": "^5.8.3"
   }
 }
