@@ -60,6 +60,9 @@ const agentDataConnector = new EmbodimentAgentDataConnector();
  * Constructs the server URL from domain using environment configuration
  */
 function constructServerUrl(domain: string): string {
+  if (domain === 'localhost') {
+    return config.env.LOCAL_BASE_URL;
+  }
   const serverUrlScheme = config.env.AGENT_DOMAIN_PORT && domain.includes(config.env.DEFAULT_AGENT_DOMAIN) ? 'http' : 'https';
   const serverUrlPort = config.env.AGENT_DOMAIN_PORT && domain.includes(config.env.DEFAULT_AGENT_DOMAIN) ? `:${config.env.AGENT_DOMAIN_PORT}` : '';
   return `${serverUrlScheme}://${domain}${serverUrlPort}`;
@@ -117,7 +120,9 @@ async function getOpenAPIJSONById(
       addDefaultComponentsAndConnections(agentData);
     }
 
+    console.log('constructing server url for domain: ', domain);
     const serverUrl = constructServerUrl(domain);
+    console.log('server url constructed: ', serverUrl);
     const result = await agentDataConnector.getOpenAPIJSON(agentData, serverUrl, version, aiOnly);
     return result;
   } catch (error) {
@@ -144,8 +149,11 @@ export async function getOpenAPIJSONForAI(domain: string, version: string, addDe
     //* in case of local agent domain, we use the local base URL since it is possible that the app would be running
     //* on a different port than the assigned default port (e.g if the app is running inside a Docker container part of a compose that have
     //* Trafeik, so if this app tried to reach the domain specified, it will not resolve to the correct port)
+    console.log('getOpenAPIJSONForAI original domain: ', _domain);
+    console.log('is LOCAL domain?', isUsingLocalAgentDomain(_domain));
     if (isUsingLocalAgentDomain(_domain)) {
       _domain = new URL(config.env.LOCAL_BASE_URL).hostname;
+      console.log('getOpenAPIJSONForAI local domain changed to: ', _domain);
     }
 
     return getOpenAPIJSONById(agentId, _domain, version, true, addDefaultFileParsingAgent);
