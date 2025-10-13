@@ -437,33 +437,40 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     [chatbotEmbodiment, settingsQuery.data],
   );
 
+  const [callAPI, setCallAPI] = useState(false);
+
   // Auto-save with debouncing
   useEffect(() => {
-    // Skip auto-save on initial mount
-    if (!agentQuery.data || !settingsQuery.data) {
-      return;
-    }
+    const currentTimeoutId = setTimeout(() => {
+      // Skip auto-save on initial mount
+      if (!agentQuery.data || !settingsQuery.data) {
+        return;
+      }
 
-    // Check if fields have actually changed
-    const hasChanges =
-      currentFormValues.current.name?.trim() !== initialFormValues.current.name ||
-      currentFormValues.current.shortDescription?.trim() !==
-        initialFormValues.current.shortDescription ||
-      currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel ||
-      currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
+      // Check if fields have actually changed
+      const hasChanges =
+        currentFormValues.current.name?.trim() !== initialFormValues.current.name ||
+        currentFormValues.current.shortDescription?.trim() !==
+          initialFormValues.current.shortDescription ||
+        currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel ||
+        currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
 
-    if (!hasChanges || !isWriteAccess || savingStatus !== 'idle') {
-      return;
-    }
+      if (!hasChanges || !isWriteAccess || savingStatus !== 'idle') {
+        return;
+      }
 
-    // Debounce the save by 500ms
-    const timeoutId = setTimeout(() => {
-      formik.submitForm();
-      clearTimeout(timeoutId);
+      setCallAPI(true);
     }, 500);
 
-    return () => clearTimeout(timeoutId);
+    return () => clearTimeout(currentTimeoutId);
   }, [formik, isWriteAccess, savingStatus, agentQuery.data, settingsQuery.data]);
+
+  useEffect(() => {
+    if (callAPI) {
+      formik.submitForm();
+      setCallAPI(false);
+    }
+  }, [callAPI, formik]);
 
   const updateCurrentFormValues = useCallback((values: FormValues) => {
     currentFormValues.current = { ...currentFormValues.current, ...values };
