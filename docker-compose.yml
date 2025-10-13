@@ -104,10 +104,7 @@ services:
 
   # SmythOS Application
   smythos:
-    # image: smythos/smythos-studio:alpha
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: smythos/smythos-studio:alpha
     container_name: smythos-app
     restart: unless-stopped
     expose:
