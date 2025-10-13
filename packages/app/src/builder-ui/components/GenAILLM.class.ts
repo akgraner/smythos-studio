@@ -24,13 +24,7 @@ declare var Metro;
 registerDatalistOptions('country-datalist', () =>
   isoCountryCodes.map((country) => ({
     value: country.value,
-    text: `${country.value} - ${country.text}`, // Show "US - United States"
-  })),
-);
-registerDatalistOptions('xai-country-datalist', () =>
-  isoCountryCodes.map((country) => ({
-    value: country.value,
-    text: `${country.value} - ${country.text}`, // Show "US - United States"
+    text: country.text, // Show "US - United States" on single line
   })),
 );
 registerDatalistOptions('timezone-datalist', () => ianaTimezones.map((tz) => ({ text: tz, value: tz })));
@@ -973,16 +967,13 @@ export class GenAILLM extends Component {
         datalistId: 'country-datalist',
         attributes: {
           ...openAIAttributes,
-          placeholder: 'Type to search countries (e.g., US)',
+          placeholder: 'Type country name or code (e.g., United States or US)',
           autocomplete: 'off',
-          maxlength: '2',
         },
         class: 'hidden',
-        help: "Country: a two-letter ISO country code, like 'US'. Type to search.",
+        help: "Country: type the full country name or two-letter ISO code, like 'United States' or 'US'. Select from the dropdown to confirm.",
         section: 'Advanced',
         fieldsGroup: 'Location',
-        validate: 'maxlength=2',
-        validateMessage: 'Country code must be 2 characters',
       },
       webSearchRegion: {
         type: 'text',
@@ -1161,19 +1152,16 @@ export class GenAILLM extends Component {
         type: 'datalist',
         label: 'Country',
         value: '',
-        datalistId: 'xai-country-datalist',
+        datalistId: 'country-datalist',
         attributes: {
           ...xAIAttributes,
-          placeholder: 'Type to search countries (e.g., US)',
+          placeholder: 'Type country name or code (e.g., United States or US)',
           autocomplete: 'off',
-          maxlength: '2',
         },
         class: 'hidden',
-        help: 'Country code to limit search results to (e.g., US). Type to search.',
+        help: 'Country: type the full country name or two-letter ISO code to limit search results. Select from the dropdown to confirm.',
         section: 'Advanced',
         fieldsGroup: 'Data Sources',
-        validate: 'maxlength=2',
-        validateMessage: 'Country code must be 2 characters',
       },
       excludedWebsites: {
         type: 'tag',
