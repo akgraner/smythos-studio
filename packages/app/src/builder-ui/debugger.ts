@@ -722,12 +722,14 @@ function handleEmbodimentRPCDebug() {
 
   //make sure that this event is bound only once
   window.onmessage = function (event) {
-    const testDomain = `${workspace.agent.id}.${workspace.serverData.agent_domain}`;
+    const testDomain = `${workspace.agent.id}.${workspace.serverData.agent_domain}`
+      .split(':')[0]
+      .trim();
 
     const agentUrl = `${testDomain}`;
     // Check the origin to make sure we're receiving a message from the expected domain
     // console.log('Received message from parent:', event.data, event.origin, event);
-    const origin = event.origin.replace('https://', '').replace('http://', '');
+    const origin = event.origin.replace('https://', '').replace('http://', '').split(':')[0].trim();
     if (origin !== agentUrl) return;
     try {
       const jsonRPC = JSON.parse(event.data);
