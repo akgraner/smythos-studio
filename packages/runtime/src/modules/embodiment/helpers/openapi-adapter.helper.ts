@@ -134,14 +134,29 @@ async function getOpenAPIJSONById(
  * @returns Promise<any> - The OpenAPI specification or error
  */
 export async function getOpenAPIJSONForAI(domain: string, version: string, addDefaultFileParsingAgent = false): Promise<any> {
+  let _domain = domain;
   try {
     const agentId = await getAgentIdByDomain(domain);
     if (!agentId) {
       return { error: 'Agent not found' };
     }
 
-    return getOpenAPIJSONById(agentId, domain, version, true, addDefaultFileParsingAgent);
+    //* in case of local agent domain, we use the local base URL since it is possible that the app would be running
+    //* on a different port than the assigned default port (e.g if the app is running inside a Docker container part of a compose that have
+    //* Trafeik, so if this app tried to reach the domain specified, it will not resolve to the correct port)
+    if (isUsingLocalAgentDomain(_domain)) {
+      _domain = new URL(config.env.LOCAL_BASE_URL).hostname;
+    }
+
+    return getOpenAPIJSONById(agentId, _domain, version, true, addDefaultFileParsingAgent);
   } catch (error) {
     return { error: error.message || 'OpenAPI generation failed' };
   }
+}
+
+function isUsingLocalAgentDomain(domain: string): boolean {
+  if (domain.includes('localhost')) {
+    return true;
+  }
+  return false;
 }

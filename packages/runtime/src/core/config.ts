@@ -34,6 +34,7 @@ const config = {
     ADMIN_PORT: process.env.RUNTIME_ADMIN_PORT || process.env.ADMIN_PORT || 5054,
 
     BASE_URL: process.env.RUNTIME_URL || `http://localhost:${process.env.RUNTIME_PORT}`,
+    LOCAL_BASE_URL: `http://localhost:${process.env.RUNTIME_PORT}`,
 
     LOGTO_M2M_APP_ID: process.env.LOGTO_M2M_APP_ID,
 
