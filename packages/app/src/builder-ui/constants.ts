@@ -6,6 +6,7 @@ export const JSON_FIELD_CLASS = '_smythos_json_field';
 
 export enum LLM_PROVIDERS {
   OPENAI = 'OpenAI',
+  XAI = 'xAI',
   RUNWARE = 'Runware',
   GOOGLEAI = 'GoogleAI',
 }

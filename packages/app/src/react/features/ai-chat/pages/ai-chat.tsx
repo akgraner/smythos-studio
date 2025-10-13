@@ -28,6 +28,7 @@ const AIChat = () => {
   const chatInputRef = useRef<ChatInputRef>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const isFirstMessageSentRef = useRef(false);
+  const hasInitializedChatRef = useRef(false);
   const navigate = useNavigate();
 
   // API Hooks - optimized with minimal dependencies
@@ -122,13 +123,13 @@ const AIChat = () => {
   }, [createNewChatSession, clearMessages, stopGenerating, setShowScrollButton]);
 
   useEffect(() => {
-    if (agentSettings && agent) {
+    if (agentSettings && agent && !hasInitializedChatRef.current) {
       agent.aiAgentSettings = agentSettings;
       agent.id = agentId;
 
-      if (!agent?.aiAgentSettings?.lastConversationId) {
-        createNewChatSession();
-      }
+      // This ensures fresh conversation every time user loads the page
+      hasInitializedChatRef.current = true;
+      createNewChatSession();
     }
   }, [agentSettings, agent, agentId, createNewChatSession]);
 

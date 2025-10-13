@@ -11,6 +11,7 @@ import {
   createCheckbox,
   createCheckboxGroup,
   createColorInput,
+  createDatalistInput,
   createHiddenInput,
   createHint,
   createInfoButton,
@@ -292,6 +293,17 @@ export default function createFormField(entry, displayType = 'block', entryIndex
       if (entry.placeholder !== undefined)
         formElement.setAttribute('placeholder', entry.placeholder);
 
+      formElement.classList.add('form-control');
+
+      break;
+
+    case 'datalist':
+    case 'DATALIST':
+      // Create text input with datalist support for autocomplete
+      // The datalist is lazily created on first focus using options from the global registry
+      // This prevents storing large arrays in field definitions
+      const datalistId = entry.datalistId || `${entry.name}-datalist`;
+      formElement = createDatalistInput(value, datalistId);
       formElement.classList.add('form-control');
 
       break;
