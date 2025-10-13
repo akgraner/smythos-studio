@@ -779,7 +779,14 @@ export class Component extends EventEmitter {
   }
   public destroy() {
     this._destroyed = true;
-    this.domElement.remove();
+    if (this.domElement) {
+      try {
+        interact(this.domElement).unset();
+        this.domElement.remove();
+      } catch (error) {
+        console.error(error);
+      }
+    }
   }
   public getSettingsSidebar() {
     if (Component.curComponentSettings !== this) return null;
