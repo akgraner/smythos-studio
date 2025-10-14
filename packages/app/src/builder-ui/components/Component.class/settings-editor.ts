@@ -1,5 +1,5 @@
 import { errorToast, successToast } from '@src/shared/components/toast';
-import { PostHog } from '@src/shared/posthog';
+import { Observability } from '@src/shared/observability';
 import { Component } from '.';
 import { FEATURE_FLAGS } from '../../../shared/constants/featureflags';
 import {
@@ -112,7 +112,7 @@ async function onComponentLoad(sidebar) {
         const isDebugCurrentlyOn = debugSwitcher && debugSwitcher.classList.contains('active');
 
         // Fire telemetry event
-        PostHog.track('test_with_debug_component_sidebar_clicked', {
+        Observability.userBehavior.recordInteraction('test_with_debug_component_sidebar_clicked', {
           source: 'component_settings_sidebar',
           componentType: component.constructor.name,
           componentId: component.uid,

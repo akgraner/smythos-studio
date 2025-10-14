@@ -6,7 +6,7 @@ import { Spinner } from '@src/react/shared/components/ui/spinner';
 import { useAuthCtx } from '@src/react/shared/contexts/auth.context';
 import { IPageRoute } from '@src/react/shared/types/route';
 import { FEATURE_FLAGS } from '@src/shared/constants/featureflags';
-import { PostHog } from '@src/shared/posthog';
+import { Observability } from '@src/shared/observability';
 import { useEffect } from 'react';
 import { Route, Routes, useNavigate } from 'react-router-dom';
 import { useGetBookAnIntroCall } from '../features/onboarding/hooks/useGetUserOnboardingSettings';
@@ -68,7 +68,7 @@ const RoutesWrapper = ({ pages }: { pages: IPageRoute[] }) => {
       const { name: planName, isDefaultPlan, isCustomPlan } = subs?.plan ?? {};
       const { name, jobtype, jobRoleLabel } = userOnBoarding ?? {};
 
-      PostHog.identify(id, {
+      Observability.userIdentity.identifyUser(id, {
         name,
         email,
         autenticationSource: avatar

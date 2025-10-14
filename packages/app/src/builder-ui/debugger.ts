@@ -1,4 +1,5 @@
 import { errorToast, successToast, warningToast } from '@src/shared/components/toast';
+import { Observability } from '@src/shared/observability';
 import { PostHog } from '@src/shared/posthog';
 import interact from 'interactjs';
 import { jsonrepair } from 'jsonrepair';
@@ -142,7 +143,10 @@ function toggleSwitch(on: boolean) {
   const debugSwitcherMessage = document?.querySelector('.debug-switcher-message');
 
   if (on) {
-    PostHog.track('debug_button_click', { position: 'bottom center of builder', type: 'debug' });
+    Observability.userBehavior.recordInteraction('debug_button_click', {
+      position: 'bottom center of builder',
+      type: 'debug',
+    });
   }
   // if (switcherText?.classList.contains('hidden')) {
   //   if (on) {
@@ -392,7 +396,10 @@ export async function init() {
   const attachBtn = document.getElementById('debug-menubtn-attach');
   runBtn?.addEventListener('click', async (event) => {
     console.log('debug run');
-    PostHog.track('debug_button_click', { position: 'bottom center of builder', type: 'run' });
+    Observability.userBehavior.recordInteraction('debug_button_click', {
+      position: 'bottom center of builder',
+      type: 'run',
+    });
     const playIcon = runBtn.querySelector('.mif-play');
     const stopIcon = runBtn.querySelector('.mif-pause');
     const isRunning = runBtn.classList.contains('running');
@@ -432,7 +439,10 @@ export async function init() {
   });
   stepBtn.addEventListener('click', async (event) => {
     console.log('debug Step');
-    PostHog.track('debug_button_click', { position: 'bottom center of builder', type: 'step' });
+    Observability.userBehavior.recordInteraction('debug_button_click', {
+      position: 'bottom center of builder',
+      type: 'step',
+    });
     const agent = workspace.agent;
     if (!debugSessions?.[agent.id]?.sessionID) {
       _openDebugDialog(event, 'step');
@@ -487,7 +497,10 @@ export async function init() {
 
   attachBtn.addEventListener('click', async (e) => {
     //attach to a live debug session
-    PostHog.track('debug_button_click', { position: 'bottom center of builder', type: 'attach' });
+    Observability.userBehavior.recordInteraction('debug_button_click', {
+      position: 'bottom center of builder',
+      type: 'attach',
+    });
     log('Attaching to live debug session ...');
     const agent = workspace.agent;
     if (!agent) return;
@@ -522,7 +535,10 @@ export async function init() {
   });
 
   document.getElementById('debug-menubtn-stop').addEventListener('click', async (e) => {
-    PostHog.track('debug_button_click', { position: 'bottom center of builder', type: 'stop' });
+    Observability.userBehavior.recordInteraction('debug_button_click', {
+      position: 'bottom center of builder',
+      type: 'stop',
+    });
     stopDebugSession();
 
     runBtn.removeAttribute('disabled');
@@ -610,7 +626,7 @@ export async function runDebug() {
   runBtn.classList.add('running');
   isRunning = true;
 
-  PostHog.track('app_run_agent', {});
+  Observability.userBehavior.recordFeatureUsage('app_run_agent', {});
 
   let sessionID;
   let processComponents = true;
@@ -652,7 +668,10 @@ export async function runDebug() {
   }
   console.log('debug run end');
 
-  PostHog.track('app_workflow_test_completed', { status: workflowStatus, source: 'debugger' });
+  Observability.userBehavior.recordWorkflowCompletion('app_workflow_test_completed', {
+    status: workflowStatus,
+    source: 'debugger',
+  });
 
   runTooltipLabel.innerHTML = 'Run';
   runBtn.classList.remove('running');

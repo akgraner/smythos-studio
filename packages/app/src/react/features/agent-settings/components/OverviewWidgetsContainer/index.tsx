@@ -9,8 +9,8 @@ import { Agent } from '@react/shared/types/agent-data.types';
 import { Embodiment } from '@react/shared/types/api-results.types';
 import { LLMFormController } from '@src/builder-ui/helpers/LLMFormController.helper';
 import { errorToast } from '@src/shared/components/toast';
+import { Observability } from '@src/shared/observability';
 import { EVENTS } from '@src/shared/posthog/constants/events';
-import { PostHog } from '@src/shared/posthog/index';
 import { LLMRegistry } from '@src/shared/services/LLMRegistry.service';
 import { llmModelsStore } from '@src/shared/state_stores/llm-models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -363,9 +363,12 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       await Promise.all(promises);
 
       if (postHogEvent.app_LLM_selected) {
-        await PostHog.track(EVENTS.AGENT_SETTINGS_EVENTS.app_LLM_selected, {
-          model: formik.values.chatGptModel,
-        });
+        await Observability.userBehavior.recordFeatureUsage(
+          EVENTS.AGENT_SETTINGS_EVENTS.app_LLM_selected,
+          {
+            model: formik.values.chatGptModel,
+          },
+        );
         setPostHogEvent((prev) => ({ ...prev, app_LLM_selected: null }));
       }
 
