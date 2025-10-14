@@ -209,12 +209,15 @@ export function generateTemplateVarBtns(
 }
 
 // TODO: REFACTOR THIS FUNCTION
-export function handleTemplateVars(targetElm) {
+export function handleTemplateVars(targetElm, component = null) {
   targetElm.onclick = (e) => {
     try {
+      console.log('component', component);
       const clickedElm = e.target as HTMLInputElement;
-      const activeComp = document.querySelector('.component.active');
-      const compUid = activeComp?.getAttribute('id') || '';
+      // TODO: Use component?._uid as the new way to get the component UID.
+      // * We're keeping the old approach for now to prevent potential issues.
+      const compUid =
+        component?._uid || document.querySelector('.component.active')?.getAttribute('id') || '';
 
       if (
         clickedElm.classList.contains('template-var-button') &&

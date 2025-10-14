@@ -1062,6 +1062,7 @@ interface SidebarOptions {
   onLoad?: (sidebar: HTMLElement) => void;
   helpTooltip?: string;
   isSettingsChanged?: () => boolean;
+  component?: any;
 }
 
 export function sidebarEditValues({
@@ -1079,6 +1080,7 @@ export function sidebarEditValues({
   onLoad = (sidebar) => {},
   helpTooltip = '',
   isSettingsChanged = () => false,
+  component = null,
 }: SidebarOptions): Promise<any> | null {
   return new Promise(async (resolve) => {
     const sidebar = await createRightSidebar(
@@ -1287,7 +1289,7 @@ export function sidebarEditValues({
 
     /* Handle Template Variable Buttons */
     if (features.templateVars) {
-      handleTemplateVars(sidebarContent);
+      handleTemplateVars(sidebarContent, component);
     }
 
     const performAutoSave = async (e?: MouseEvent) => {
