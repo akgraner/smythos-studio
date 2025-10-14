@@ -38,7 +38,7 @@ export const ImageSettingsConfig = {
         {
           label: '$ View Pricing',
           icon: 'dollar-sign',
-          classes: 'text-gray-600 top-[-8px] right-2 hover:underline _model_pricing_link hidden',
+          classes: 'text-gray-600 top-[-8px] right-6 hover:underline _model_pricing_link hidden',
           tooltip: 'SmythOS charges based on input and output tokens',
           events: {
             click: () => {
