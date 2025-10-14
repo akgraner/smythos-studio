@@ -53,6 +53,7 @@ export class MCPClient extends Component {
         label: 'MCP URL',
         help: 'Enter the MCP server URL so the client can list the tools it offers.',
         validateMessage: 'MCP URL is required',
+        doNotValidateOnLoad: true,
       },
       prompt: {
         type: 'textarea',
