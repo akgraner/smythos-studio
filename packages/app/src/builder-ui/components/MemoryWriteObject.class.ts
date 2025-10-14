@@ -13,6 +13,7 @@ export class MemoryWriteObject extends Component {
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
         help: 'Groups all saved keys under one namespace for consistent reads and deletes.',
+        doNotValidateOnLoad: true,
       },
       scope: {
         type: 'select',

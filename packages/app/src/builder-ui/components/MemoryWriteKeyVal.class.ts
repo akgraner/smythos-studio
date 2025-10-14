@@ -12,6 +12,7 @@ export class MemoryWriteKeyVal extends Component {
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
         help: 'Stores the value under this namespace so other steps can find or remove it later.',
+        doNotValidateOnLoad: true,
       },
       key: {
         type: 'input',
