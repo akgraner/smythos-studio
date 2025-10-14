@@ -150,7 +150,7 @@ export function createForm(entriesObject, displayType = 'block'): FormHTMLElemen
       const sectionWrapper = document.createElement('div');
       sectionWrapper.setAttribute(
         'class',
-        `form-section flex flex-wrap ${sectionName !== 'main' ? 'overflow-y-auto max-h-[280px]' : ''}`,
+        `form-section flex flex-wrap ${sectionName !== 'main' && displayType === 'inline' ? 'overflow-y-auto max-h-[280px]' : ''}`,
       );
       sectionWrapper.setAttribute('data-name', sectionName);
       form.appendChild(sectionWrapper);
