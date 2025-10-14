@@ -995,13 +995,19 @@ export class Workspace extends EventEmitter {
       const parent = zoom.parentElement;
 
       workspaceContainer.addEventListener('pointerdown', (event) => {
+        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
         this.panzoom.handleDown(event);
       });
       document.addEventListener('pointermove', (event) => {
+        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
         if (event.ctrlKey || event.metaKey) return;
+
         this.panzoom.handleMove(event);
       });
-      document.addEventListener('pointerup', this.panzoom.handleUp);
+      document.addEventListener('pointerup', (event) => {
+        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
+        this.panzoom.handleUp(event);
+      });
 
       // Completely custom wheel handling for better touchpad experience
       parent.addEventListener('wheel', (event) => {
@@ -1557,20 +1563,22 @@ export class Workspace extends EventEmitter {
         const sourceComponent = source.closest('.component');
         const targetComponent = target.closest('.component');
 
+        const sourceName = source.getAttribute('smt-name');
+        const targetName = target.getAttribute('smt-name');
+        const sourceExpression = source.getAttribute('smt-expression');
+        const targetExpression = target.getAttribute('smt-expression');
+
         if (!sourceComponent || !targetComponent) return null; //exclude connections that are not connected to components, these can be used for other visual stuff
         return {
           sourceId: source.closest('.component').id,
-          sourceIndex: [...source.parentElement.querySelectorAll('.output-endpoint')].findIndex(
-            (c) => c === source,
-          ),
+          sourceExpression, // will be used as a fallback/backup in case of missing or unmatched source name
+          sourceIndex: sourceName,
           targetId: target.closest('.component').id,
-          targetIndex: [...target.parentElement.querySelectorAll('.input-endpoint')].findIndex(
-            (r) => r === target,
-          ),
+          targetIndex: targetName,
+          targetExpression, // will be used as a fallback/backup in case of missing or unmatched target name
         };
       })
       .filter((c) => c);
-
     const debugSessionEnabled = this.domElement.classList.contains('debug-enabled');
     let auth = this.agent.data?.auth;
     const variables = this.agent.data.variables;
@@ -2062,24 +2070,25 @@ export class Workspace extends EventEmitter {
     }
   }
 
-  public getJsplumbConnection(connection) {
-    const sourceComponent = document.querySelector(`#${connection.sourceId}`);
-    const targetComponent = document.querySelector(`#${connection.targetId}`);
-    if (!sourceComponent || !targetComponent) return null;
-    const sourceEndpoint = sourceComponent.querySelector(
-      `.output-endpoint:nth-child(${connection.sourceIndex + 1})`,
-    );
-    const targetEndpoint = targetComponent.querySelector(
-      `.input-endpoint:nth-child(${connection.targetIndex + 1})`,
-    );
-    if (!sourceEndpoint || !targetEndpoint) return null;
+  // No more used ?
+  // public getJsplumbConnection(connection) {
+  //   const sourceComponent = document.querySelector(`#${connection.sourceId}`);
+  //   const targetComponent = document.querySelector(`#${connection.targetId}`);
+  //   if (!sourceComponent || !targetComponent) return null;
+  //   const sourceEndpoint = sourceComponent.querySelector(
+  //     `.output-endpoint:nth-child(${connection.sourceIndex + 1})`,
+  //   );
+  //   const targetEndpoint = targetComponent.querySelector(
+  //     `.input-endpoint:nth-child(${connection.targetIndex + 1})`,
+  //   );
+  //   if (!sourceEndpoint || !targetEndpoint) return null;
 
-    const source = sourceEndpoint;
-    const target = targetEndpoint;
+  //   const source = sourceEndpoint;
+  //   const target = targetEndpoint;
 
-    const jsPlumbInstance: any = this.jsPlumbInstance;
-    return jsPlumbInstance.getConnections({ source, target })[0];
-  }
+  //   const jsPlumbInstance: any = this.jsPlumbInstance;
+  //   return jsPlumbInstance.getConnections({ source, target })[0];
+  // }
   public async checkConnectionsConsistency(newConnection = null) {
     const jsPlumbInstance: any = this.jsPlumbInstance;
     let conflict = false;

@@ -148,7 +148,10 @@ export function createForm(entriesObject, displayType = 'block'): FormHTMLElemen
     const section = sections[sectionName];
     if (section.length > 0) {
       const sectionWrapper = document.createElement('div');
-      sectionWrapper.setAttribute('class', 'form-section flex flex-wrap');
+      sectionWrapper.setAttribute(
+        'class',
+        `form-section flex flex-wrap ${sectionName !== 'main' && displayType === 'inline' ? 'overflow-y-auto max-h-[280px]' : ''}`,
+      );
       sectionWrapper.setAttribute('data-name', sectionName);
       form.appendChild(sectionWrapper);
 
@@ -172,7 +175,8 @@ export function createForm(entriesObject, displayType = 'block'): FormHTMLElemen
         if (sectionsHelp[sectionName]) {
           const infoBtn = createInfoButton(sectionsHelp[sectionName].help, {
             cls: 'mr-2 btn-info',
-            clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-center',
+            clsHint:
+              'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-left normal-case',
             position: sectionsHelp[sectionName]?.hintPosition || 'bottom',
             tooltipClasses: sectionsHelp[sectionName]?.tooltipClasses || '',
             arrowClasses: sectionsHelp[sectionName]?.arrowClasses || '',

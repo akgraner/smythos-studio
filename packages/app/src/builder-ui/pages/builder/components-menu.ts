@@ -610,11 +610,16 @@ function isDroppedInCanvasArea(
 }
 
 function setupBuilderMenuDragDrop() {
+  // Store interact instances
+  const interactInstances = [];
+
   // Initialize the dummy dragging div
   let dummyDiv = null;
-  interact(
+  const leftMenuInteract = interact(
     '#left-menu a[smt-component], #left-sidebar-integrations-menu a[smt-component]',
-  ).draggable({
+  );
+  interactInstances.push(leftMenuInteract);
+  leftMenuInteract.draggable({
     // Create the dummy div when starting the drag
     onstart: function (event) {
       if (workspace?.locked) return false;
@@ -688,7 +693,9 @@ function setupBuilderMenuDragDrop() {
     },
   });
 
-  interact('#workspace-container').dropzone({
+  const workspaceContainerInteract = interact('#workspace-container');
+  interactInstances.push(workspaceContainerInteract);
+  workspaceContainerInteract.dropzone({
     // Only accept elements matching this CSS selector
     accept: 'a[smt-component]',
     // Listen for drop related events
@@ -797,7 +804,11 @@ function setupBuilderMenuDragDrop() {
     },
   });
 
-  interact('#right-sidebar,#embodiment-sidebar,#agent-settings-sidebar')
+  const rightSidebarInteract = interact(
+    '#right-sidebar,#embodiment-sidebar,#agent-settings-sidebar',
+  );
+  interactInstances.push(rightSidebarInteract);
+  rightSidebarInteract
     .resizable({
       margin: 5,
       // Enable resize from right edge; preset cursor styles
@@ -857,7 +868,9 @@ function setupBuilderMenuDragDrop() {
     });
 
   // temporary debug console height: move to a better place
-  interact('#bottom-bar')
+  const bottomBarInteract = interact('#bottom-bar');
+  interactInstances.push(bottomBarInteract);
+  bottomBarInteract
     .resizable({
       margin: 5,
       edges: { left: false, right: false, bottom: false, top: true },
@@ -887,6 +900,17 @@ function setupBuilderMenuDragDrop() {
 
       localStorage.setItem(`debug-console-height`, event.target.style.height);
     });
+
+  // Add cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    try {
+      interactInstances.forEach((interactInstance) => {
+        interactInstance?.unset();
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  });
 }
 
 function renderUpgradeModal() {

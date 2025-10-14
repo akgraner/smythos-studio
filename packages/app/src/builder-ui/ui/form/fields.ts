@@ -1,9 +1,31 @@
+import DOMPurify from 'dompurify';
 import { Tooltip } from 'flowbite-react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { delay } from '../../utils';
 
 declare var Metro;
+
+/**
+ * Global registry for datalist options.
+ * Options are stored as functions to avoid loading large data modules during app initialization.
+ * The functions are called synchronously on first focus to ensure immediate availability.
+ */
+const datalistRegistry: Map<string, () => Array<string | { text: string; value: string }>> = new Map();
+
+/**
+ * Register a datalist options provider by datalist ID.
+ * The provider function is called synchronously when the field is first focused.
+ *
+ * @param datalistId - Unique ID for the datalist
+ * @param optionsProvider - Function that returns the options array
+ */
+export const registerDatalistOptions = (
+  datalistId: string,
+  optionsProvider: () => Array<string | { text: string; value: string }>,
+): void => {
+  datalistRegistry.set(datalistId, optionsProvider);
+};
 
 export const createInput = (value: string = ''): HTMLInputElement => {
   const fieldElm = document.createElement('input');
@@ -17,6 +39,88 @@ export const createHiddenInput = (value: string = ''): HTMLInputElement => {
   const fieldElm = document.createElement('input');
   fieldElm.setAttribute('type', 'hidden');
   fieldElm.setAttribute('value', value || '');
+
+  return fieldElm;
+};
+
+/**
+ * Creates a text input with datalist autocomplete support.
+ * The datalist is created synchronously on first user interaction (mousedown, touchstart, or focus).
+ * Using mousedown ensures the datalist is ready BEFORE focus, making it work on the first try.
+ * This keeps initial render fast while ensuring the field works immediately.
+ *
+ * @param value - Initial value for the input
+ * @param datalistId - ID for the datalist element (used to lookup options in registry)
+ * @returns HTMLInputElement with datalist support
+ */
+export const createDatalistInput = (value: string = '', datalistId?: string): HTMLInputElement => {
+  const fieldElm = document.createElement('input');
+  fieldElm.setAttribute('data-role', 'input');
+  fieldElm.setAttribute('type', 'text');
+  fieldElm.setAttribute('value', value || '');
+
+  // Set up datalist if datalistId is provided
+  if (datalistId) {
+    fieldElm.setAttribute('list', datalistId);
+
+    let datalistCreated = false;
+
+    // Create datalist on first interaction - synchronously so it's ready immediately
+    const createDatalistOnce = (): void => {
+      // Prevent multiple calls
+      if (datalistCreated) {
+        return;
+      }
+
+      // Check if datalist already exists
+      if (document.getElementById(datalistId)) {
+        datalistCreated = true;
+        return;
+      }
+
+      // Get options provider from registry
+      const optionsProvider = datalistRegistry.get(datalistId);
+      if (!optionsProvider) {
+        console.warn(`Datalist options not registered for ID: ${datalistId}`);
+        datalistCreated = true;
+        return;
+      }
+
+      // Create datalist SYNCHRONOUSLY (no setTimeout/requestIdleCallback)
+      // This ensures the datalist exists before the browser tries to show the dropdown
+      const options = optionsProvider();
+
+      const datalist = document.createElement('datalist');
+      datalist.id = datalistId;
+
+      // Use DocumentFragment for batch DOM operations (much faster)
+      const fragment = document.createDocumentFragment();
+
+      options.forEach((option) => {
+        const optionEl = document.createElement('option');
+        if (typeof option === 'string') {
+          optionEl.value = option;
+        } else {
+          optionEl.value = option.value;
+          if (option.text) {
+            optionEl.textContent = option.text;
+          }
+        }
+        fragment.appendChild(optionEl);
+      });
+
+      datalist.appendChild(fragment);
+      document.body.appendChild(datalist);
+      datalistCreated = true;
+    };
+
+    // Listen to multiple events to catch interaction as early as possible
+    // mousedown fires BEFORE focus, ensuring datalist is ready
+    fieldElm.addEventListener('mousedown', createDatalistOnce, { once: true });
+    fieldElm.addEventListener('focus', createDatalistOnce, { once: true });
+    // Also handle touch devices
+    fieldElm.addEventListener('touchstart', createDatalistOnce, { once: true, passive: true });
+  }
 
   return fieldElm;
 };
@@ -217,6 +321,11 @@ export function createInfoButton(
     src: '/img/icons/Info.svg',
   });
 
+  // Sanitize the HTML content to prevent XSS attacks
+  // DOMPurify's default configuration already allows all safe HTML tags
+  // and blocks dangerous elements like <script>, event handlers, etc.
+  const sanitizedText = DOMPurify.sanitize(text);
+
   // Render the Tooltip component
   const root = createRoot(tooltipContainer);
   root.render(
@@ -224,11 +333,14 @@ export function createInfoButton(
       Tooltip,
       {
         content: React.createElement('div', {
-          dangerouslySetInnerHTML: { __html: text },
+          dangerouslySetInnerHTML: { __html: sanitizedText },
         }),
         placement: position as any,
         className:
-          clsHint + ' whitespace-normal text-xs ' + (tooltipClasses || (hasLinks ? `min-w-52 max-w-96` : `w-${estimatedWidth}`)) + ' [&_a]:whitespace-nowrap [&_a]:inline-block',
+          clsHint +
+          ' whitespace-normal text-xs ' +
+          (tooltipClasses || (hasLinks ? `min-w-52 max-w-96` : `w-${estimatedWidth}`)) +
+          ' [&_a]:whitespace-nowrap [&_a]:inline-block',
         style: 'dark',
         arrow: true,
       },
@@ -373,10 +485,21 @@ export function createTagInput({ maxTags, value }: { maxTags: number; value: str
   return input;
 }
 
+/**
+ * Creates a hint element with sanitized HTML content
+ * @param text - The HTML text content to display in the hint
+ * @returns HTMLElement - The hint element with sanitized content
+ */
 export function createHint(text: string) {
   const elm = document.createElement('small');
   elm.classList.add('field-hint');
-  elm.innerHTML = text;
+
+  // Sanitize the HTML content to prevent XSS attacks
+  // DOMPurify's default configuration already allows all safe HTML tags
+  // and blocks dangerous elements like <script>, event handlers, etc.
+  const sanitizedText = DOMPurify.sanitize(text);
+
+  elm.innerHTML = sanitizedText;
 
   return elm;
 }

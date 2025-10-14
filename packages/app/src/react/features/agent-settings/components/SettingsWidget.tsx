@@ -26,6 +26,7 @@ const SettingsWidget = () => {
     models: MODELS_V2,
     modal: { isOpen: isModalOpen, setIsOpen: setIsModalOpen, handleClose: handleModalClose },
     postHogEvent: { setPostHogEvent },
+    updateCurrentFormValues,
   } = useWidgetsContext();
 
   if (isLoading.embodiments || isLoading.llmModels) return <ComponentSkeleton />;
@@ -63,6 +64,7 @@ const SettingsWidget = () => {
               onChange={(e) => {
                 setPostHogEvent((prev) => ({ ...prev, app_LLM_selected: e.target.value }));
                 formik.setFieldValue('chatGptModel', e.target.value);
+                updateCurrentFormValues({ chatGptModel: e.target.value });
               }}
               className="mt-1 w-full p-2 bg-white border border-gray-300 rounded-lg text-sm text-gray-900 focus:ring-v2-blue focus:border-v2-blue"
             >

@@ -11,13 +11,14 @@ export class MemoryWriteKeyVal extends Component {
         validate: `required maxlength=100`,
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
-        help: 'Select the key-value store to write into (e.g., \'crm_cache\'). <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Stores the value under this namespace so other steps can find or remove it later.',
+        doNotValidateOnLoad: true,
       },
       key: {
         type: 'input',
         label: 'Key',
         value: '{{Key}}',
-        help: 'Key for the value; supports dynamic inputs like {{user.id}}. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Labels the value you are saving, used to read or overwrite this exact item.',
         validate: `maxlength=50`,
         attributes: { 'data-template-vars': 'true' },
       },
@@ -25,7 +26,7 @@ export class MemoryWriteKeyVal extends Component {
         type: 'textarea',
         label: 'Value',
         value: '{{Value}}',
-        help: 'Data to save: string, number, or JSON. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Data to remember for reuse in later steps and workflows.',
         attributes: { 'data-template-vars': 'true' },
       },
       scope: {
@@ -47,7 +48,7 @@ export class MemoryWriteKeyVal extends Component {
             else ttl?.classList.add('hidden');
           },
         },
-        help: 'Pick persistence: session, user, or project. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Controls lifespan and visibility, Request for this run or TTL to persist until expiry.',
       },
       ttl: {
         type: 'select',
@@ -66,7 +67,7 @@ export class MemoryWriteKeyVal extends Component {
           { value: '86400', text: '1 day' },
           { value: '604800', text: '1 week' },
         ],
-        hint: 'Time to live',
+        help: 'Sets how long a TTL value remains available before automatic deletion.',
       },
     };
 
@@ -85,6 +86,7 @@ export class MemoryWriteKeyVal extends Component {
 
     // #region [ Draw config ] ==================
     //this.drawSettings.showSettings = false;
+    this.drawSettings.displayName = 'Memory Write';
     this.drawSettings.iconCSSClass = 'svg-icon Memory ' + this.constructor.name;
     this.drawSettings.addOutputButton = ' ';
     // this.drawSettings.addInputButton = ' + Entry';

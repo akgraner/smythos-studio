@@ -2,12 +2,7 @@ import hotkeys from 'hotkeys-js';
 import { CanvasSearchHelper } from '../helpers/canvasSearch.helper';
 import { runUIEnterKey } from '../ui/dialogs';
 import { sortAgent } from './ComponentSort';
-import {
-  canCopy,
-  canPaste,
-  copySelection,
-  deleteSelectionWithConfirm,
-} from './SelectionActions';
+import { canCopy, canPaste, copySelection, deleteSelectionWithConfirm } from './SelectionActions';
 import { Workspace } from './Workspace.class';
 
 export function registerHotkeys(workspace: Workspace) {
@@ -108,7 +103,30 @@ export function registerHotkeys(workspace: Workspace) {
       const dbgElement = workspace.hoveredElement.classList.contains('dbg')
         ? workspace.hoveredElement
         : workspace.hoveredElement.closest('.dbg');
-      window.getSelection().selectAllChildren(dbgElement);
+
+      // Handle textarea elements specially
+      if (
+        dbgElement &&
+        (dbgElement.tagName === 'TEXTAREA' || dbgElement.classList.contains('dbg-textarea'))
+      ) {
+        // If it's a textarea, use the select() method
+        if (dbgElement.tagName === 'TEXTAREA') {
+          (dbgElement as HTMLTextAreaElement).select();
+        } else {
+          // If it's a div with dbg-textarea class, find the textarea inside it
+          const textarea = dbgElement.querySelector('textarea');
+          if (textarea) {
+            textarea.select();
+          } else {
+            // Fallback to selecting all children
+            window.getSelection().selectAllChildren(dbgElement);
+          }
+        }
+      } else {
+        // For other elements, use the original method
+        window.getSelection().selectAllChildren(dbgElement);
+      }
+
       event.preventDefault();
       event.stopPropagation();
       event.stopImmediatePropagation();

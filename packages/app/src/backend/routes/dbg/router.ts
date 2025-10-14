@@ -37,10 +37,12 @@ router.get('/debugSession/:id', async (req, res, next) => {
 
 router.post(`/api`, async (req, res) => {
   try {
-    const url = `${config.env.API_SERVER}/api/`;
+    const { includeNewState } = req.query;
+    const url = `${config.env.API_SERVER}/api/${includeNewState ? '?includeNewState=true' : ''}`;
 
     //x-hash-id is configured in smyth load balancer to use user IP by default or custom value if provided
     //here we force it to use the real client IP in order to keep debug sessions consistent
+    //TODO : set trust proxy to true in production and use req.ip instead of req.headers['x-forwarded-for']
     const client_ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
 
     const headers = {

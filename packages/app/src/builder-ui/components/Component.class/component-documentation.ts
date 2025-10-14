@@ -46,14 +46,14 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
 
   ImageGenerator: {
     description:
-      'Create images from text or edit existing ones with model controls for size, quality, and style.',
+      'Create or edit images from text with controls for size, quality, and style. Write clear prompts and iterate quickly to refine results.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/image-generator/#step-1-select-a-model-and-configure-settings',
   },
 
   GenAILLM: {
     description:
-      'Give your agent language skills for summarising, generating, extracting, and classifying text. Pick a model, write a clear prompt, connect inputs, then tune settings for length, quality, and cost.',
+      'Give your agent the ability to summarize, generate, extract, or classify text by choosing a model, adding a prompt, and tuning length, quality, and cost.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=component-header',
   },
@@ -178,7 +178,8 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
   },
 
   FTimestamp: {
-    description: 'Generate timestamps for your workflow.',
+    description:
+      'Emits the server UTC time as a Unix timestamp in milliseconds at execution for logging, timing, and time-based IDs.',
   },
 
   // RAG Data Components
@@ -204,42 +205,52 @@ export const COMPONENT_DOCUMENTATION: Record<string, ComponentDocumentation> = {
   },
 
   // Memory Components
-  MemoryWriteInput: {
-    description: 'Write to memory by slot name for storing data that can be accessed later.',
+  MemoryWriteObject: {
+    description:
+      'Save multiple keys in one shot with a flat JSON object. Keep flows tidy and consistent while updating several fields at once.',
+    docsLink:
+      'https://smythos.com/docs/agent-studio/components/memory/memory-write-multi/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-forget&utm_content=source-identifier',
   },
 
   MemoryWriteKeyVal: {
-    description: 'Store key-value pairs in memory for later retrieval.',
-  },
-
-  MemoryReadOutput: {
-    description: 'Read data from memory slots by name.',
+    description:
+      'Store a single key and value in a named memory. Pick Request or TTL scope to control lifetime and shareability across workflows.',
+    docsLink:
+      'https://smythos.com/docs/agent-studio/components/memory/memory-write/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-forget&utm_content=source-identifier',
   },
 
   MemoryReadKeyVal: {
-    description: 'Read key-value data from memory stores.',
+    description:
+      'Retrieve a stored value from memory by key. Use it to pass saved state forward in your workflow or reuse data across steps.',
+    docsLink:
+      'https://smythos.com/docs/agent-studio/components/memory/memory-read/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-forget&utm_content=source-identifier',
   },
 
   MemoryDeleteKeyVal: {
-    description: 'Delete keys from memory stores.',
+    description:
+      'Remove a specific key from a named memory to prevent stale data. Works for Request and TTL scopes so you can clean up mid run or purge persistent values.',
+    docsLink:
+      'https://smythos.com/docs/agent-studio/components/memory/memory-delete/?utm_source=studio&utm_medium=tooltip&utm_campaign=rag-forget&utm_content=source-identifier',
   },
 
   // Legacy Components
   PromptGenerator: {
     description:
-      'Generates a single, stateless completion from a text prompt using the selected model. Supports templated variables and an optional passthrough of the original input. This is a legacy component; for multi-turn chat or newer controls, see LLM Assistant and GenAI LLM.',
+      'Generates a single, stateless completion from a text prompt using the selected model. Supports templated variables and an optional passthrough of the original input. This is a legacy component; for multi-turn chat or newer controls, see <a href="https://smythos.com/docs/agent-studio/components/advanced/llm-assistant/?utm_source=app&utm_medium=component&utm_campaign=docs&utm_content=llm-prompt-legacy" target="_blank" class="text-blue-600 hover:text-blue-800">LLM Assistant</a> and <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=app&utm_medium=component&utm_campaign=docs&utm_content=llm-prompt-legacy" target="_blank" class="text-blue-600 hover:text-blue-800">GenAI LLM</a>.',
+    docsLink:
+      'https://smythos.com/docs/agent-studio/components/legacy/llm-prompts/?utm_source=app&utm_medium=tooltip&utm_campaign=docs&utm_content=llm-prompt-overview',
   },
 
   MultimodalLLM: {
     description:
-      'Runs a single-turn prompt on a multimodal model that reads text plus images, audio, or video. Accepts media inputs and returns a result ready for downstream steps.',
+      'Runs a single completion from mixed inputs like images, video, audio, and text. Supports Google multimodal models, file URLs or Base64, and basic output length control. This is a legacy component; see <a href="https://smythos.com/docs/agent-studio/components/advanced/llm-assistant/?utm_source=app&utm_medium=component&utm_campaign=docs&utm_content=llm-prompt-legacy" target="_blank" class="text-blue-600 hover:text-blue-800">LLM Assistant</a> and <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=app&utm_medium=component&utm_campaign=docs&utm_content=llm-prompt-legacy" target="_blank" class="text-blue-600 hover:text-blue-800">GenAI LLM</a>.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/legacy/multimodal-llm/?utm_source=app&utm_medium=tooltip&utm_campaign=docs&utm_content=multimodal-llm-overview',
   },
 
   VisionLLM: {
     description:
-      'Processes images with a vision model to extract text, detect objects, or describe scenes. Accepts one or more image inputs and returns a structured result.',
+      'Processes images with a vision model to extract text, detect objects, or describe scenes. Accepts one or more image inputs and returns a structured result. This is a legacy component; see <a href="https://smythos.com/docs/agent-studio/components/advanced/llm-assistant/?utm_source=app&utm_medium=component&utm_campaign=docs&utm_content=llm-prompt-legacy" target="_blank" class="text-blue-600 hover:text-blue-800">LLM Assistant</a> and <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=app&utm_medium=component&utm_campaign=docs&utm_content=llm-prompt-legacy" target="_blank" class="text-blue-600 hover:text-blue-800">GenAI LLM</a>.',
     docsLink:
       'https://smythos.com/docs/agent-studio/components/legacy/vision-llm/?utm_source=app&utm_medium=tooltip&utm_campaign=docs&utm_content=vision-llm-overview',
   },

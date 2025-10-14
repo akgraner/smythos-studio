@@ -11,6 +11,7 @@ export class MemoryDeleteKeyVal extends Component {
         validate: `required maxlength=100`,
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
+        help: 'Tells the component which namespace to search so it removes the correct value.',
       },
       key: {
         type: 'input',
@@ -18,7 +19,7 @@ export class MemoryDeleteKeyVal extends Component {
         value: '{{Key}}',
         validate: `maxlength=50`,
         attributes: { 'data-template-vars': 'true' },
-        help: 'Select the key-value store containing the key to delete. <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Targets the exact item to delete using its saved identifier.',
       },
     };
 
@@ -38,6 +39,7 @@ export class MemoryDeleteKeyVal extends Component {
 
     // #region [ Draw config ] ==================
     //this.drawSettings.showSettings = false;
+    this.drawSettings.displayName = 'Memory Delete';
     this.drawSettings.iconCSSClass = 'svg-icon Memory ' + this.constructor.name;
     this.drawSettings.addOutputButton = ' ';
     // this.drawSettings.addInputButton = ' + Entry';

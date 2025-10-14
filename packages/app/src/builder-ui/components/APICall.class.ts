@@ -106,6 +106,7 @@ export class APICall extends Component {
         //validate: `required maxlength=${maxUriLength} ${isLocalhost ? 'url' : ''}`,
         validate: `required maxlength=${maxUriLength} custom=isUrlValid`,
         validateMessage: 'Provide a valid URL',
+        doNotValidateOnLoad: true,
         attributes: { 'data-template-vars': 'true' },
         cls: 'pr-4',
         help: `Enter the website address and add any path or query parts.\n <a href="${SMYTHOS_DOCS_URL}/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=url#step-1-choose-method-and-url" target="_blank" class="text-blue-600 hover:text-blue-800">See URL patterns</a>`,
@@ -209,8 +210,7 @@ export class APICall extends Component {
             visible: () => true, // Always visible
             events: {
               click: () => {
-                this.data.oauth_con_id = 'None';
-                this.handleOAuthConnectionAction();
+                this.handleOAuthConnectionAction('None');
               },
             },
           },
@@ -222,7 +222,7 @@ export class APICall extends Component {
             cls: 'mt-[7px] !mr-[24px] !pt-[10px]',
             visible: () => this.data.oauth_con_id && this.data.oauth_con_id !== 'None',
             events: {
-              click: () => this.handleOAuthConnectionAction(),
+              click: () => this.handleOAuthConnectionAction(this.data.oauth_con_id),
             },
           },
         ],
@@ -232,7 +232,7 @@ export class APICall extends Component {
         label: 'Authentication Service',
         section: 'OAuth',
         sectionHelp:
-          'SmythOS supports OAuth 2.0 with OpenID Connect (OIDC) for secure user authentication and authorization.',
+          'Sign in once and let tokens attach to your calls automatically. <a href="https://smythos.com/docs/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=url#step-3-add-authentication" target="_blank" class="text-blue-600 hover:text-blue-800">See OAuth setup</a>',
         sectionTooltipClasses: 'w-64',
         sectionArrowClasses: '-ml-11',
         options: [...OAUTH_SERVICES],
@@ -338,6 +338,7 @@ export class APICall extends Component {
         type: 'textarea',
         label: 'Proxy URLs',
         section: 'Advanced',
+        help: 'Send calls through a proxy if your network or vendor asks for it.',
         validateMessage: `Enter your proxy URLs in the following format:<br/>
                 [scheme]://[username]:[password]@[host]:[port]<br/><br/>
                 For multiple URLs, place each one in a new line.<br/><br/>
@@ -1597,10 +1598,9 @@ export class APICall extends Component {
     this.updateOAuthActionButton();
   }
 
-  private async handleOAuthConnectionAction() {
-    const currentValue = this.data.oauth_con_id;
+  private async handleOAuthConnectionAction(currentValue: string) {
     const isNone = !currentValue || currentValue === 'None';
-    // console.log('[OAuth Edit] Action started. Current Value:', currentValue, 'Is None:', isNone);
+    
     // Fetch existing OAuth connections ONLY when editing to avoid modal delay on "Add New"
     if (!isNone) {
       try {

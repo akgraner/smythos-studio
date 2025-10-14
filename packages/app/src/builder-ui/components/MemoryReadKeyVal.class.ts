@@ -11,6 +11,7 @@ export class MemoryReadKeyVal extends Component {
         validate: `required maxlength=100`,
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
+        help: 'Tells the component which namespace to search so it finds the value you wrote.',
       },
       key: {
         type: 'input',
@@ -18,7 +19,7 @@ export class MemoryReadKeyVal extends Component {
         value: '{{Key}}',
         validate: `maxlength=50`,
         attributes: { 'data-template-vars': 'true' },
-        help: 'Select the key-value store to query (e.g., \'crm_cache\'). <a href="#" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Targets the exact item to retrieve using its saved identifier.',
       },
       // scope: {
       //   type: 'select',
@@ -50,6 +51,7 @@ export class MemoryReadKeyVal extends Component {
 
     // #region [ Draw config ] ==================
     //this.drawSettings.showSettings = false;
+    this.drawSettings.displayName = 'Memory Read';
     this.drawSettings.iconCSSClass = 'svg-icon Memory ' + this.constructor.name;
     this.drawSettings.addOutputButton = ' ';
     this.drawSettings.addInputButton = ' ';

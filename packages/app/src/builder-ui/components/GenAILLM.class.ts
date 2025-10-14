@@ -1,19 +1,33 @@
 // TODO: Refactor this file (specially setting fields for different providers)
 import { LLMRegistry } from '../../shared/services/LLMRegistry.service';
-import { REASONING_EFFORTS } from '../constants';
+import { LLM_PROVIDERS, REASONING_EFFORTS } from '../constants';
 import { LLMFormController } from '../helpers/LLMFormController.helper';
 import llmParams from '../params/LLM.params.json';
 import { createBadge } from '../ui/badges';
+import { registerDatalistOptions } from '../ui/form/fields';
 import { IconArrowRight, IconConfigure } from '../ui/icons';
 import { refreshLLMModels, saveApiKey, setupSidebarTooltips } from '../utils';
 import { delay } from '../utils/general.utils';
 import { Component } from './Component.class';
 
-// Since getWebSearchFields is called multiple times, using a static import is more efficient than a lazy import.
+// Import modules statically - this happens at module load but doesn't process arrays yet
 import ianaTimezones from '../params/IANA-time-zones';
 import isoCountryCodes from '../params/ISO-country-code';
 
 declare var Metro;
+
+/**
+ * Register datalist options with lazy functions.
+ * The arrays are imported but only processed when the datalist is actually needed (on first focus).
+ * This prevents blocking during field generation.
+ */
+registerDatalistOptions('country-datalist', () =>
+  isoCountryCodes.map((country) => ({
+    value: country.value,
+    text: country.text, // Show "US - United States" on single line
+  })),
+);
+registerDatalistOptions('timezone-datalist', () => ianaTimezones.map((tz) => ({ text: tz, value: tz })));
 
 /*
  * Here field name like model, apiKey, temperature is very important
@@ -225,15 +239,13 @@ export class GenAILLM extends Component {
     await delay(200);
     await setupSidebarTooltips(sidebar, this);
 
-    const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
-    if (useWebSearchElm) {
-      this.toggleWebSearchNestedFields(useWebSearchElm, form);
-    }
-
-    const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
-    if (useSearchElm) {
-      this.toggleSearchNestedFields(useSearchElm, form);
-    }
+    // Auto-set search options based on current model's provider
+    const modelSelect = form?.querySelector('#model') as HTMLSelectElement;
+    const currentModel = modelSelect?.value || this.data.model;
+    const provider = LLMRegistry.getModelProvider(currentModel);
+    
+    // Automatically switch search options based on provider
+    this.autoSwitchSearchOptions(provider, form);
 
     const useReasoningElm = form?.querySelector('#useReasoning') as HTMLInputElement;
     if (useReasoningElm) {
@@ -341,7 +353,7 @@ export class GenAILLM extends Component {
       model: {
         type: 'select',
         label: 'Select a Model',
-        help: 'Choose the model that will generate and interpret text. <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=model#step-1-choose-a-model" target="_blank" class="text-blue-600 hover:text-blue-800">Go to Docs</a>',
+        help: 'Choose the <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=model#step-1-choose-a-model" target="_blank" class="text-blue-600 hover:text-blue-800">model</a> that will generate and interpret text.',
         hintPosition: 'after_label',
         tooltipClasses: 'w-56 ',
         arrowClasses: '-ml-11',
@@ -368,28 +380,20 @@ export class GenAILLM extends Component {
             }
             // #endregion
 
-            // #region Toggle web search nested fields on model change
+            // #region Auto-set search options based on provider
             const form = currentElement.closest('form');
-            const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
-
-            if (useWebSearchElm) {
-              this.toggleWebSearchNestedFields(useWebSearchElm, form);
-            }
-            // #endregion
-
-            // #region Toggle search nested fields on model change
-            const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
-            if (useSearchElm) {
-              this.toggleSearchNestedFields(useSearchElm, form);
-            }
+            const provider = LLMRegistry.getModelProvider(currentElement.value);
+            
+            // Automatically switch search options based on provider
+            this.autoSwitchSearchOptions(provider, form);
             // #endregion
 
             // #region Hide provider-specific fields when switching models
-            const provider = LLMRegistry.getModelProvider(currentElement.value);
-            if (provider.toLowerCase() !== 'xai') {
+            const providerLower = provider.toLowerCase();
+            if (providerLower !== LLM_PROVIDERS.XAI.toLowerCase()) {
               this.hideXAISpecificFields(form);
             }
-            if (provider.toLowerCase() !== 'openai') {
+            if (providerLower !== LLM_PROVIDERS.OPENAI.toLowerCase()) {
               this.hideOpenAIWebSearchFields(form);
             }
             // #endregion
@@ -471,7 +475,7 @@ export class GenAILLM extends Component {
           {
             label: '$ View Pricing',
             icon: 'dollar-sign',
-            classes: 'text-gray-600 top-[-8px] right-2 hover:underline _model_pricing_link hidden',
+            classes: 'text-gray-600 top-[-8px] right-6 hover:underline _model_pricing_link hidden',
             tooltip: 'SmythOS charges based on input and output tokens',
             events: {
               click: () => {
@@ -516,7 +520,7 @@ export class GenAILLM extends Component {
         cls: 'mb-0',
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
         },
         section: 'Advanced',
         help: 'The total context window size includes both the request prompt length and output completion length.',
@@ -550,7 +554,7 @@ export class GenAILLM extends Component {
         validateMessage: `Allowed range 0 to ${maxTemperature}`,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.anthropicThinkingModels,
             ...this.gpt5Models,
@@ -575,7 +579,7 @@ export class GenAILLM extends Component {
         validateMessage: `Allowed range ${minMaxTokens} to ${allowedCompletionTokens}`,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
         },
         section: 'Advanced',
         help: 'Limit reply length to manage cost and avoid cutoffs. <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=context-window-size#step-4-configure-advanced-settings" target="_blank" class="text-blue-600 hover:text-blue-800">See token limits</a>',
@@ -589,7 +593,7 @@ export class GenAILLM extends Component {
         value: '',
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,TogetherAI,VertexAI,Bedrock,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
           'data-excluded-models': [
             ...this.gpt5Models,
             ...this.gptO3andO4Models,
@@ -614,7 +618,7 @@ export class GenAILLM extends Component {
         validateMessage: `Allowed range ${minTopP} to ${maxTopP}`,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.openaiReasoningModels,
             ...this.gpt5Models,
@@ -639,7 +643,7 @@ export class GenAILLM extends Component {
         validate: `min=${minTopK} max=${maxTopK}`,
         validateMessage: `Allowed range ${minTopK} to ${maxTopK}`,
         attributes: {
-          'data-supported-models': 'GoogleAI,VertexAI,Anthropic,TogetherAI,Perplexity,cohere',
+          'data-supported-models': 'GoogleAI,VertexAI,Anthropic,TogetherAI,Perplexity,cohere,Ollama,xAI,Groq',
           'data-excluded-models': this.anthropicThinkingModels.join(','),
         },
         section: 'Advanced',
@@ -657,7 +661,7 @@ export class GenAILLM extends Component {
         validate: `min=0 max=${maxFrequencyPenalty}`,
         validateMessage: `Allowed range 0 to ${maxFrequencyPenalty}`,
         attributes: {
-          'data-supported-models': 'OpenAI,TogetherAI,Perplexity,cohere',
+          'data-supported-models': 'OpenAI,TogetherAI,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.gpt5Models,
             ...this.gptO3andO4Models,
@@ -679,7 +683,7 @@ export class GenAILLM extends Component {
         validate: `min=0 max=${maxPresencePenalty}`,
         validateMessage: `Allowed range 0 to ${maxPresencePenalty}`,
         attributes: {
-          'data-supported-models': 'OpenAI,Perplexity,cohere',
+          'data-supported-models': 'OpenAI,Perplexity,cohere,Ollama',
           'data-excluded-models': [
             ...this.gpt5Models,
             ...this.gptO3andO4Models,
@@ -714,7 +718,7 @@ export class GenAILLM extends Component {
         value: false,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Echo',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama,Echo',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
         help: 'Stream the response live to chat, or turn off for batch runs. <a href="https://smythos.com/docs/agent-studio/components/base/gen-ai-llm/?utm_source=studio&utm_medium=tooltip&utm_campaign=genai-llm&utm_content=passthrough#step-4-configure-advanced-settings" target="_blank" class="text-blue-600 hover:text-blue-800">See passthrough details</a>',
         section: 'Advanced',
@@ -729,7 +733,7 @@ export class GenAILLM extends Component {
         value: false,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
         help: 'Apply the agent\'s rules and tone to this call for consistency.',
         section: 'Advanced',
@@ -742,7 +746,7 @@ export class GenAILLM extends Component {
         value: false,
         attributes: {
           'data-supported-models':
-            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere',
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
         help: 'Include recent chat history when responses depend on prior turns.',
         section: 'Advanced',
@@ -835,7 +839,7 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Reasoning Effort',
       },
 
-      ...(await this.getWebSearchFields()),
+      ...this.getWebSearchFields(),
     };
   }
 
@@ -855,22 +859,19 @@ export class GenAILLM extends Component {
     }
   }
 
-  private async getWebSearchFields() {
-    const countryOptions = [{ text: 'Select a Country', value: '' }, ...isoCountryCodes];
-    const timezoneOptions = [{ text: 'Select a Timezone', value: '' }, ...ianaTimezones];
-
+  private getWebSearchFields() {
     // Include all search models, but exclude xAI for the generic useWebSearch field
     const webSearchSupportedModels = [...this.searchModels].join(',');
     const openAISearchModels = this.searchModels
       .filter((model) => {
         const provider = LLMRegistry.getModelProvider(model);
-        return provider.toLowerCase() !== 'xai';
+        return provider.toLowerCase() !== LLM_PROVIDERS.XAI.toLowerCase();
       })
       .join(',');
     const xAISearchModels = this.searchModels
       .filter((model) => {
         const provider = LLMRegistry.getModelProvider(model);
-        return provider.toLowerCase() === 'xai';
+        return provider.toLowerCase() === LLM_PROVIDERS.XAI.toLowerCase();
       })
       .join(',');
 
@@ -898,6 +899,16 @@ export class GenAILLM extends Component {
           change: (event) => {
             const target = event.target as HTMLInputElement;
             const form = target.closest('form');
+
+            // Make useWebSearch and useSearch mutually exclusive
+            if (target.checked) {
+              const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
+              if (useSearchElm && useSearchElm.checked) {
+                useSearchElm.checked = false;
+                // Hide useSearch nested fields
+                this.toggleSearchNestedFields(useSearchElm, form);
+              }
+            }
 
             this.toggleWebSearchNestedFields(target, form);
           },
@@ -950,13 +961,17 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Location',
       },
       webSearchCountry: {
-        type: 'select',
+        type: 'datalist',
         label: 'Country',
         value: '',
-        attributes: openAIAttributes,
+        datalistId: 'country-datalist',
+        attributes: {
+          ...openAIAttributes,
+          placeholder: 'Type country name or code (e.g., United States or US)',
+          autocomplete: 'off',
+        },
         class: 'hidden',
-        options: countryOptions,
-        help: "Country: a two-letter ISO country code, like 'US'.",
+        help: "Country: type the full country name or two-letter ISO code, like 'United States' or 'US'. Select from the dropdown to confirm.",
         section: 'Advanced',
         fieldsGroup: 'Location',
       },
@@ -973,13 +988,17 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Location',
       },
       webSearchTimezone: {
-        type: 'select',
+        type: 'datalist',
         label: 'Timezone',
         value: '',
-        attributes: openAIAttributes,
+        datalistId: 'timezone-datalist',
+        attributes: {
+          ...openAIAttributes,
+          placeholder: 'Type to search timezones (e.g., America/Chicago)',
+          autocomplete: 'off',
+        },
         class: 'hidden',
-        options: timezoneOptions,
-        help: 'Timezone: an IANA timezone like America/Chicago.',
+        help: 'Timezone: an IANA timezone like America/Chicago. Type to search.',
         section: 'Advanced',
         fieldsGroup: 'Location',
       },
@@ -996,6 +1015,16 @@ export class GenAILLM extends Component {
           change: (event) => {
             const target = event.target as HTMLInputElement;
             const form = target.closest('form');
+
+            // Make useSearch and useWebSearch mutually exclusive
+            if (target.checked) {
+              const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
+              if (useWebSearchElm && useWebSearchElm.checked) {
+                useWebSearchElm.checked = false;
+                // Hide useWebSearch nested fields
+                this.toggleWebSearchNestedFields(useWebSearchElm, form);
+              }
+            }
 
             this.toggleSearchNestedFields(target, form);
           },
@@ -1120,13 +1149,17 @@ export class GenAILLM extends Component {
         fieldsGroup: 'Data Sources',
       },
       searchCountry: {
-        type: 'select',
+        type: 'datalist',
         label: 'Country',
         value: '',
-        attributes: xAIAttributes,
+        datalistId: 'country-datalist',
+        attributes: {
+          ...xAIAttributes,
+          placeholder: 'Type country name or code (e.g., United States or US)',
+          autocomplete: 'off',
+        },
         class: 'hidden',
-        options: countryOptions,
-        help: 'Select a country to limit search results to.',
+        help: 'Country: type the full country name or two-letter ISO code to limit search results. Select from the dropdown to confirm.',
         section: 'Advanced',
         fieldsGroup: 'Data Sources',
       },
@@ -1281,13 +1314,56 @@ export class GenAILLM extends Component {
   }
 
   /**
+   * Enforces mutually exclusive search options based on the model's provider.
+   * Only disables incompatible search options, doesn't automatically enable them.
+   *
+   * @param provider - The LLM provider name
+   * @param form - The form element containing the search checkboxes
+   */
+  private autoSwitchSearchOptions(provider: string, form: HTMLFormElement): void {
+    const useWebSearchElm = form?.querySelector('#useWebSearch') as HTMLInputElement;
+    const useSearchElm = form?.querySelector('#useSearch') as HTMLInputElement;
+
+    const providerLower = provider.toLowerCase();
+
+    if (providerLower === LLM_PROVIDERS.OPENAI.toLowerCase()) {
+      // OpenAI models: disable useSearch (keep useWebSearch as is)
+      if (useSearchElm && useSearchElm.checked) {
+        useSearchElm.checked = false;
+      }
+    } else if (providerLower === LLM_PROVIDERS.XAI.toLowerCase()) {
+      // XAI models: disable useWebSearch (keep useSearch as is)
+      if (useWebSearchElm && useWebSearchElm.checked) {
+        useWebSearchElm.checked = false;
+      }
+    } else {
+      // Other providers: disable both
+      if (useWebSearchElm && useWebSearchElm.checked) {
+        useWebSearchElm.checked = false;
+      }
+      if (useSearchElm && useSearchElm.checked) {
+        useSearchElm.checked = false;
+      }
+    }
+
+    // Toggle visibility of nested fields
+    if (useWebSearchElm) {
+      this.toggleWebSearchNestedFields(useWebSearchElm, form);
+    }
+    if (useSearchElm) {
+      this.toggleSearchNestedFields(useSearchElm, form);
+    }
+  }
+
+  /**
    * Get the provider-specific fields based on the current model
-   * @param provider - The LLM provider (e.g., 'openai', 'xai')
+   * @param provider - The LLM provider (e.g., 'OpenAI', 'xAI')
    * @returns Array of field names to show for the provider
    */
   private getProviderWebSearchFields(provider: string): string[] {
-    const providerFieldMap = {
-      openai: [
+    const providerLower = provider.toLowerCase();
+    const providerFieldMap: Record<string, string[]> = {
+      [LLM_PROVIDERS.OPENAI.toLowerCase()]: [
         'webSearchContextSize',
         'locationTitle',
         'webSearchCity',
@@ -1295,7 +1371,7 @@ export class GenAILLM extends Component {
         'webSearchRegion',
         'webSearchTimezone',
       ],
-      xai: [
+      [LLM_PROVIDERS.XAI.toLowerCase()]: [
         'searchMode',
         'returnCitations',
         'maxSearchResults',
@@ -1315,7 +1391,7 @@ export class GenAILLM extends Component {
       // Add other providers as needed
     };
 
-    return providerFieldMap[provider.toLowerCase()] || [];
+    return providerFieldMap[providerLower] || [];
   }
 
   /**

@@ -11,6 +11,7 @@ import {
   createCheckbox,
   createCheckboxGroup,
   createColorInput,
+  createDatalistInput,
   createHiddenInput,
   createHint,
   createInfoButton,
@@ -292,6 +293,17 @@ export default function createFormField(entry, displayType = 'block', entryIndex
       if (entry.placeholder !== undefined)
         formElement.setAttribute('placeholder', entry.placeholder);
 
+      formElement.classList.add('form-control');
+
+      break;
+
+    case 'datalist':
+    case 'DATALIST':
+      // Create text input with datalist support for autocomplete
+      // The datalist is lazily created on first focus using options from the global registry
+      // This prevents storing large arrays in field definitions
+      const datalistId = entry.datalistId || `${entry.name}-datalist`;
+      formElement = createDatalistInput(value, datalistId);
       formElement.classList.add('form-control');
 
       break;
@@ -590,7 +602,8 @@ export default function createFormField(entry, displayType = 'block', entryIndex
   if (entry.validateMessage) {
     const span = document.createElement('span');
     span.classList.add('invalid_feedback');
-    span.innerHTML = entry.validateMessage;
+    // Use textContent instead of innerHTML for validation messages (no HTML needed)
+    span.textContent = entry.validateMessage;
     div.appendChild(span);
   }
 
@@ -880,7 +893,7 @@ function generateTooltip(entry, elm, entryIndex) {
     entry?.help,
     {
       cls: 'btn-info ' + entry?.tooltipIconClasses || '',
-      clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-center',
+      clsHint: 'smt-hint drop-shadow bg-[#111111] rounded-lg text-white text-left normal-case',
       position: entry?.hintPosition,
       arrowClasses: entry?.arrowClasses || '',
       tooltipClasses: entry?.tooltipClasses || '',

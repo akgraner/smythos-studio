@@ -987,7 +987,7 @@ export async function openAlexaEmbodiment() {
   </button>`;
 
   const content = wrapContent(`<div class="emb-instructions p-4 flex-row">
-        <div>
+        <div id="talk-to-agent-wrapper">
            <div class="flex items-center justify-between">
            <label class="block text-sm font-medium text-gray-700 mb-1">Talk to Agent</label>
            <a href="${voiceUrl}" target="_blank" rel="noopener noreferrer">
@@ -1107,7 +1107,17 @@ export async function openAlexaEmbodiment() {
     actions,
     EMBODIMENT_DESCRIPTIONS.alexa.title,
     EMBODIMENT_DESCRIPTIONS.alexa.tooltipTitle,
-  );
+  ).then(() => {
+    console.log('openEmbodimentDialog');
+    const talkToAgentWrapper = document.querySelector(
+      '#alexa-embodiment-wrapper #talk-to-agent-wrapper',
+    );
+    const isProd = window.location.hostname.includes('smythos.com');
+
+    if (talkToAgentWrapper && isProd) {
+      talkToAgentWrapper.classList.add('hidden');
+    }
+  });
 
   // on prod domain change, update the url
   builderStore.subscribe(

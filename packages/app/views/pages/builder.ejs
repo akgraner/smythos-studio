@@ -428,5 +428,10 @@ include('partials/studio/feedback-modal') -%>
     // --- Initial Layout Update ---
     // Calls updateLayout once on load to set the initial layout.
     updateLayout();
+
+    // Add cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+      layoutObserver?.disconnect();
+    });
   });
 </script>

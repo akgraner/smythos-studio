@@ -306,5 +306,33 @@
       "presencePenalty": "",
       "maxThinkingTokens": ""
     }
+  },
+  "ollama": {
+    "defaultTemperature": 0.8,
+    "maxTemperature": 2,
+    "minMaxTokens": 1,
+    "defaultMaxTokens": 128,
+    "defaultThinkingTokens": 128,
+    "defaultTopP": 0.9,
+    "minTopP": 0,
+    "maxTopP": 1,
+    "defaultTopK": 40,
+    "minTopK": 1,
+    "maxTopK": 100,
+    "defaultFrequencyPenalty": 1.1,
+    "defaultPresencePenalty": 0,
+    "maxFrequencyPenalty": 2,
+    "maxPresencePenalty": 2,
+    "maxStopSequences": 4,
+    "hint": {
+      "temperature": "Controls randomness in the response. Higher values make the output more creative and random, while lower values make it more focused and deterministic. Default: 0.8",
+      "maxTokens": "The maximum number of tokens to predict. Set to -1 for unlimited generation or -2 to fill the context. Default: 128 tokens (one token is roughly 4 characters of English text)",
+      "stopSequences": "Custom text sequences that will cause the model to stop generating when encountered.",
+      "topP": "Controls diversity via nucleus sampling (0-1). Lower values make the output more focused, while higher values make it more diverse. Default: 0.9",
+      "topK": "Limits the number of tokens considered at each step to reduce nonsensical outputs. Higher values allow more diversity. Default: 40",
+      "frequencyPenalty": "Repeat penalty strength to prevent repetition. Values greater than 1.0 penalize repeated tokens more strongly. Default: 1.1",
+      "presencePenalty": "",
+      "maxThinkingTokens": ""
+    }
   }
 }
