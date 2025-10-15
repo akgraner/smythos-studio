@@ -11,7 +11,8 @@ declare var Metro;
  * Options are stored as functions to avoid loading large data modules during app initialization.
  * The functions are called synchronously on first focus to ensure immediate availability.
  */
-const datalistRegistry: Map<string, () => Array<string | { text: string; value: string }>> = new Map();
+const datalistRegistry: Map<string, () => Array<string | { text: string; value: string }>> =
+  new Map();
 
 /**
  * Register a datalist options provider by datalist ID.
@@ -237,11 +238,325 @@ export const createCheckboxGroup = (
   return group;
 };
 
-export const createTextArea = ({
-  value = '',
-  fieldCls = '',
-  autoSize = true,
-}): HTMLTextAreaElement => {
+/**
+ * Type definition for textarea elements with an attached code editor instance
+ */
+interface TextAreaWithEditor extends HTMLTextAreaElement {
+  _editor?: {
+    getValue: () => string;
+    setValue: (value: string) => void;
+    focus: () => void;
+  };
+}
+
+/**
+ * Cached imports for modal and editor functionality to avoid repeated dynamic imports
+ */
+let cachedTwModalDialog: typeof import('../tw-dialogs').twModalDialog | null = null;
+let cachedSetCodeEditor: typeof import('../dom').setCodeEditor | null = null;
+
+/**
+ * Lazy load and cache modal-related imports
+ * This avoids circular dependencies while maintaining performance
+ * Imports are cached separately to handle both code editor and non-code editor cases
+ */
+async function getModalImports(needsCodeEditor: boolean): Promise<{
+  twModalDialog: typeof import('../tw-dialogs').twModalDialog;
+  setCodeEditor: typeof import('../dom').setCodeEditor | null;
+}> {
+  // Load dialog module if not cached
+  if (!cachedTwModalDialog) {
+    const dialogModule = await import('../tw-dialogs');
+    cachedTwModalDialog = dialogModule.twModalDialog;
+  }
+
+  // Load code editor module if needed and not cached
+  if (needsCodeEditor && !cachedSetCodeEditor) {
+    const domModule = await import('../dom');
+    cachedSetCodeEditor = domModule.setCodeEditor;
+  }
+
+  return {
+    twModalDialog: cachedTwModalDialog,
+    setCodeEditor: needsCodeEditor ? cachedSetCodeEditor : null,
+  };
+}
+
+/**
+ * Creates an expand button element with proper styling and accessibility
+ * Uses passive event listeners for hover effect to avoid blocking the main thread
+ */
+function createExpandButton(): HTMLButtonElement {
+  const expandButton = document.createElement('button');
+  expandButton.type = 'button';
+  expandButton.classList.add('expand-textarea-btn');
+  expandButton.setAttribute('aria-label', 'Expand textarea');
+
+  // Apply inline styles - opacity transition handled by CSS
+  expandButton.style.cssText = `
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  `;
+
+  // Add expand icon SVG
+  expandButton.innerHTML = `
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="15 3 21 3 21 9"></polyline>
+      <polyline points="9 21 3 21 3 15"></polyline>
+      <line x1="21" y1="3" x2="14" y2="10"></line>
+      <line x1="3" y1="21" x2="10" y2="14"></line>
+    </svg>
+  `;
+
+  // Add hover effect using passive event listeners for better performance
+  expandButton.addEventListener(
+    'pointerenter',
+    () => {
+      expandButton.style.opacity = '1';
+    },
+    { passive: true },
+  );
+
+  expandButton.addEventListener(
+    'pointerleave',
+    () => {
+      expandButton.style.opacity = '0.5';
+    },
+    { passive: true },
+  );
+
+  return expandButton;
+}
+
+/**
+ * Apply styles to a textarea element based on whether it's a code editor or regular textarea
+ */
+function applyTextareaStyles(textarea: HTMLTextAreaElement, isCodeEditor: boolean): void {
+  if (isCodeEditor) {
+    // Minimal styles for code editor - the editor handles most styling
+    textarea.style.cssText = `
+      width: 100%;
+      min-height: 400px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      outline: none;
+    `;
+  } else {
+    // Full styling for regular textarea
+    textarea.style.cssText = `
+      width: 100%;
+      min-height: 300px;
+      padding: 16px;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      outline: none;
+      transition: border-color 0.15s ease-in-out;
+    `;
+  }
+}
+
+/**
+ * Synchronize values between modal textarea and original textarea
+ * Handles both regular textareas and code editor instances
+ */
+function syncTextareaValues(
+  modalTextarea: TextAreaWithEditor,
+  originalTextarea: TextAreaWithEditor,
+  hasCodeEditor: boolean,
+): void {
+  let valueToSync = modalTextarea.value;
+
+  // If it's a code editor, get value from the editor instance
+  if (hasCodeEditor && modalTextarea._editor) {
+    valueToSync = modalTextarea._editor.getValue();
+  }
+
+  // Update the original textarea
+  originalTextarea.value = valueToSync;
+
+  // If original textarea has an editor, update it too
+  if (originalTextarea._editor) {
+    originalTextarea._editor.setValue(valueToSync);
+  }
+
+  // Trigger input event to notify any listeners
+  const changeEvent = new Event('input', { bubbles: true });
+  originalTextarea.dispatchEvent(changeEvent);
+}
+
+/**
+ * Initialize code editor in a textarea element
+ * Uses requestAnimationFrame for optimal DOM readiness detection
+ */
+async function initializeCodeEditor(
+  textarea: TextAreaWithEditor,
+  setCodeEditor: typeof import('../dom').setCodeEditor,
+  mode: string,
+  theme: string,
+  disableWorker: boolean | undefined,
+  initialValue: string,
+): Promise<void> {
+  // Wait for DOM to be ready using requestAnimationFrame instead of setTimeout
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+
+  // Initialize the code editor
+  setCodeEditor(textarea, mode, theme, disableWorker);
+
+  // Wait for editor initialization and set value
+  await new Promise((resolve) => requestAnimationFrame(resolve));
+
+  if (textarea._editor) {
+    textarea._editor.setValue(initialValue);
+    textarea._editor.focus();
+  }
+}
+
+/**
+ * Initialize a regular textarea by focusing and positioning cursor at the end
+ */
+function initializeRegularTextarea(textarea: HTMLTextAreaElement): void {
+  // Use requestAnimationFrame for optimal timing instead of setTimeout
+  requestAnimationFrame(() => {
+    textarea.focus();
+    // Set cursor at the end
+    textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+  });
+}
+
+/**
+ * Handles the expansion of a textarea into a modal dialog
+ * Creates modal content, handles code editor initialization, and manages value synchronization
+ */
+async function handleExpandTextarea(
+  originalTextarea: TextAreaWithEditor,
+  label: string | undefined,
+  code: { mode?: string; theme?: string; disableWorker?: boolean } | undefined,
+  attributes: Record<string, string> | undefined,
+): Promise<void> {
+  // Load required modules
+  const { twModalDialog, setCodeEditor } = await getModalImports(!!code);
+  const hasCodeEditor = !!code;
+
+  // Create modal content container
+  const modalContent = document.createElement('div');
+  modalContent.style.cssText = 'padding: 16px;';
+
+  // Create modal textarea
+  const modalTextarea = document.createElement('textarea') as TextAreaWithEditor;
+  modalTextarea.value = originalTextarea.value;
+  modalTextarea.classList.add('form-control');
+
+  // Apply styles based on editor type
+  applyTextareaStyles(modalTextarea, hasCodeEditor);
+
+  // Add focus handlers for regular textarea (not needed for code editor)
+  if (!hasCodeEditor) {
+    modalTextarea.addEventListener('focus', () => {
+      modalTextarea.style.borderColor = '#3b82f6';
+    });
+    modalTextarea.addEventListener('blur', () => {
+      modalTextarea.style.borderColor = '#d1d5db';
+    });
+  }
+
+  modalContent.appendChild(modalTextarea);
+
+  // Open modal dialog (content must be HTML string, not element)
+  await twModalDialog({
+    title: label || 'Edit',
+    content: modalContent.outerHTML,
+    actions: [
+      {
+        label: 'Done',
+        cssClass: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600',
+        callback: (dialogElm: HTMLElement) => {
+          const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
+
+          if (modalTextareaInDialog) {
+            syncTextareaValues(modalTextareaInDialog, originalTextarea, hasCodeEditor);
+          }
+        },
+      },
+    ],
+    onLoad: async (dialogElm: HTMLElement) => {
+      const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
+
+      if (!modalTextareaInDialog) {
+        return;
+      }
+
+      // Set initial value
+      modalTextareaInDialog.value = originalTextarea.value;
+
+      // Apply all attributes to the modal textarea
+      if (attributes) {
+        Object.entries(attributes).forEach(([key, value]) => {
+          modalTextareaInDialog.setAttribute(key, value);
+        });
+      }
+
+      // Initialize based on editor type
+      if (hasCodeEditor && code && setCodeEditor) {
+        const mode = code.mode || '';
+        const theme = code.theme || 'tomorrow';
+        const disableWorker = code.disableWorker;
+
+        await initializeCodeEditor(
+          modalTextareaInDialog,
+          setCodeEditor,
+          mode,
+          theme,
+          disableWorker,
+          originalTextarea.value,
+        );
+      } else {
+        initializeRegularTextarea(modalTextareaInDialog);
+      }
+    },
+  });
+}
+
+/**
+ * Creates a textarea element with optional expand functionality
+ * @param entry - Configuration object for the textarea
+ * @param entry.value - Initial value for the textarea
+ * @param entry.fieldCls - Additional CSS classes for the textarea
+ * @param entry.autoSize - Whether to enable auto-size functionality
+ * @param entry.expandable - Whether to show an expand button for modal editing
+ * @param entry.label - Label for the modal title
+ * @param entry.attributes - Additional attributes for the textarea
+ * @param entry.code - Code editor configuration (mode, theme, disableWorker)
+ * @returns Object containing the textarea element and optional container wrapper
+ */
+export const createTextArea = (entry: {
+  label?: string;
+  value?: string;
+  fieldCls?: string;
+  autoSize?: boolean;
+  expandable?: boolean;
+  attributes?: Record<string, string>;
+  code?: {
+    mode?: string;
+    theme?: string;
+    disableWorker?: boolean;
+  };
+}): HTMLTextAreaElement | { textarea: HTMLTextAreaElement; container: HTMLDivElement } => {
+  const { value = '', fieldCls = '', autoSize = true, expandable, label, attributes, code } = entry;
   const textarea = document.createElement('textarea');
   textarea.setAttribute('data-role', 'textarea');
   textarea.innerHTML = value;
@@ -252,6 +567,40 @@ export const createTextArea = ({
   }
 
   textarea.setAttribute('data-auto-size', `${autoSize}`);
+
+  // Apply all attributes to the textarea
+  if (attributes) {
+    Object.entries(attributes).forEach(([key, value]) => {
+      textarea.setAttribute(key, value);
+    });
+  }
+
+  // If expandable is true, wrap textarea with container and add expand button
+  if (expandable) {
+    const container = document.createElement('div');
+    container.classList.add('relative');
+    container.style.position = 'relative';
+
+    // Create expand button with CSS-based hover effects
+    const expandButton = createExpandButton();
+
+    // Add click handler to open modal (async handler with error handling)
+    expandButton.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      try {
+        await handleExpandTextarea(textarea, label, code, attributes);
+      } catch (error) {
+        console.error('Error opening textarea modal:', error);
+      }
+    });
+
+    container.appendChild(textarea);
+    container.appendChild(expandButton);
+
+    return { textarea, container };
+  }
 
   return textarea;
 };

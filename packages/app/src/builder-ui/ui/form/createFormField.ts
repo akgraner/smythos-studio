@@ -60,6 +60,9 @@ export default function createFormField(entry, displayType = 'block', entryIndex
   let label = entry?.label === undefined ? entry.name : entry.label;
 
   let additionalFormElement: HTMLElement;
+  
+  // Store the wrapper container if textarea is expandable
+  let textareaWrapper: HTMLDivElement | null = null;
 
   let subFields = [];
   let isDropdown = false;
@@ -102,7 +105,16 @@ export default function createFormField(entry, displayType = 'block', entryIndex
 
     case 'kvjson':
     case 'KVJSON':
-      formElement = createTextArea(entry);
+      {
+        const textareaResult = createTextArea(entry);
+        // Handle both return types: direct textarea or object with textarea and container
+        if (typeof textareaResult === 'object' && 'container' in textareaResult) {
+          formElement = textareaResult.textarea;
+          textareaWrapper = textareaResult.container;
+        } else {
+          formElement = textareaResult as HTMLTextAreaElement;
+        }
+      }
       if (!entry.actions) entry.actions = [];
       const kvParams: any = { title: entry.label };
       if (entry.attributes?.['data-vault']) {
@@ -120,7 +132,17 @@ export default function createFormField(entry, displayType = 'block', entryIndex
       break;
     case 'textarea':
     case 'TEXTAREA':
-      formElement = createTextArea(entry);
+      {
+        const textareaResult = createTextArea(entry);
+        
+        // Handle both return types: direct textarea or object with textarea and container
+        if (typeof textareaResult === 'object' && 'container' in textareaResult) {
+          formElement = textareaResult.textarea;
+          textareaWrapper = textareaResult.container;
+        } else {
+          formElement = textareaResult as HTMLTextAreaElement;
+        }
+      }
 
       if (entry?.code) {
         formElement.addEventListener('created', async () => {
@@ -546,6 +568,9 @@ export default function createFormField(entry, displayType = 'block', entryIndex
   //inject bracket selection event to the input element
   addBracketSelection(formElement);
 
+  // Determine which element to append (wrapper container or direct formElement)
+  const elementToAppend = textareaWrapper || formElement;
+
   if (additionalFormElement) {
     /*
             Basically we implement it for 'range' type input
@@ -554,18 +579,18 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     const rangeWrapper = document.createElement('div');
     rangeWrapper.classList.add('flex');
 
-    rangeWrapper.appendChild(formElement);
+    rangeWrapper.appendChild(elementToAppend);
     rangeWrapper.appendChild(additionalFormElement);
 
     div.appendChild(rangeWrapper);
   } else if (entry?.display === 'inline') {
     if (labelElement) {
-      labelElement.appendChild(formElement);
+      labelElement.appendChild(elementToAppend);
     } else {
-      div.appendChild(formElement);
+      div.appendChild(elementToAppend);
     }
   } else {
-    div.appendChild(formElement);
+    div.appendChild(elementToAppend);
   }
 
   // append subfields if exists for 'composite' type input
