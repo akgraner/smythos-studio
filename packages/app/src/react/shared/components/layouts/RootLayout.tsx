@@ -4,7 +4,7 @@ import { useAuthCtx } from '@react/shared/contexts/auth.context';
 import { useOnboarding } from '@src/react/features/agents/contexts/OnboardingContext';
 import OnboardingCompletedModal from '@src/react/features/onboarding/modals/OnboardingCompleted';
 import classNames from 'classnames';
-import React, { Suspense, useEffect, useState } from 'react';
+import React, { Suspense, useEffect } from 'react';
 import { TopbarPrimary } from './topbarPrimary/TopbarPrimary';
 
 interface IRootLayoutProps {
@@ -34,7 +34,6 @@ export const RootLayout = ({
     useFullWidthLayout = false,
   } = layoutOptions;
   const { loading } = useAuthCtx();
-  const [hasScrollbar, setHasScrollbar] = useState<boolean>(false);
 
   /**
    * Checks if the main content has a scrollbar and adjusts the topbar width accordingly
@@ -57,7 +56,6 @@ export const RootLayout = ({
         if (mainContent && topbar && topMenu) {
           // Check if scrollbar is present by comparing scroll height to client height
           const hasVerticalScrollbar = mainContent.scrollHeight > mainContent.clientHeight;
-          setHasScrollbar(hasVerticalScrollbar);
 
           // Adjust topbar width based on scrollbar presence
           topbar.style.width = hasVerticalScrollbar ? 'calc(100% - 8px)' : '100%';
