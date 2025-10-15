@@ -265,8 +265,8 @@
     setLoadingState(false);
 
     if (result && result.success) {
-      toast?.('Thank you for your feedback!', 'Success', 'success');
       closeFeedbackModal();
+      toast?.('Thank you for your feedback!', 'Success', 'success');
     } else {
       toast?.('Failed to submit feedback. Please try again.', 'Error', 'alert');
       console.error('Failed to submit feedback to HubSpot');
