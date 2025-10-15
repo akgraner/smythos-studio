@@ -110,7 +110,7 @@ export const RootLayout = ({
     return () => {
       window.removeEventListener('resize', checkForScrollbar);
     };
-  }, []);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className={classNames('flex flex-col h-screen overflow-hidden')}>
