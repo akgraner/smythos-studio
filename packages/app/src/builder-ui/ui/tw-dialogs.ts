@@ -24,6 +24,7 @@ interface FormDialogSettings {
   contentClasses?: string;
   dialogClasses?: string;
   showCloseButton?: boolean;
+  component?: any;
 }
 
 interface ContentDialogSettings {
@@ -44,6 +45,7 @@ export function editValuesDialog({
   contentClasses = '',
   dialogClasses = '',
   showCloseButton = false,
+  component = null,
 }: FormDialogSettings) {
   return new Promise((resolve, reject) => {
     twEditValues({
@@ -53,7 +55,7 @@ export function editValuesDialog({
       onDOMReady: (dialog) => {
         const dialogElm = dialog.querySelector('.__dialog');
 
-        handleTemplateVars(dialogElm);
+        handleTemplateVars(dialogElm, component);
         const sections = [...dialogElm.querySelectorAll('.form-section')];
 
         for (let section of sections) {

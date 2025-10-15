@@ -779,7 +779,14 @@ export class Component extends EventEmitter {
   }
   public destroy() {
     this._destroyed = true;
-    this.domElement.remove();
+    if (this.domElement) {
+      try {
+        interact(this.domElement).unset();
+        this.domElement.remove();
+      } catch (error) {
+        console.error(error);
+      }
+    }
   }
   public getSettingsSidebar() {
     if (Component.curComponentSettings !== this) return null;
@@ -1013,6 +1020,7 @@ export class Component extends EventEmitter {
         contentClasses: 'min-h-[335px]',
         dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
         showCloseButton: true,
+        component: this,
       });
 
       if (!newValues) return;
@@ -1430,6 +1438,7 @@ export class Component extends EventEmitter {
         contentClasses: 'min-h-[425px] px-2',
         dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
         showCloseButton: true,
+        component: this,
       });
       if (!newValues) return;
       if (newValues.name !== name) {
@@ -2783,6 +2792,7 @@ export class Component extends EventEmitter {
       contentClasses: 'min-h-[425px] px-2',
       dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
       showCloseButton: true,
+      component: this,
     });
     if (newValues?.name) {
       const inputDiv: any = await this.addInput(this.inputContainer, newValues.name, newValues);
@@ -2892,6 +2902,7 @@ export class Component extends EventEmitter {
       contentClasses: 'min-h-[335px]',
       dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
       showCloseButton: true,
+      component: this,
     });
     if (newValues?.name) {
       const outputDiv: any = await this.addOutput(this.outputContainer, newValues.name, newValues);

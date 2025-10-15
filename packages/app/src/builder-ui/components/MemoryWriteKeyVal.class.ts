@@ -12,6 +12,7 @@ export class MemoryWriteKeyVal extends Component {
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
         help: 'Stores the value under this namespace so other steps can find or remove it later.',
+        doNotValidateOnLoad: true,
       },
       key: {
         type: 'input',
@@ -85,6 +86,7 @@ export class MemoryWriteKeyVal extends Component {
 
     // #region [ Draw config ] ==================
     //this.drawSettings.showSettings = false;
+    this.drawSettings.displayName = 'Memory Write';
     this.drawSettings.iconCSSClass = 'svg-icon Memory ' + this.constructor.name;
     this.drawSettings.addOutputButton = ' ';
     // this.drawSettings.addInputButton = ' + Entry';

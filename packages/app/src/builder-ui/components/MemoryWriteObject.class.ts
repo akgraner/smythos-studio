@@ -13,6 +13,7 @@ export class MemoryWriteObject extends Component {
         validateMessage: 'Enter a non-empty name, not more than 100 characters.',
         attributes: { 'data-template-vars': 'true' },
         help: 'Groups all saved keys under one namespace for consistent reads and deletes.',
+        doNotValidateOnLoad: true,
       },
       scope: {
         type: 'select',
@@ -72,6 +73,7 @@ export class MemoryWriteObject extends Component {
 
     // #region [ Draw config ] ==================
     //this.drawSettings.showSettings = false;
+    this.drawSettings.displayName = 'Memory Write Multi';
     this.drawSettings.iconCSSClass = 'svg-icon Memory ' + this.constructor.name;
     this.drawSettings.addOutputButton = ' ';
     // this.drawSettings.addInputButton = ' + Entry';
