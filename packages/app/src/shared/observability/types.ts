@@ -29,13 +29,19 @@ export interface UserIdentityContext {
 }
 
 /**
- * Interface for capturing user behavior and interaction patterns
+ * Unified Observability Provider Interface
  *
- * This abstraction allows enterprise editions to collect product usage metrics,
- * feature adoption data, and workflow completion analytics without modifying
- * community edition code.
+ * This interface provides complete observability capabilities:
+ * - User behavior tracking (interactions, feature usage, workflows)
+ * - System insights (events, errors, performance metrics)
+ * - User identity management (identification, context correlation)
+ * - Feature configuration (flags, A/B testing, rollouts)
+ *
+ * Enterprise editions implement this interface to provide complete observability.
+ * Community edition uses a no-op implementation by default.
  */
-export interface IUserBehaviorObservability {
+export interface IObservabilityProvider {
+  // User Behavior Tracking
   /**
    * Records a user interaction or behavior event
    *
@@ -64,15 +70,8 @@ export interface IUserBehaviorObservability {
    * @param properties - Additional context about the workflow
    */
   recordWorkflowCompletion(workflowName: string, properties?: ObservabilityEventProperties): void;
-}
 
-/**
- * Interface for capturing system-level insights and operational metrics
- *
- * This abstraction allows enterprise editions to monitor system performance,
- * error patterns, and operational health without modifying community edition code.
- */
-export interface ISystemInsightCapture {
+  // System Insights
   /**
    * Records a system-level event
    *
@@ -106,15 +105,8 @@ export interface ISystemInsightCapture {
     value: number,
     properties?: ObservabilityEventProperties,
   ): void;
-}
 
-/**
- * Interface for managing user identity context in observability systems
- *
- * This abstraction allows enterprise editions to correlate events with user identities
- * for better analytics and insights.
- */
-export interface IUserIdentityContext {
+  // User Identity Management
   /**
    * Associates a user identity with subsequent observability events
    *
@@ -138,4 +130,52 @@ export interface IUserIdentityContext {
    * Clears the current user identity context
    */
   clearUserIdentity(): void;
+
+  // Feature Configuration
+  /**
+   * Retrieves the value of a feature flag
+   *
+   * @param featureName - Name of the feature flag
+   * @returns The feature flag value (string, boolean, or undefined if not set)
+   *
+   * @example
+   * ```typescript
+   * const variant = getFeatureFlag('new-ui-design');
+   * if (variant === 'variant_1') {
+   *   // Show new UI
+   * }
+   * ```
+   */
+  getFeatureFlag(featureName: string): string | boolean | undefined;
+
+  /**
+   * Checks if a feature is enabled
+   *
+   * @param featureName - Name of the feature
+   * @returns True if the feature is enabled, false otherwise
+   */
+  isFeatureEnabled(featureName: string): boolean;
+
+  /**
+   * Retrieves the feature flag payload (additional metadata)
+   * Can return any type (string, object, boolean, array, etc.) depending on PostHog configuration
+   *
+   * @param featureName - Name of the feature flag
+   * @returns The feature flag payload (any type) or undefined if not set
+   *
+   * @example
+   * ```typescript
+   * const payload = getFeatureFlagPayload('rollout-config');
+   * // Type assertion based on your specific flag configuration
+   * if ((payload as { percentage?: number })?.percentage > 50) {
+   *   // Feature is rolled out to more than 50%
+   * }
+   * ```
+   */
+  getFeatureFlagPayload(featureName: string): unknown;
+
+  /**
+   * Reloads feature flags from the server
+   */
+  reloadFeatureFlags(): void;
 }

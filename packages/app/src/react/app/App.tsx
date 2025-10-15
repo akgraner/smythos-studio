@@ -2,6 +2,7 @@
 import { OnboardingProvider } from '@src/react/features/agents/contexts/OnboardingContext';
 import { SidebarProvider } from '@src/react/shared/contexts/SidebarContext';
 import { queryClient } from '@src/react/shared/query-client';
+import { Observability } from '@src/shared/observability';
 import { PostHog } from '@src/shared/posthog/index';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { useEffect } from 'react';
@@ -12,20 +13,24 @@ import RoutesWrapper from './routes';
 
 const App = () => {
   useEffect(() => {
-    PostHog.initialize();
+    // Only initialize PostHog if observability is enabled
+    if ((window as any).isObservability === true) {
+      PostHog.initialize();
+      (window as any).Observability = Observability;
+    }
   }, []);
 
   return (
-      <QueryClientProvider client={queryClient}>
-        <Router>
-          <SidebarProvider>
-            <OnboardingProvider>
-              <RoutesWrapper pages={routeMap} />
-            </OnboardingProvider>
-          </SidebarProvider>
-        </Router>
-        <ToastContainer />
-      </QueryClientProvider>
+    <QueryClientProvider client={queryClient}>
+      <Router>
+        <SidebarProvider>
+          <OnboardingProvider>
+            <RoutesWrapper pages={routeMap} />
+          </OnboardingProvider>
+        </SidebarProvider>
+      </Router>
+      <ToastContainer />
+    </QueryClientProvider>
   );
 };
 

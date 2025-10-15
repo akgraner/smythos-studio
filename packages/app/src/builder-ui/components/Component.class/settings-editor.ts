@@ -85,7 +85,7 @@ async function onComponentLoad(sidebar) {
   deleteButton.onclick = component.delete.bind(this, false);
 
   // Add Test with Debug button based on feature flag
-  const testWithDebugFeatureFlag = PostHog.getFeatureFlag(
+  const testWithDebugFeatureFlag = Observability.features.getFeatureFlag(
     FEATURE_FLAGS.TEST_WITH_DEBUG_COMPONENT_SIDEBAR,
   );
   if (testWithDebugFeatureFlag === 'variant_1' && !component.workspace?.locked) {

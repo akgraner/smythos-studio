@@ -18,108 +18,41 @@
  */
 
 import { plugins, PluginTarget, PluginType } from '@react/shared/plugins/Plugins';
-import {
-  NoOpSystemInsightCapture,
-  NoOpUserBehaviorObservability,
-  NoOpUserIdentityContext,
-} from './no-op-providers';
-import type {
-  ISystemInsightCapture,
-  IUserBehaviorObservability,
-  IUserIdentityContext,
-} from './types';
+import { NoOpObservabilityProvider } from './no-op-providers';
+import type { IObservabilityProvider, ObservabilityEventProperties } from './types';
 
 /**
- * Lazy-loaded singleton for user behavior observability
+ * Lazy-loaded singleton for the unified observability provider
  */
-let userBehaviorInstance: IUserBehaviorObservability | null = null;
+let observabilityInstance: IObservabilityProvider | null = null;
 
 /**
- * Lazy-loaded singleton for system insight capture
- */
-let systemInsightInstance: ISystemInsightCapture | null = null;
-
-/**
- * Lazy-loaded singleton for user identity context
- */
-let userIdentityInstance: IUserIdentityContext | null = null;
-
-/**
- * Gets the user behavior observability provider from plugins
+ * Gets the unified observability provider from plugins
  * Falls back to no-op implementation if no plugin is registered
+ *
+ * This function lazily retrieves the provider registered by enterprise editions
+ * or returns a no-op implementation for community edition.
  */
-function getUserBehaviorProvider(): IUserBehaviorObservability {
-  if (userBehaviorInstance) {
-    return userBehaviorInstance;
+function getObservabilityProvider(): IObservabilityProvider {
+  if (observabilityInstance) {
+    return observabilityInstance;
   }
 
   // Try to get provider from enterprise plugin
   const registeredPlugins = plugins.getPluginsByTarget(
-    PluginTarget.UserBehaviorObservabilityProvider,
+    PluginTarget.ObservabilityProvider,
     PluginType.Config,
   );
 
   if (registeredPlugins.length > 0 && registeredPlugins[0].type === PluginType.Config) {
-    const provider = registeredPlugins[0].config as IUserBehaviorObservability;
-    userBehaviorInstance = provider;
+    const provider = registeredPlugins[0].config as IObservabilityProvider;
+    observabilityInstance = provider;
     return provider;
   }
 
   // Fall back to no-op implementation (default for community edition)
-  userBehaviorInstance = new NoOpUserBehaviorObservability();
-  return userBehaviorInstance;
-}
-
-/**
- * Gets the system insight capture provider from plugins
- * Falls back to no-op implementation if no plugin is registered
- */
-function getSystemInsightProvider(): ISystemInsightCapture {
-  if (systemInsightInstance) {
-    return systemInsightInstance;
-  }
-
-  // Try to get provider from enterprise plugin
-  const registeredPlugins = plugins.getPluginsByTarget(
-    PluginTarget.SystemInsightCaptureProvider,
-    PluginType.Config,
-  );
-
-  if (registeredPlugins.length > 0 && registeredPlugins[0].type === PluginType.Config) {
-    const provider = registeredPlugins[0].config as ISystemInsightCapture;
-    systemInsightInstance = provider;
-    return provider;
-  }
-
-  // Fall back to no-op implementation (default for community edition)
-  systemInsightInstance = new NoOpSystemInsightCapture();
-  return systemInsightInstance;
-}
-
-/**
- * Gets the user identity context provider from plugins
- * Falls back to no-op implementation if no plugin is registered
- */
-function getUserIdentityProvider(): IUserIdentityContext {
-  if (userIdentityInstance) {
-    return userIdentityInstance;
-  }
-
-  // Try to get provider from enterprise plugin
-  const registeredPlugins = plugins.getPluginsByTarget(
-    PluginTarget.UserIdentityContextProvider,
-    PluginType.Config,
-  );
-
-  if (registeredPlugins.length > 0 && registeredPlugins[0].type === PluginType.Config) {
-    const provider = registeredPlugins[0].config as IUserIdentityContext;
-    userIdentityInstance = provider;
-    return provider;
-  }
-
-  // Fall back to no-op implementation (default for community edition)
-  userIdentityInstance = new NoOpUserIdentityContext();
-  return userIdentityInstance;
+  observabilityInstance = new NoOpObservabilityProvider();
+  return observabilityInstance;
 }
 
 /**
@@ -137,13 +70,22 @@ export const Observability = {
    */
   userBehavior: {
     recordInteraction: (eventName: string, properties?: Record<string, unknown>) => {
-      getUserBehaviorProvider().recordInteraction(eventName, properties);
+      getObservabilityProvider().recordInteraction(
+        eventName,
+        properties as ObservabilityEventProperties,
+      );
     },
     recordFeatureUsage: (featureName: string, properties?: Record<string, unknown>) => {
-      getUserBehaviorProvider().recordFeatureUsage(featureName, properties);
+      getObservabilityProvider().recordFeatureUsage(
+        featureName,
+        properties as ObservabilityEventProperties,
+      );
     },
     recordWorkflowCompletion: (workflowName: string, properties?: Record<string, unknown>) => {
-      getUserBehaviorProvider().recordWorkflowCompletion(workflowName, properties);
+      getObservabilityProvider().recordWorkflowCompletion(
+        workflowName,
+        properties as ObservabilityEventProperties,
+      );
     },
   },
 
@@ -153,17 +95,24 @@ export const Observability = {
    */
   systemInsight: {
     recordSystemEvent: (eventName: string, properties?: Record<string, unknown>) => {
-      getSystemInsightProvider().recordSystemEvent(eventName, properties);
+      getObservabilityProvider().recordSystemEvent(
+        eventName,
+        properties as ObservabilityEventProperties,
+      );
     },
     recordError: (errorName: string, properties?: Record<string, unknown>) => {
-      getSystemInsightProvider().recordError(errorName, properties);
+      getObservabilityProvider().recordError(errorName, properties as ObservabilityEventProperties);
     },
     recordPerformanceMetric: (
       metricName: string,
       value: number,
       properties?: Record<string, unknown>,
     ) => {
-      getSystemInsightProvider().recordPerformanceMetric(metricName, value, properties);
+      getObservabilityProvider().recordPerformanceMetric(
+        metricName,
+        value,
+        properties as ObservabilityEventProperties,
+      );
     },
   },
 
@@ -173,22 +122,42 @@ export const Observability = {
    */
   userIdentity: {
     identifyUser: (userId: string, properties?: Record<string, unknown>) => {
-      getUserIdentityProvider().identifyUser({ userId, properties });
+      getObservabilityProvider().identifyUser({
+        userId,
+        properties: properties as ObservabilityEventProperties,
+      });
     },
     setUserProperties: (properties: Record<string, unknown>) => {
-      getUserIdentityProvider().setUserProperties(properties);
+      getObservabilityProvider().setUserProperties(properties as ObservabilityEventProperties);
     },
     clearUserIdentity: () => {
-      getUserIdentityProvider().clearUserIdentity();
+      getObservabilityProvider().clearUserIdentity();
+    },
+  },
+
+  /**
+   * Feature configuration methods
+   * Manages feature flags and experimentation
+   */
+  features: {
+    getFeatureFlag: (featureName: string) => {
+      return getObservabilityProvider().getFeatureFlag(featureName);
+    },
+    isFeatureEnabled: (featureName: string) => {
+      return getObservabilityProvider().isFeatureEnabled(featureName);
+    },
+    getFeatureFlagPayload: (featureName: string) => {
+      return getObservabilityProvider().getFeatureFlagPayload(featureName);
+    },
+    reloadFeatureFlags: () => {
+      getObservabilityProvider().reloadFeatureFlags();
     },
   },
 };
 
 // Re-export types for convenience
 export type {
-  ISystemInsightCapture,
-  IUserBehaviorObservability,
-  IUserIdentityContext,
+  IObservabilityProvider,
   ObservabilityEventProperties,
   UserIdentityContext,
 } from './types';

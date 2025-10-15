@@ -1,3 +1,4 @@
+import { PostHog } from '@enterprise/shared/posthog';
 import {
   getProperTeamSubs,
   getTeamMembers,
@@ -9,7 +10,6 @@ import { getUserInfo } from '@src/react/features/account/clients';
 import { getUserOnboardingInfo } from '@src/react/features/onboarding/clients';
 import { getUserSettings } from '@src/react/shared/hooks/useUserSettings';
 import { IMembershipTeam } from '@src/react/shared/types/entities';
-import { PostHog } from '@src/shared/posthog';
 import { StateCreator } from 'zustand';
 import { FEATURE_FLAGS } from '../../../constants/featureflags';
 import { userSettingKeys } from '../../../userSettingKeys';

@@ -97,25 +97,23 @@ Observability.userIdentity.identifyUser('user-123', {
 ## How It Works
 
 1. **Plugin Registration** (Enterprise Only):
-   - Enterprise edition registers PostHog providers in `src/react/plugins.tsx`
-   - Uses `PluginTarget.UserBehaviorObservabilityProvider` and other targets
+   - Enterprise edition registers a unified PostHog provider in `src/react/plugins.tsx`
+   - Uses `PluginTarget.ObservabilityProvider` for all observability capabilities
    - Happens during app initialization
 
 2. **Lazy Loading**:
-   - Providers are lazy-loaded on first use
+   - Provider is lazy-loaded on first use
    - Falls back to no-op implementation if no plugin registered
 
 3. **Zero Overhead**:
    - In community edition, all methods are empty functions
    - No performance impact when analytics are disabled
 
-## Plugin Targets
+## Plugin Target
 
-Three plugin targets are available for provider registration:
+A single unified plugin target is used for provider registration:
 
-- `UserBehaviorObservabilityProvider`: User interactions and feature usage
-- `SystemInsightCaptureProvider`: System events and performance metrics
-- `UserIdentityContextProvider`: User identification and context
+- `ObservabilityProvider`: Provides complete observability functionality including user behavior tracking, system insights, user identity management, and feature flags
 
 ## Documentation
 

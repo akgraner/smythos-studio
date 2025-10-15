@@ -15,28 +15,17 @@ export enum PluginTarget {
   VaultPageSmythOSRecommendedModels = 'vaultPage/smythOSRecommendedModels',
 
   /**
-   * UserBehaviorObservabilityProvider - Injected by enterprise edition to capture user interaction patterns
-   * Provides implementation for recording user actions, feature usage, and workflow completion metrics
-   * Default: No-op implementation in community edition
-   * Enterprise: PostHog-based implementation for product analytics
+   * ObservabilityProvider - Unified observability provider injected by enterprise edition
+   * Provides complete implementation for:
+   * - User behavior tracking (interactions, feature usage, workflows)
+   * - System insights (events, errors, performance metrics)
+   * - User identity management (identification, context correlation)
+   * - Feature configuration (flags, A/B testing, rollouts)
+   *
+   * Default: No-op implementation in community edition (all operations disabled)
+   * Enterprise: PostHog-based implementation for complete observability
    */
-  UserBehaviorObservabilityProvider = 'observability/userBehaviorProvider',
-
-  /**
-   * SystemInsightCaptureProvider - Injected by enterprise edition for system-level event monitoring
-   * Enables collection of system performance, error patterns, and operational metrics
-   * Default: No-op implementation in community edition
-   * Enterprise: PostHog-based implementation for system analytics
-   */
-  SystemInsightCaptureProvider = 'observability/systemInsightProvider',
-
-  /**
-   * UserIdentityContextProvider - Injected by enterprise edition to associate user context with observability data
-   * Manages user identity correlation across different monitoring surfaces
-   * Default: No-op implementation in community edition
-   * Enterprise: PostHog-based implementation for user identification
-   */
-  UserIdentityContextProvider = 'observability/userIdentityProvider',
+  ObservabilityProvider = 'observability/provider',
 }
 
 export enum PluginType {

@@ -1,6 +1,6 @@
 import { errorToast, successToast, warningToast } from '@src/shared/components/toast';
 import { Observability } from '@src/shared/observability';
-import { PostHog } from '@src/shared/posthog';
+import { PostHog } from '@enterprise/shared/posthog';
 import interact from 'interactjs';
 import { jsonrepair } from 'jsonrepair';
 import { Component } from './components/Component.class';
