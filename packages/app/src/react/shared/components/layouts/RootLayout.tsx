@@ -118,7 +118,8 @@ export const RootLayout = ({
         {sidebar && <SidebarWithErrorBoundary />}
         <main
           className={classNames(
-            'relative flex flex-1 flex-col min-w-0 transition-all duration-300 mt-2.5 ml-0 mb-0',
+            'relative flex flex-1 flex-col min-w-0 transition-all duration-300  ml-0 mb-0',
+            !isWelcomePage && 'mt-2.5',
           )}
         >
           {useFullWidthLayout ? (
