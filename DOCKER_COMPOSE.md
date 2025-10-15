@@ -41,7 +41,7 @@ This guide explains how to run SmythOS Studio using Docker, both with the standa
 
 ## Quick Start with Docker Compose (Recommended)
 
-The docker compose setup provides a complete production-ready environment with all necessary services.
+The docker compose setup provides a ready environment with all necessary services.
 
 ### 1. Clone the Repository
 
