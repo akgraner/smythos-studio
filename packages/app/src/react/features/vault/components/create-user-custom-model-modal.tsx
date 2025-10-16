@@ -20,8 +20,10 @@ import {
 import { Spinner } from '@src/react/shared/components/ui/spinner';
 import { CUSTOM_LLM_FEATURES } from '@src/shared/constants/custom-llm.constants';
 import { LLMRegistry } from '@src/shared/services/LLMRegistry.service';
-import React, { useEffect, useMemo, useState } from 'react';
+import { generateKeyTemplateVar } from '@src/shared/utils';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import type { UserCustomModel } from '../types/types';
+import { userCustomModelService } from '../vault-business-logic';
 
 /**
  * SVG icon for info tooltips
@@ -30,6 +32,46 @@ const infoIcon = `<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16"
 <path d="M3 12C3 16.9699 7.02908 21 12 21C16.9709 21 21 16.9699 21 12C21 7.02908 16.9709 3 12 3C7.02908 3 3 7.02908 3 12Z" stroke="#757575" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 <path d="M12.0057 15.6932V11.3936M12 8.35426V8.29102" stroke="#757575" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>`;
+
+/**
+ * SVG icon for showing password (eye icon)
+ */
+const EyeIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <circle cx="12" cy="12" r="3" />
+  </svg>
+);
+
+/**
+ * SVG icon for hiding password (eye-slash icon)
+ */
+const EyeOffIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    width="16"
+    height="16"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+    <line x1="1" y1="1" x2="23" y2="23" />
+  </svg>
+);
 
 interface CreateUserCustomModelModalProps {
   isOpen: boolean;
@@ -51,6 +93,26 @@ const getTempBadge = (tags: string[]) => {
   return tags.filter((tag) => TEMP_BADGES?.[tag?.toLowerCase()]).join(' ');
 };
 
+/**
+ * Extracts the key name from a vault key template variable
+ * @param templateVariable - The template variable string (e.g., "{{KEY(My API Key)}}")
+ * @returns The extracted key name or empty string if not a valid template variable
+ */
+const extractKeyNameFromTemplate = (templateVariable: string): string => {
+  const match = templateVariable?.match(/\{\{KEY\((.+?)\)\}\}/);
+  return match ? match[1] : '';
+};
+
+/**
+ * Transforms the base URL by removing '.forbidden' from it
+ * @param url - The URL to transform
+ * @returns The transformed URL with '.forbidden' removed
+ */
+const transformBaseURL = (url: string): string => {
+  if (!url) return url;
+  return url.replace(/\.forbidden/gi, '');
+};
+
 export function CreateUserCustomModelModal({
   isOpen,
   onClose,
@@ -67,7 +129,20 @@ export function CreateUserCustomModelModal({
     maxOutputTokens: undefined as number | undefined,
     fallbackLLM: '',
     features: ['text'],
+    apiKey: '',
+    apiKeyName: '',
   });
+
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [isApiKeyFromVault, setIsApiKeyFromVault] = useState(false);
+  const [isLoadingApiKey, setIsLoadingApiKey] = useState(false);
+  const [showApiKeyPassword, setShowApiKeyPassword] = useState(false);
+  const [hasRevealedApiKey, setHasRevealedApiKey] = useState(false);
+  const [hasModifiedApiKey, setHasModifiedApiKey] = useState(false);
+  const [shouldRemoveApiKey, setShouldRemoveApiKey] = useState(false);
+
+  // Track if modal was just opened to distinguish from data updates
+  const prevIsOpenRef = useRef(isOpen);
 
   const fallbackOptions = useMemo(() => {
     return LLMRegistry.getSortedModelsByFeatures('tools').map((model) => {
@@ -80,19 +155,62 @@ export function CreateUserCustomModelModal({
     });
   }, []);
 
+  /**
+   * Memoize serialized editModel to properly track deep changes
+   * This ensures we detect changes in nested objects like credentials
+   */
+  const editModelKey = useMemo(() => {
+    return JSON.stringify(editModel);
+  }, [editModel]);
+
+  /**
+   * Effect to populate form data when modal opens or editModel changes
+   * This ensures formData ALWAYS updates when editModel changes, including credentials
+   */
   useEffect(() => {
+    // Detect if modal is transitioning from closed to open
+    const isModalOpening = isOpen && !prevIsOpenRef.current;
+    prevIsOpenRef.current = isOpen;
+
+    // Only process when modal is open
+    if (!isOpen) {
+      return;
+    }
+
     if (editModel) {
-      setFormData({
-        name: editModel.name,
-        modelId: editModel.modelId,
-        baseURL: editModel.baseURL,
-        provider: editModel.provider,
+      // Extract API key info from template variable if present
+      const apiKeyTemplateVariable = editModel.credentials?.apiKey || '';
+      const extractedKeyName = extractKeyNameFromTemplate(apiKeyTemplateVariable);
+      const hasVaultKey = editModel.credentials?.isUserKey === true && extractedKeyName !== '';
+
+      // Update formData with latest editModel values
+      // Only update apiKey field if it's currently empty (not revealed) or if modal is just opening
+      setFormData((prev) => ({
+        name: editModel.name || '',
+        modelId: editModel.modelId || '',
+        baseURL: editModel.baseURL || '',
+        provider: editModel.provider || '',
         contextWindow: editModel.contextWindow,
         maxOutputTokens: editModel.maxOutputTokens,
         fallbackLLM: editModel.fallbackLLM || '',
         features: editModel.features || ['text'],
-      });
+        // Preserve revealed apiKey if user has revealed it, otherwise clear it
+        apiKey: hasRevealedApiKey && prev.apiKey ? prev.apiKey : '',
+        apiKeyName: extractedKeyName,
+      }));
+
+      setIsApiKeyFromVault(hasVaultKey);
+
+      // Only reset reveal states when modal is first opening, not on data updates
+      if (isModalOpening) {
+        setShowApiKey(false);
+        setShowApiKeyPassword(false);
+        setHasRevealedApiKey(false);
+        setHasModifiedApiKey(false);
+        setShouldRemoveApiKey(false);
+      }
     } else {
+      // Reset form for creating new model
       setFormData({
         name: '',
         modelId: '',
@@ -102,9 +220,21 @@ export function CreateUserCustomModelModal({
         maxOutputTokens: undefined,
         fallbackLLM: '',
         features: ['text'],
+        apiKey: '',
+        apiKeyName: '',
       });
+      setIsApiKeyFromVault(false);
+      setShowApiKey(false);
+      setShowApiKeyPassword(false);
+      setHasRevealedApiKey(false);
+      setHasModifiedApiKey(false);
+      setShouldRemoveApiKey(false);
     }
-  }, [editModel, isOpen, fallbackOptions]);
+    // We use editModelKey instead of editModel directly to ensure deep change detection
+    // editModelKey is a memoized JSON string that changes whenever editModel's properties change
+    // Note: We don't include hasRevealedApiKey in dependencies to avoid re-running when user reveals key
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen, editModelKey]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,7 +248,47 @@ export function CreateUserCustomModelModal({
       return;
     }
 
-    onSubmit(formData);
+    // Prepare the submission data
+    // Apply transformer to remove '.forbidden' in case user manually entered it or it wasn't cleaned
+    const cleanedBaseURL = transformBaseURL(formData.baseURL);
+
+    const submissionData: Omit<UserCustomModel, 'id'> = {
+      name: formData.name,
+      modelId: formData.modelId,
+      baseURL: cleanedBaseURL,
+      provider: formData.provider,
+      contextWindow: formData.contextWindow,
+      maxOutputTokens: formData.maxOutputTokens,
+      fallbackLLM: formData.fallbackLLM,
+      features: formData.features,
+    };
+
+    // Handle API key credentials based on different scenarios:
+    // IMPORTANT: Only update credentials when user explicitly modifies the API key
+    if (shouldRemoveApiKey) {
+      // User clicked "Remove Key" - set credentials to empty object to signal removal
+      // The backend will handle deleting the key from vault
+      submissionData.credentials = {} as typeof submissionData.credentials;
+    } else if (editModel?.credentials && !hasModifiedApiKey) {
+      // Scenario: Editing a model that has existing credentials, and user hasn't modified the key
+      // Preserve the existing credentials (template variable) unchanged
+      // This ensures we don't accidentally reset the key when updating other fields
+      submissionData.credentials = editModel.credentials;
+    } else if (hasModifiedApiKey || (!editModel && formData.apiKey?.trim())) {
+      // Scenario 1: User has modified the API key (revealed and changed it)
+      // Scenario 2: Creating new model with an API key
+      // Only include credentials if there's actually a key value
+      if (formData.apiKey?.trim()) {
+        submissionData.credentials = {
+          apiKey: formData.apiKey.trim(),
+          isUserKey: true,
+        };
+      }
+    }
+    // If none of the above conditions match, credentials won't be included (undefined)
+    // This means: editing a model without credentials, or creating without a key
+
+    onSubmit(submissionData);
   };
 
   const handleInputChange = (field: string, value: string) => {
@@ -126,6 +296,19 @@ export function CreateUserCustomModelModal({
       ...prev,
       [field]: value,
     }));
+  };
+
+  /**
+   * Handles API key input changes and marks it as modified
+   * @param value - The new API key value
+   */
+  const handleApiKeyChange = (value: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      apiKey: value,
+    }));
+    // Mark the API key as modified when user types in the field
+    setHasModifiedApiKey(true);
   };
 
   /**
@@ -163,12 +346,12 @@ export function CreateUserCustomModelModal({
     setFormData((prev) => {
       const currentFeatures = prev.features;
       const isCurrentlySelected = currentFeatures.includes(featureValue);
-      
+
       // If feature is selected, remove it; otherwise, add it
       const newFeatures = isCurrentlySelected
         ? currentFeatures.filter((f) => f !== featureValue)
         : [...currentFeatures, featureValue];
-      
+
       // Ensure at least one feature is selected; default to 'text' if none
       if (newFeatures.length === 0) {
         return {
@@ -176,7 +359,7 @@ export function CreateUserCustomModelModal({
           features: ['text'],
         };
       }
-      
+
       return {
         ...prev,
         features: newFeatures,
@@ -184,11 +367,83 @@ export function CreateUserCustomModelModal({
     });
   };
 
+  /**
+   * Handles revealing the API key from vault
+   * Fetches the decrypted API key and populates the form field
+   * If key cannot be retrieved, sets empty value allowing user to enter a new key
+   */
+  const handleRevealApiKey = async () => {
+    if (!editModel?.id) return;
+
+    setIsLoadingApiKey(true);
+    try {
+      const modelWithCredentials = await userCustomModelService.getUserCustomModelWithCredentials(
+        editModel.id,
+      );
+
+      // Validate that we received an actual API key, not a template variable
+      const apiKey = modelWithCredentials.credentials?.apiKey || '';
+
+      // Check if we got the actual key or if it's still a template variable
+      // If it's a template or empty, set empty string so user can enter a new key
+      const actualKey = apiKey && !apiKey.startsWith('{{KEY(') ? apiKey : '';
+
+      setFormData((prev) => ({
+        ...prev,
+        apiKey: actualKey,
+      }));
+
+      setShowApiKey(true);
+      setHasRevealedApiKey(true); // Mark that user has revealed the key - now it can be updated
+    } catch {
+      // If fetching fails, set empty value so user can enter a new key
+      setFormData((prev) => ({
+        ...prev,
+        apiKey: '',
+      }));
+
+      setShowApiKey(true);
+      setHasRevealedApiKey(true);
+    } finally {
+      setIsLoadingApiKey(false);
+    }
+  };
+
+  /**
+   * Handles removing the API key from the model
+   * Sets a flag that will delete the key from vault when the form is submitted
+   */
+  const handleRemoveApiKey = () => {
+    setShouldRemoveApiKey(true);
+    // Keep isApiKeyFromVault true so we can show a proper "will be removed" message
+    // Don't switch to input mode
+  };
+
   const isFormValid =
     formData.name?.trim() &&
     formData.modelId?.trim() &&
     formData.baseURL?.trim() &&
     formData.provider?.trim();
+
+  /**
+   * Handles closing the modal and ensures state is properly reset
+   */
+  const handleClose = () => {
+    // Reset reveal state when closing without saving
+    setShowApiKey(false);
+    setShowApiKeyPassword(false);
+    setHasRevealedApiKey(false);
+    setHasModifiedApiKey(false);
+    setShouldRemoveApiKey(false);
+    // Clear any revealed API key data
+    if (isApiKeyFromVault) {
+      setFormData((prev) => ({
+        ...prev,
+        apiKey: '',
+      }));
+    }
+    onClose();
+  };
 
   // Filter features to only show Text Completion and Function calling/Tool Use
   const userCustomModelFeatures = CUSTOM_LLM_FEATURES.filter(
@@ -200,7 +455,7 @@ export function CreateUserCustomModelModal({
       open={isOpen}
       onOpenChange={(open) => {
         if (!open && !isProcessing) {
-          onClose();
+          handleClose();
         }
       }}
     >
@@ -327,7 +582,119 @@ export function CreateUserCustomModelModal({
 
             <div className="space-y-2">
               <div className="mb-2">
-                <Label htmlFor="contextWindow" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                <Label htmlFor="apiKey" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                  API Key {isApiKeyFromVault && '(Stored in Vault)'}
+                </Label>
+                <ToolTip
+                  text="Optional API key for your custom model. The key will be securely stored in your team vault. Leave empty if your model does not require authentication."
+                  classes="w-[240px] text-center"
+                  placement="right"
+                >
+                  <div
+                    dangerouslySetInnerHTML={{ __html: infoIcon }}
+                    className="w-4 h-4 text-gray-400"
+                  />
+                </ToolTip>
+              </div>
+              {shouldRemoveApiKey ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 p-3 bg-red-50 border border-red-200 rounded-md">
+                      <p className="text-sm text-red-700 font-medium">
+                        API key will be removed from vault when you save
+                      </p>
+                    </div>
+                    <CustomButton
+                      type="button"
+                      variant="secondary"
+                      handleClick={() => setShouldRemoveApiKey(false)}
+                      className="whitespace-nowrap"
+                      label="Undo"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    Click &apos;Undo&apos; to cancel the removal, or &apos;
+                    {editModel ? 'Update Model' : 'Create Model'}&apos; to confirm and delete the
+                    key from vault.
+                  </p>
+                </div>
+              ) : isApiKeyFromVault && !showApiKey ? (
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Input
+                      id="apiKeyName"
+                      type="text"
+                      value={generateKeyTemplateVar(formData.apiKeyName)}
+                      disabled
+                      fullWidth
+                      className="w-full bg-gray-50"
+                    />
+                    <CustomButton
+                      type="button"
+                      variant="secondary"
+                      handleClick={handleRevealApiKey}
+                      disabled={isLoadingApiKey}
+                      className="whitespace-nowrap"
+                      addIcon={isLoadingApiKey}
+                      Icon={isLoadingApiKey ? <Spinner size="sm" /> : undefined}
+                      label={isLoadingApiKey ? 'Loading...' : 'Reveal Key'}
+                    />
+                    <CustomButton
+                      type="button"
+                      variant="secondary"
+                      handleClick={handleRemoveApiKey}
+                      className="whitespace-nowrap bg-red-50 text-red-600 hover:bg-red-100"
+                      label="Remove Key"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500">
+                    This API key is stored securely in the vault as a template variable. Click
+                    &apos;Reveal Key&apos; to view or update it, or &apos;Remove Key&apos; to delete
+                    it.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Input
+                      id="apiKey"
+                      type={showApiKeyPassword ? 'text' : 'password'}
+                      value={formData.apiKey}
+                      onChange={(e) => handleApiKeyChange(e.target.value)}
+                      placeholder="sk-..."
+                      fullWidth
+                      className="w-full pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowApiKeyPassword(!showApiKeyPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 focus:outline-none transition-colors"
+                      aria-label={showApiKeyPassword ? 'Hide API key' : 'Show API key'}
+                    >
+                      {showApiKeyPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    </button>
+                  </div>
+                  {isApiKeyFromVault && showApiKey && (
+                    <p className="text-xs text-gray-500">
+                      Enter a new API key to update the existing one. Changes will only be saved if
+                      you modify the key.
+                    </p>
+                  )}
+                  {!isApiKeyFromVault && formData.apiKey && (
+                    <p className="text-xs text-gray-500">
+                      This key will be securely stored in your team vault.
+                    </p>
+                  )}
+                </div>
+              )}
+            </div>
+
+            <div className="space-y-2">
+              <div className="mb-2">
+                <Label
+                  htmlFor="contextWindow"
+                  className="text-base font-normal mr-2 text-[#1E1E1E]"
+                >
                   Context Window
                 </Label>
                 <ToolTip
@@ -357,7 +724,10 @@ export function CreateUserCustomModelModal({
 
             <div className="space-y-2">
               <div className="mb-2">
-                <Label htmlFor="maxOutputTokens" className="text-base font-normal mr-2 text-[#1E1E1E]">
+                <Label
+                  htmlFor="maxOutputTokens"
+                  className="text-base font-normal mr-2 text-[#1E1E1E]"
+                >
                   Maximum Output Tokens
                 </Label>
                 <ToolTip
@@ -377,7 +747,9 @@ export function CreateUserCustomModelModal({
                 min="1024"
                 max="200000"
                 step="4"
-                value={formData.maxOutputTokens !== undefined ? String(formData.maxOutputTokens) : ''}
+                value={
+                  formData.maxOutputTokens !== undefined ? String(formData.maxOutputTokens) : ''
+                }
                 onChange={(e) => handleNumericInputChange('maxOutputTokens', e.target.value)}
                 placeholder="4096"
                 fullWidth
@@ -454,7 +826,7 @@ export function CreateUserCustomModelModal({
             <CustomButton
               type="button"
               variant="secondary"
-              handleClick={onClose}
+              handleClick={handleClose}
               disabled={isProcessing}
               className="flex-1"
               label="Cancel"

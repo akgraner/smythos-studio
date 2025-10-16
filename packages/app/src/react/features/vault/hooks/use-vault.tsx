@@ -318,7 +318,21 @@ export function useUpdateUserCustomModel() {
       modelId: string;
       updatedFields: Partial<UserCustomModel>;
     }) => userCustomModelService.updateUserCustomModel(modelId, updatedFields),
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Immediately update the cache with the complete data from server response
+      // This includes credentials with the transformed API key template variable
+      queryClient.setQueryData<UserCustomModel[]>(
+        USER_CUSTOM_MODEL_QUERY_KEYS.USER_CUSTOM_MODELS,
+        (oldData) => {
+          if (!oldData) return oldData;
+          return oldData.map((model) =>
+            model.id === variables.modelId
+              ? data // Use the complete data returned from server
+              : model,
+          );
+        },
+      );
+      // Also invalidate to trigger a background refetch for server sync
       queryClient.invalidateQueries({ queryKey: USER_CUSTOM_MODEL_QUERY_KEYS.USER_CUSTOM_MODELS });
     },
   });

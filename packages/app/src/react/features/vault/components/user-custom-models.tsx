@@ -80,7 +80,10 @@ export function UserCustomModels({ pageAccess }: { pageAccess: { write: boolean 
         modelId: editingModel.id,
         updatedFields: data,
       });
+
       successToast('Custom model updated successfully');
+
+      // Close modal - the cache has been updated with complete data including credentials
       setEditingModel(undefined);
     } catch (error) {
       console.error('Error updating user custom model:', error);

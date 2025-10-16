@@ -769,11 +769,14 @@ router.delete('/custom-llm/:provider/:id', customLLMRouteMiddlewares, async (req
  */
 const handleUserCustomLLMSave = async (req, res) => {
   const teamId = req?._team?.id;
+  const userEmail = req?._user?.email;
   const id = req.params?.id; // This will be undefined for POST requests
 
   try {
     const saveUserCustomLLM = await userCustomLLMHelper.saveUserCustomLLM(req, {
       id,
+      teamId,
+      userEmail,
       ...req.body,
     });
 
@@ -831,6 +834,26 @@ router.get('/user-custom-llm/:id', includeTeamDetails, async (req, res) => {
     res.status(200).json({ success: true, data: modelInfo });
   } catch (error) {
     console.error('Error getting user custom LLM model:', error?.message);
+    res.status(500).json({ success: false, error: 'Error getting user custom LLM model.' });
+  }
+});
+
+/**
+ * Get a specific user custom LLM model by ID with decrypted credentials
+ * GET /user-custom-llm/:id/with-credentials
+ */
+router.get('/user-custom-llm/:id/with-credentials', includeTeamDetails, async (req, res) => {
+  try {
+    const entryId = req.params.id;
+    const modelInfo = await userCustomLLMHelper.getUserCustomLLMWithCredentials(req, entryId);
+
+    if (!modelInfo) {
+      return res.status(404).json({ success: false, error: 'User custom LLM model not found.' });
+    }
+
+    res.status(200).json({ success: true, data: modelInfo });
+  } catch (error) {
+    console.error('Error getting user custom LLM model with credentials:', error?.message);
     res.status(500).json({ success: false, error: 'Error getting user custom LLM model.' });
   }
 });

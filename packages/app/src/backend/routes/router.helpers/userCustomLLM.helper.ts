@@ -2,8 +2,10 @@ import { Request } from 'express';
 import Joi from 'joi';
 import { USER_CUSTOM_LLM_SETTINGS_KEY } from '../../constants';
 import { LLMService } from '../../services/LLMHelper/LLMService.class';
+import { vault } from '../../services/SmythVault.class';
 import * as teamData from '../../services/team-data.service';
 import { uid } from '../../services/utils.service';
+import { setVaultKeys } from './vault.helper';
 
 /**
  * User Custom LLM Helper
@@ -34,10 +36,20 @@ export interface UserCustomLLMInputParams {
   maxOutputTokens?: number;
   fallbackLLM?: string;
   features?: string[];
+  teamId?: string;
+  userEmail?: string;
+  credentials?: {
+    apiKey?: string;
+    isUserKey?: boolean;
+  };
 }
 
-export interface UserCustomLLMInfo extends UserCustomLLMInputParams {
+export interface UserCustomLLMInfo extends Omit<UserCustomLLMInputParams, 'teamId' | 'userEmail'> {
   id: string; // Always present in stored data
+  credentials?: {
+    apiKey?: string;
+    isUserKey?: boolean;
+  };
 }
 
 interface UserCustomLLMModel {
@@ -64,6 +76,14 @@ const userCustomLLMValidationSchema = Joi.object({
   maxOutputTokens: Joi.number().integer().min(256).max(200000).optional(),
   fallbackLLM: Joi.string().trim().optional().allow('').max(100),
   features: Joi.array().items(Joi.string()).optional(),
+  teamId: Joi.string().optional(),
+  userEmail: Joi.string().optional(),
+  credentials: Joi.object({
+    apiKey: Joi.string().max(10000).optional().allow(''),
+    isUserKey: Joi.boolean().optional(),
+  })
+    .optional()
+    .allow(null), // Allow null or empty object {} to signal explicit removal of credentials
 });
 //#endregion - Validation Schema
 
@@ -85,7 +105,15 @@ async function saveUserCustomLLM(req: Request, params: UserCustomLLMInputParams)
       provider: params.provider?.trim(),
       fallbackLLM: params.fallbackLLM?.trim(),
       features: params.features || ['text'],
+      credentials: params.credentials,
     };
+
+    const teamId = params.teamId || req?._team?.id;
+    const userEmail = params.userEmail || req?._user?.email;
+
+    if (!teamId || !userEmail) {
+      throw new Error('Team ID and user email are required');
+    }
 
     // Validate input parameters
     const { error } = userCustomLLMValidationSchema.validate(trimmedParams);
@@ -95,6 +123,40 @@ async function saveUserCustomLLM(req: Request, params: UserCustomLLMInputParams)
 
     // Generate or use provided ID - using uid() like custom-llm
     const entryId = trimmedParams.id || uid().toLowerCase();
+    const isUpdate = !!trimmedParams.id; // Check if this is an update operation
+
+    // If updating, get existing model to preserve credentials if needed
+    let existingModel: UserCustomLLMInfo | null = null;
+    if (isUpdate) {
+      existingModel = await getUserCustomLLMByEntryId(req, entryId);
+
+      // Check if user is explicitly removing the API key (credentials set to empty object means remove)
+      const isRemovingCredentials =
+        trimmedParams.credentials &&
+        typeof trimmedParams.credentials === 'object' &&
+        Object.keys(trimmedParams.credentials).length === 0;
+
+      if (
+        existingModel?.credentials?.isUserKey &&
+        existingModel.credentials?.apiKey &&
+        isRemovingCredentials
+      ) {
+        // Extract the key name from the template variable and delete from vault
+        const apiKeyTemplateVariable = existingModel.credentials.apiKey;
+        const match = apiKeyTemplateVariable.match(/\{\{KEY\((.+?)\)\}\}/);
+
+        if (match && match[1]) {
+          const apiKeyName = match[1];
+
+          try {
+            await vault.delete(apiKeyName, teamId, req);
+            console.log(`Deleted vault key: ${apiKeyName}`);
+          } catch (vaultError) {
+            console.warn('Error deleting vault key during update:', vaultError?.message);
+          }
+        }
+      }
+    }
 
     // Create the user custom LLM data object
     const userCustomLLMData: UserCustomLLMInfo = {
@@ -108,6 +170,74 @@ async function saveUserCustomLLM(req: Request, params: UserCustomLLMInputParams)
       fallbackLLM: trimmedParams.fallbackLLM,
       features: trimmedParams.features,
     };
+
+    // Handle API key storage if provided
+    // Check if the provided apiKey is an actual key (not a template variable)
+    const hasActualApiKey =
+      trimmedParams.credentials?.apiKey &&
+      trimmedParams.credentials?.isUserKey &&
+      !trimmedParams.credentials.apiKey.startsWith('{{KEY(');
+
+    // Check if user explicitly wants to remove credentials (empty object)
+    const shouldRemoveCredentials =
+      trimmedParams.credentials &&
+      typeof trimmedParams.credentials === 'object' &&
+      Object.keys(trimmedParams.credentials).length === 0;
+
+    if (shouldRemoveCredentials) {
+      // User explicitly removed the API key - set credentials to empty object
+      // The key has already been deleted from vault in the earlier check
+      userCustomLLMData.credentials = {} as UserCustomLLMInfo['credentials'];
+    } else if (hasActualApiKey) {
+      // User is providing a new API key (creating new model or updating existing key)
+      const apiKey = trimmedParams.credentials.apiKey.trim();
+
+      // Generate a unique name for the API key in vault
+      const apiKeyName = `User Custom Model API Key (${entryId})`;
+
+      // Save the API key to vault with _hidden scope
+      const keyEntries = [
+        {
+          id: apiKeyName,
+          scope: ['_hidden'],
+          name: apiKeyName,
+          key: apiKey,
+          metadata: {
+            field: 'apiKey',
+            userCustomLLMEntryId: entryId,
+            userCustomLLMEntryName: trimmedParams.name,
+          },
+        },
+      ];
+
+      await setVaultKeys({
+        req,
+        teamId,
+        userEmail,
+        keyEntries,
+      });
+
+      // Store the vault key reference as a template variable in the model data
+      userCustomLLMData.credentials = {
+        apiKey: `{{KEY(${apiKeyName})}}`,
+        isUserKey: true,
+      };
+    } else if (
+      trimmedParams.credentials?.apiKey &&
+      trimmedParams.credentials.apiKey.startsWith('{{KEY(')
+    ) {
+      // Frontend sent the template variable back - preserve it as is
+      // This happens when user updates other fields without modifying the API key
+      userCustomLLMData.credentials = {
+        apiKey: trimmedParams.credentials.apiKey,
+        isUserKey: true,
+      };
+    } else if (isUpdate && existingModel?.credentials) {
+      // Updating model, no credentials provided in params, but model has existing credentials
+      // Preserve the existing credentials
+      userCustomLLMData.credentials = existingModel.credentials;
+    }
+    // If none of the above, credentials will be undefined (no API key)
 
     // Save to team settings
     const result = await teamData.saveTeamSettingsObj({
@@ -233,6 +363,75 @@ async function getAllUserCustomLLMs(req: Request): Promise<Record<string, UserCu
 }
 
 /**
+ * Gets a user custom LLM configuration with credentials (API key from vault)
+ * @param req - Express request object
+ * @param entryId - The ID of the entry to retrieve
+ * @returns Promise with the model info including decrypted API key
+ */
+async function getUserCustomLLMWithCredentials(
+  req: Request,
+  entryId: string,
+): Promise<UserCustomLLMInfo | null> {
+  try {
+    const teamId = req?._team?.id;
+    const accessToken = req?.user?.accessToken;
+    const idToken = req?.session?.idToken;
+
+    if (!teamId) {
+      throw new Error('Team ID is required');
+    }
+
+    // Get the model info first
+    const modelInfo = await getUserCustomLLMByEntryId(req, entryId);
+
+    if (!modelInfo) {
+      return null;
+    }
+
+    // If the model has credentials with a vault key template variable, retrieve the actual key
+    if (modelInfo.credentials?.isUserKey && modelInfo.credentials?.apiKey) {
+      const apiKeyTemplateVariable = modelInfo.credentials.apiKey;
+
+      // Extract the key name from the template variable {{KEY(...)}}
+      const match = apiKeyTemplateVariable.match(/\{\{KEY\((.+?)\)\}\}/);
+
+      if (match && match[1]) {
+        const apiKeyName = match[1];
+
+        // Retrieve the key from vault
+        try {
+          const keyEntry = await vault.get(
+            {
+              team: teamId,
+              keyName: apiKeyName,
+            },
+            req,
+          );
+
+          // Return the model info with the decrypted API key
+          return {
+            ...modelInfo,
+            credentials: {
+              apiKey: keyEntry?.key || '',
+              isUserKey: true,
+            },
+          };
+        } catch (vaultError) {
+          console.warn('Error retrieving API key from vault:', vaultError?.message);
+          // Return model info without the key if vault retrieval fails
+          return modelInfo;
+        }
+      }
+    }
+
+    return modelInfo;
+  } catch (error) {
+    console.error('Error getting user custom LLM with credentials:', error?.message);
+    throw error;
+  }
+}
+
+/**
  * Deletes a user custom LLM configuration
  * @param req - Express request object
  * @param entryId - The ID of the entry to delete
@@ -240,6 +439,27 @@ async function getAllUserCustomLLMs(req: Request): Promise<Record<string, UserCu
  */
 async function deleteUserCustomLLM(req: Request, entryId: string) {
   try {
+    const teamId = req?._team?.id;
+
+    // Get the model info to check if it has an API key stored in vault
+    const modelInfo = await getUserCustomLLMByEntryId(req, entryId);
+
+    if (modelInfo?.credentials?.isUserKey && modelInfo.credentials?.apiKey) {
+      const apiKeyTemplateVariable = modelInfo.credentials.apiKey;
+      const match = apiKeyTemplateVariable.match(/\{\{KEY\((.+?)\)\}\}/);
+
+      if (match && match[1]) {
+        const apiKeyName = match[1];
+
+        // Try to delete the vault key, but don't fail if it doesn't exist
+        try {
+          await vault.delete(apiKeyName, teamId, req);
+        } catch (vaultError) {
+          console.warn('Error deleting vault key:', vaultError?.message);
+        }
+      }
+    }
+
     const result = await teamData.deleteTeamSettingsObj(req, USER_CUSTOM_LLM_SETTINGS_KEY, entryId);
 
     if (!result.success) {
@@ -259,6 +479,7 @@ export const userCustomLLMHelper = {
   saveUserCustomLLM,
   getUserCustomLLMByName,
   getUserCustomLLMByEntryId,
+  getUserCustomLLMWithCredentials,
   getAllUserCustomLLMs,
   deleteUserCustomLLM,
 };
