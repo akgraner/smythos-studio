@@ -25,36 +25,12 @@ import type {
  * All methods are no-ops that do nothing or return safe defaults.
  */
 export class NoOpObservabilityProvider implements IObservabilityProvider {
-  // User Behavior Observability
-  recordInteraction(_eventName: string, _properties?: ObservabilityEventProperties): void {
-    // No operation - disabled by default
-  }
-
-  recordFeatureUsage(_featureName: string, _properties?: ObservabilityEventProperties): void {
-    // No operation - disabled by default
-  }
-
-  recordWorkflowCompletion(
-    _workflowName: string,
-    _properties?: ObservabilityEventProperties,
-  ): void {
-    // No operation - disabled by default
-  }
-
-  // System Insight Capture
-  recordSystemEvent(_eventName: string, _properties?: ObservabilityEventProperties): void {
-    // No operation - disabled by default
-  }
-
-  recordError(_errorName: string, _properties?: ObservabilityEventProperties): void {
-    // No operation - disabled by default
-  }
-
-  recordPerformanceMetric(
-    _metricName: string,
-    _value: number,
-    _properties?: ObservabilityEventProperties,
-  ): void {
+  // Unified Event Tracking
+  /**
+   * No-op implementation of observeInteraction
+   * Does nothing, ensuring zero overhead
+   */
+  observeInteraction(_eventName: string, _properties?: ObservabilityEventProperties): void {
     // No operation - disabled by default
   }
 
@@ -86,5 +62,10 @@ export class NoOpObservabilityProvider implements IObservabilityProvider {
 
   reloadFeatureFlags(): void {
     // No operation - disabled by default
+  }
+
+  onFeatureFlagsReady(callback: () => void): void {
+    // Execute immediately in no-op mode (no flags to load)
+    callback();
   }
 }

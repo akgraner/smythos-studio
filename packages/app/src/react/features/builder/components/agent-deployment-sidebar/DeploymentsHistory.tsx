@@ -28,7 +28,7 @@ const DeploymentsHistory = () => {
 
   const restoreVersionConfirmation = async (deploymentId: string) => {
     if (!userInfo?.subs?.plan?.paid) {
-      Observability.userBehavior.recordInteraction('upgrade_impression', {
+      Observability.observeInteraction('upgrade_impression', {
         page_url: '/builder',
         source: 'restoring previous version',
       });

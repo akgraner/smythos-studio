@@ -32,7 +32,7 @@ export const builderPageTutorialWorkflow = async () => {
     },
     onReset: () => {
       // Called when overlay is about to be cleared
-      Observability.userBehavior.recordWorkflowCompletion('builder_page_tutorial_completed', {
+      Observability.observeInteraction('builder_page_tutorial_completed', {
         page_url: '/builder',
         source: 'Tutorial completed on builder page onboarding',
       });

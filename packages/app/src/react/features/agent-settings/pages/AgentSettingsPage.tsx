@@ -172,7 +172,7 @@ export const AgentSettingsPageBody = (props: Props) => {
   );
 
   const handleUpgrade = () => {
-    Observability.userBehavior.recordInteraction('upgrade_click', {
+    Observability.observeInteraction('upgrade_click', {
       page_url: '/agent_settings',
       source: 'upgrade button displayed alongside My Workflow',
     });
@@ -180,7 +180,7 @@ export const AgentSettingsPageBody = (props: Props) => {
   };
 
   useEffect(() => {
-    Observability.userBehavior.recordInteraction('upgrade_impression', {
+    Observability.observeInteraction('upgrade_impression', {
       page_url: '/agent_settings',
       source: 'upgrade button displayed alongside My Workflow',
     });

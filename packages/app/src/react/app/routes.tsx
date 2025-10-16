@@ -28,7 +28,9 @@ const RoutesWrapper = ({ pages }: { pages: IPageRoute[] }) => {
     const { subs } = userInfoCtx?.userInfo ?? {};
     const planNameLower = subs?.plan?.name?.toLowerCase() || '';
     const isBuilderPlan = planNameLower === PRICING_PLANS_V4.BUILDER.toLowerCase();
-    const flagValue = PostHog.getFeatureFlag(FEATURE_FLAGS.ONBOARDING_CALLS_FOR_BUILDER_PLAN);
+    const flagValue = Observability.features.getFeatureFlag(
+      FEATURE_FLAGS.ONBOARDING_CALLS_FOR_BUILDER_PLAN,
+    );
 
     if (isBuilderPlan && typeof flagValue !== 'boolean' && flagValue !== 'variant_1') {
       useGetBookAnIntroCall({
@@ -88,7 +90,7 @@ const RoutesWrapper = ({ pages }: { pages: IPageRoute[] }) => {
       });
 
       // Reload feature flags after user identification
-      PostHog.reloadFeatureFlags();
+      Observability.features.reloadFeatureFlags();
 
       // Wait a bit longer for flags to reload before checking features
       setTimeout(checkFeatureFlag, 2000);

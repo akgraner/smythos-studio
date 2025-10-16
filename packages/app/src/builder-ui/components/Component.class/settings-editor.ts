@@ -112,7 +112,7 @@ async function onComponentLoad(sidebar) {
         const isDebugCurrentlyOn = debugSwitcher && debugSwitcher.classList.contains('active');
 
         // Fire telemetry event
-        Observability.userBehavior.recordInteraction('test_with_debug_component_sidebar_clicked', {
+        Observability.observeInteraction('test_with_debug_component_sidebar_clicked', {
           source: 'component_settings_sidebar',
           componentType: component.constructor.name,
           componentId: component.uid,

@@ -14,14 +14,14 @@ type Props = {
 
 const WidgetSubscribeInfo = ({ infoText, analytics }: Props) => {
   useEffect(() => {
-    Observability.userBehavior.recordInteraction('upgrade_impression', {
+    Observability.observeInteraction('upgrade_impression', {
       page_url: analytics?.page_url,
       source: analytics?.source,
     });
   }, []);
 
   const handleUpgrade = () => {
-    Observability.userBehavior.recordInteraction('upgrade_click', {
+    Observability.observeInteraction('upgrade_click', {
       page_url: analytics?.page_url,
       source: analytics?.source,
     });

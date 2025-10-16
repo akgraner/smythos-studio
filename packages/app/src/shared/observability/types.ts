@@ -33,7 +33,7 @@ export interface UserIdentityContext {
  *
  * This interface provides complete observability capabilities:
  * - User behavior tracking (interactions, feature usage, workflows)
- * - System insights (events, errors, performance metrics)
+ * - System insights (events, errors)
  * - User identity management (identification, context correlation)
  * - Feature configuration (flags, A/B testing, rollouts)
  *
@@ -41,70 +41,29 @@ export interface UserIdentityContext {
  * Community edition uses a no-op implementation by default.
  */
 export interface IObservabilityProvider {
-  // User Behavior Tracking
+  // Unified Event Tracking
   /**
-   * Records a user interaction or behavior event
+   * Observes and tracks any interaction, event, or behavior in the system
    *
-   * @param eventName - Descriptive name of the user action or behavior
+   * This unified method handles all types of observability events including:
+   * - User interactions (button clicks, form submissions, etc.)
+   * - Feature usage
+   * - Workflow completions
+   * - System events
+   * - Errors and exceptions
+   *
+   * @param eventName - Descriptive name of the event, interaction, or behavior
    * @param properties - Additional context about the event
    *
    * @example
    * ```typescript
-   * recordInteraction('agent_created', { agentType: 'chatbot', source: 'template' });
+   * observeInteraction('agent_created', { agentType: 'chatbot', source: 'template' });
+   * observeInteraction('debug_button_click', { position: 'bottom center', type: 'run' });
+   * observeInteraction('workflow_test_completed', { status: 'success', source: 'debugger' });
+   * observeInteraction('deployment_error', { errorType: 'timeout', duration: 30000 });
    * ```
    */
-  recordInteraction(eventName: string, properties?: ObservabilityEventProperties): void;
-
-  /**
-   * Records a feature usage event
-   *
-   * @param featureName - Name of the feature being used
-   * @param properties - Additional context about feature usage
-   */
-  recordFeatureUsage(featureName: string, properties?: ObservabilityEventProperties): void;
-
-  /**
-   * Records a workflow completion event
-   *
-   * @param workflowName - Name of the completed workflow
-   * @param properties - Additional context about the workflow
-   */
-  recordWorkflowCompletion(workflowName: string, properties?: ObservabilityEventProperties): void;
-
-  // System Insights
-  /**
-   * Records a system-level event
-   *
-   * @param eventName - Descriptive name of the system event
-   * @param properties - Additional context about the event
-   *
-   * @example
-   * ```typescript
-   * recordSystemEvent('deployment_completed', { duration: 1200, success: true });
-   * ```
-   */
-  recordSystemEvent(eventName: string, properties?: ObservabilityEventProperties): void;
-
-  /**
-   * Records an error or exception
-   *
-   * @param errorName - Name or type of the error
-   * @param properties - Additional context about the error
-   */
-  recordError(errorName: string, properties?: ObservabilityEventProperties): void;
-
-  /**
-   * Records a performance metric
-   *
-   * @param metricName - Name of the performance metric
-   * @param value - Numeric value of the metric
-   * @param properties - Additional context about the metric
-   */
-  recordPerformanceMetric(
-    metricName: string,
-    value: number,
-    properties?: ObservabilityEventProperties,
-  ): void;
+  observeInteraction(eventName: string, properties?: ObservabilityEventProperties): void;
 
   // User Identity Management
   /**
@@ -178,4 +137,20 @@ export interface IObservabilityProvider {
    * Reloads feature flags from the server
    */
   reloadFeatureFlags(): void;
+
+  /**
+   * Registers a callback to be executed when feature flags are fully loaded
+   * In community edition (no-op), the callback is executed immediately
+   *
+   * @param callback - Function to call when flags are ready
+   *
+   * @example
+   * ```typescript
+   * Observability.features.onFeatureFlagsReady(() => {
+   *   const payload = Observability.features.getFeatureFlagPayload('my-flag');
+   *   console.log('Flag loaded:', payload);
+   * });
+   * ```
+   */
+  onFeatureFlagsReady(callback: () => void): void;
 }

@@ -115,12 +115,9 @@ const ChatWithAgentWidget = ({ isWriteAccess, isAgentDeployed }: Props) => {
                 `${isAgentDeployed ? PRIMARY_BUTTON_STYLE : SECONDARY_BUTTON_STYLE}`,
               )}
               onClick={(e) => {
-                Observability.userBehavior.recordFeatureUsage(
-                  EVENTS.AGENT_SETTINGS_EVENTS.app_chat_with_agent,
-                  {
-                    source: 'agent settings',
-                  },
-                );
+                Observability.observeInteraction(EVENTS.AGENT_SETTINGS_EVENTS.app_chat_with_agent, {
+                  source: 'agent settings',
+                });
                 !isAgentDeployed && e.preventDefault();
               }}
               target="_blank"

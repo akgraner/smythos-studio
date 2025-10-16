@@ -121,7 +121,7 @@ function Endpoint({ component }: { component: Component }) {
           <button
             className=" flex group-hover:flex items-center"
             onClick={() => {
-              Observability.userBehavior.recordFeatureUsage(
+              Observability.observeInteraction(
                 EVENTS.AGENT_SETTINGS_EVENTS.app_agent_skills_click,
                 {
                   button: 'call',

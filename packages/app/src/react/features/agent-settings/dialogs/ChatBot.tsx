@@ -601,7 +601,7 @@ const ChatBotDialog = ({
                                       onChange={(e) => {
                                         setIsChatBotFullScreen(e.target.checked);
                                         if (e.target.checked) {
-                                          Observability.userBehavior.recordFeatureUsage(
+                                          Observability.observeInteraction(
                                             'app_chatbot_message_view_enabled',
                                             {
                                               description:

@@ -3,9 +3,7 @@
  * This service is kept for backward compatibility but forwards all calls to the new Observability API
  *
  * Migration:
- * - Replace Analytics.track() with Observability.userBehavior.recordInteraction()
- * - Or use Observability.userBehavior.recordFeatureUsage() for feature-specific events
- * - Or use Observability.userBehavior.recordWorkflowCompletion() for workflow events
+ * - Replace Analytics.track() with Observability.observeInteraction()
  */
 
 import { Observability } from '@src/shared/observability';
@@ -13,7 +11,7 @@ import { isProdEnv } from '@src/shared/utils';
 
 export const Analytics = {
   /**
-   * @deprecated Use Observability.userBehavior.recordInteraction() instead
+   * @deprecated Use Observability.observeInteraction() instead
    */
   track: (eventName: string, properties: Record<string, unknown> = {}) => {
     try {
@@ -26,7 +24,7 @@ export const Analytics = {
       }
 
       // Forward to new Observability API
-      Observability.userBehavior.recordInteraction(eventName, enhancedProperties);
+      Observability.observeInteraction(eventName, enhancedProperties);
     } catch (error) {
       console.info('Error tracking event', error);
     }

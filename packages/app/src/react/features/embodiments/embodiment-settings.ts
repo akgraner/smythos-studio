@@ -342,12 +342,9 @@ export const useAgentEmbodimentSettings = (
       await updateEmbodiment(agentId, embodimentType, status);
 
       if (status) {
-        Observability.userBehavior.recordFeatureUsage(
-          EVENTS.AGENT_SETTINGS_EVENTS.app_work_location_toggle,
-          {
-            locationType: embodimentType.toLowerCase(),
-          },
-        );
+        Observability.observeInteraction(EVENTS.AGENT_SETTINGS_EVENTS.app_work_location_toggle, {
+          locationType: embodimentType.toLowerCase(),
+        });
       }
       updateAgentSettingsCache(embodimentType, formattedValue, false);
       callCallback();

@@ -118,8 +118,8 @@ const AIChat = () => {
     clearMessages();
     await createNewChatSession();
     chatInputRef.current?.focus();
-    Observability.userBehavior.recordInteraction(EVENTS.CHAT_EVENTS.SESSION_END);
-    Observability.userBehavior.recordInteraction(EVENTS.CHAT_EVENTS.SESSION_START);
+    Observability.observeInteraction(EVENTS.CHAT_EVENTS.SESSION_END);
+    Observability.observeInteraction(EVENTS.CHAT_EVENTS.SESSION_START);
   }, [createNewChatSession, clearMessages, stopGenerating, setShowScrollButton]);
 
   useEffect(() => {
@@ -138,8 +138,8 @@ const AIChat = () => {
   }, [isAgentLoading, inputDisabled]);
 
   useEffect(() => {
-    Observability.userBehavior.recordInteraction(EVENTS.CHAT_EVENTS.SESSION_START);
-    return () => Observability.userBehavior.recordInteraction(EVENTS.CHAT_EVENTS.SESSION_END);
+    Observability.observeInteraction(EVENTS.CHAT_EVENTS.SESSION_START);
+    return () => Observability.observeInteraction(EVENTS.CHAT_EVENTS.SESSION_END);
   }, []);
 
   // Fast context value - minimal dependencies

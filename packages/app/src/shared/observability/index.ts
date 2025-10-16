@@ -13,7 +13,7 @@
  * // In community code - works with or without enterprise plugin
  * import { Observability } from '@src/shared/observability';
  *
- * Observability.userBehavior.recordInteraction('button_clicked', { buttonId: 'submit' });
+ * Observability.observeInteraction('button_clicked', { buttonId: 'submit' });
  * ```
  */
 
@@ -65,55 +65,27 @@ function getObservabilityProvider(): IObservabilityProvider {
  */
 export const Observability = {
   /**
-   * User behavior observability methods
-   * Records user interactions, feature usage, and workflow completions
+   * Observes and tracks any interaction, event, or behavior in the system
+   *
+   * This unified method handles all types of observability events including
+   * user interactions, feature usage, workflow completions, system events,
+   * and errors.
+   *
+   * @param eventName - Descriptive name of the event, interaction, or behavior
+   * @param properties - Additional context about the event
+   *
+   * @example
+   * ```typescript
+   * Observability.observeInteraction('agent_created', { agentType: 'chatbot', source: 'template' });
+   * Observability.observeInteraction('debug_button_click', { position: 'bottom center', type: 'run' });
+   * Observability.observeInteraction('workflow_test_completed', { status: 'success', source: 'debugger' });
+   * ```
    */
-  userBehavior: {
-    recordInteraction: (eventName: string, properties?: Record<string, unknown>) => {
-      getObservabilityProvider().recordInteraction(
-        eventName,
-        properties as ObservabilityEventProperties,
-      );
-    },
-    recordFeatureUsage: (featureName: string, properties?: Record<string, unknown>) => {
-      getObservabilityProvider().recordFeatureUsage(
-        featureName,
-        properties as ObservabilityEventProperties,
-      );
-    },
-    recordWorkflowCompletion: (workflowName: string, properties?: Record<string, unknown>) => {
-      getObservabilityProvider().recordWorkflowCompletion(
-        workflowName,
-        properties as ObservabilityEventProperties,
-      );
-    },
-  },
-
-  /**
-   * System insight capture methods
-   * Records system events, errors, and performance metrics
-   */
-  systemInsight: {
-    recordSystemEvent: (eventName: string, properties?: Record<string, unknown>) => {
-      getObservabilityProvider().recordSystemEvent(
-        eventName,
-        properties as ObservabilityEventProperties,
-      );
-    },
-    recordError: (errorName: string, properties?: Record<string, unknown>) => {
-      getObservabilityProvider().recordError(errorName, properties as ObservabilityEventProperties);
-    },
-    recordPerformanceMetric: (
-      metricName: string,
-      value: number,
-      properties?: Record<string, unknown>,
-    ) => {
-      getObservabilityProvider().recordPerformanceMetric(
-        metricName,
-        value,
-        properties as ObservabilityEventProperties,
-      );
-    },
+  observeInteraction: (eventName: string, properties?: Record<string, unknown>) => {
+    getObservabilityProvider().observeInteraction(
+      eventName,
+      properties as ObservabilityEventProperties,
+    );
   },
 
   /**
@@ -152,6 +124,9 @@ export const Observability = {
     reloadFeatureFlags: () => {
       getObservabilityProvider().reloadFeatureFlags();
     },
+    onFeatureFlagsReady: (callback: () => void) => {
+      getObservabilityProvider().onFeatureFlagsReady(callback);
+    },
   },
 };
 
@@ -161,3 +136,6 @@ export type {
   ObservabilityEventProperties,
   UserIdentityContext,
 } from './types';
+
+// Export the observability instance getter for advanced usage
+export { getObservabilityProvider as getObservabilityInstance };

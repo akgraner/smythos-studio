@@ -40,7 +40,7 @@ const ResponseView = () => {
       if (component && typeof component.openDebugDialog === 'function') {
         // Fire telemetry event
         const { PostHog } = await import('@src/shared/posthog');
-        Observability.userBehavior.recordInteraction('debug_modal_opened', {
+        Observability.observeInteraction('debug_modal_opened', {
           source: 'test_as_form',
         });
 
@@ -56,7 +56,7 @@ const ResponseView = () => {
       <span
         className="font-semibold border-b border-solid pb-0.5 cursor-pointer text-blue-500 border-blue-500"
         onClick={() => {
-          Observability.userBehavior.recordInteraction('debug_api_modal_opened_test_as_form', {
+          Observability.observeInteraction('debug_api_modal_opened_test_as_form', {
             source: 'test_as_form',
             variant: 'control',
           });
@@ -74,7 +74,7 @@ const ResponseView = () => {
       <button
         className="font-semibold cursor-pointer text-blue-500 bg-transparent hover:text-smythos-blue focus:outline-none py-2 rounded-lg text-sm transition-colors"
         onClick={() => {
-          Observability.userBehavior.recordInteraction('debug_api_modal_opened_test_as_form', {
+          Observability.observeInteraction('debug_api_modal_opened_test_as_form', {
             source: 'test_as_form',
             variant: 'variant_1',
           });
@@ -94,7 +94,7 @@ const ResponseView = () => {
 
   const getDebugComponent = () => {
     try {
-      const featureVariant = PostHog.getFeatureFlag(
+      const featureVariant = Observability.features.getFeatureFlag(
         FEATURE_FLAGS.TEST_FORM_TRY_DEBUG_BUTTON_EXPERIMENT,
       ) as string;
 

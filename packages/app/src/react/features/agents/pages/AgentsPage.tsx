@@ -94,7 +94,7 @@ function AgentsPage() {
         },
         operation: 'insertOrUpdate',
       });
-      Observability.userBehavior.recordWorkflowCompletion('app_build_first_agent', {
+      Observability.observeInteraction('app_build_first_agent', {
         createdAt: sortedAgents[0]?.createdAt,
       });
     }

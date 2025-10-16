@@ -525,7 +525,7 @@ export class Component extends EventEmitter {
         `Missing Settings ${missingSettings.map((e) => e.name).join(', ')}`,
         'alert pointer',
         () => {
-          Observability.userBehavior.recordInteraction('app_component_alert_click', {
+          Observability.observeInteraction('app_component_alert_click', {
             type: 'missing settings',
           });
           this.editSettings();
@@ -625,7 +625,7 @@ export class Component extends EventEmitter {
 
       if (missingSettings.length > 0) {
         this.addComponentMessage(`Missing Settings`, 'alert pointer', () => {
-          Observability.userBehavior.recordInteraction('app_component_alert_click', {
+          Observability.observeInteraction('app_component_alert_click', {
             type: 'missing settings',
           });
           this.editSettings();
@@ -747,7 +747,7 @@ export class Component extends EventEmitter {
           `Missing Key "${keyName}"`,
           'alert pointer',
           () => {
-            Observability.userBehavior.recordInteraction('app_component_alert_click', {
+            Observability.observeInteraction('app_component_alert_click', {
               type: 'missing key',
             });
             missingKeyMessageClickHandler.bind(this, keyName)();
@@ -2935,7 +2935,7 @@ export class Component extends EventEmitter {
     operation: 'step' | 'run' = 'step',
     prefillValues?: Record<string, any>,
   ) {
-    Observability.userBehavior.recordInteraction('app_debug_inject_click', {});
+    Observability.observeInteraction('app_debug_inject_click', {});
     event.stopPropagation();
     event.stopImmediatePropagation();
     const debugBtn = this.domElement.querySelector('.btn-debug');
@@ -3515,7 +3515,7 @@ function addMissingKey({
       await saveKey({ ...fieldValues, apiKey: mockKey }, dialog);
 
       // #region enable mock data
-      Observability.userBehavior.recordInteraction('app_mock_screen_impression', {
+      Observability.observeInteraction('app_mock_screen_impression', {
         source: 'skip_and_set_mock_data',
       });
       await saveMockOutputs(component);

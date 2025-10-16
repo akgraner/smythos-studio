@@ -14,14 +14,14 @@ type Props = {
 const UpSellModal = ({ onClose, children, analytics }: Props) => {
   const navigate = useNavigate();
   useEffect(() => {
-    Observability.userBehavior.recordInteraction('upgrade_impression', {
+    Observability.observeInteraction('upgrade_impression', {
       page_url: analytics?.page_url,
       source: analytics.source,
     });
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleUpgradeClick = () => {
-    Observability.userBehavior.recordInteraction('upgrade_click', {
+    Observability.observeInteraction('upgrade_click', {
       page_url: analytics?.page_url,
       source: analytics?.source,
     });

@@ -68,7 +68,7 @@ export function useAgentsPageTutorial(options: UseAgentsPageTutorialOptions = {}
           },
           onReset: () => {
             // Called when overlay is about to be cleared
-            Observability.userBehavior.recordWorkflowCompletion('home_page_tutorial_completed', {
+            Observability.observeInteraction('home_page_tutorial_completed', {
               page_url: '/agents',
               source: 'Tutorial completed on home page onboarding',
             });

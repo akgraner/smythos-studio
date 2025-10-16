@@ -1,6 +1,5 @@
 import { errorToast, successToast, warningToast } from '@src/shared/components/toast';
 import { Observability } from '@src/shared/observability';
-import { PostHog } from '@enterprise/shared/posthog';
 import interact from 'interactjs';
 import { jsonrepair } from 'jsonrepair';
 import { Component } from './components/Component.class';
@@ -143,7 +142,7 @@ function toggleSwitch(on: boolean) {
   const debugSwitcherMessage = document?.querySelector('.debug-switcher-message');
 
   if (on) {
-    Observability.userBehavior.recordInteraction('debug_button_click', {
+    Observability.observeInteraction('debug_button_click', {
       position: 'bottom center of builder',
       type: 'debug',
     });
@@ -255,7 +254,7 @@ function applyDebugButtonStyles(debugLogBtn: HTMLElement, fixWithAIBtn: HTMLElem
 
 function runDebugInjectButtonExperiment() {
   try {
-    const featureVariant = PostHog.getFeatureFlag(
+    const featureVariant = Observability.features.getFeatureFlag(
       FEATURE_FLAGS.DEBUG_INJECT_TEXT_EXPERIMENT,
     ) as string;
     handleDebugButtons(featureVariant);
@@ -265,7 +264,7 @@ function runDebugInjectButtonExperiment() {
 }
 
 function runFixWithAIEExperiment() {
-  const featureVariant = PostHog.getFeatureFlag(
+  const featureVariant = Observability.features.getFeatureFlag(
     FEATURE_FLAGS.POSTHOG_EXPERIMENT_FIX_WITH_AI,
   ) as string;
   if (featureVariant === FIX_WITH_AI_EXPERIMENT_VARIANTS.VARIANT_1) {
@@ -396,7 +395,7 @@ export async function init() {
   const attachBtn = document.getElementById('debug-menubtn-attach');
   runBtn?.addEventListener('click', async (event) => {
     console.log('debug run');
-    Observability.userBehavior.recordInteraction('debug_button_click', {
+    Observability.observeInteraction('debug_button_click', {
       position: 'bottom center of builder',
       type: 'run',
     });
@@ -439,7 +438,7 @@ export async function init() {
   });
   stepBtn.addEventListener('click', async (event) => {
     console.log('debug Step');
-    Observability.userBehavior.recordInteraction('debug_button_click', {
+    Observability.observeInteraction('debug_button_click', {
       position: 'bottom center of builder',
       type: 'step',
     });
@@ -497,7 +496,7 @@ export async function init() {
 
   attachBtn.addEventListener('click', async (e) => {
     //attach to a live debug session
-    Observability.userBehavior.recordInteraction('debug_button_click', {
+    Observability.observeInteraction('debug_button_click', {
       position: 'bottom center of builder',
       type: 'attach',
     });
@@ -535,7 +534,7 @@ export async function init() {
   });
 
   document.getElementById('debug-menubtn-stop').addEventListener('click', async (e) => {
-    Observability.userBehavior.recordInteraction('debug_button_click', {
+    Observability.observeInteraction('debug_button_click', {
       position: 'bottom center of builder',
       type: 'stop',
     });
@@ -626,7 +625,7 @@ export async function runDebug() {
   runBtn.classList.add('running');
   isRunning = true;
 
-  Observability.userBehavior.recordFeatureUsage('app_run_agent', {});
+  Observability.observeInteraction('app_run_agent', {});
 
   let sessionID;
   let processComponents = true;
@@ -668,7 +667,7 @@ export async function runDebug() {
   }
   console.log('debug run end');
 
-  Observability.userBehavior.recordWorkflowCompletion('app_workflow_test_completed', {
+  Observability.observeInteraction('app_workflow_test_completed', {
     status: workflowStatus,
     source: 'debugger',
   });

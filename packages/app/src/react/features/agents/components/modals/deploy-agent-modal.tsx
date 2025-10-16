@@ -339,14 +339,14 @@ function DeployAgentModal({ userInfo, deploymentSidebarCtx }) {
           },
           operation: 'insertOrUpdate',
         });
-        Observability.userBehavior.recordWorkflowCompletion('app_deploy_first_agent', {
+        Observability.observeInteraction('app_deploy_first_agent', {
           createdAt: new Date().toISOString().split('T')[0],
         });
-        Observability.userBehavior.recordFeatureUsage('app_deploy_agent', {
+        Observability.observeInteraction('app_deploy_agent', {
           createdAt: new Date().toISOString().split('T')[0],
         });
       } else {
-        Observability.userBehavior.recordFeatureUsage('app_deploy_agent', {
+        Observability.observeInteraction('app_deploy_agent', {
           createdAt: new Date().toISOString().split('T')[0],
         });
       }

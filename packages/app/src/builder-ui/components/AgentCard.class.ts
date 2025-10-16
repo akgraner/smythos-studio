@@ -608,7 +608,7 @@ export class AgentCard extends EventEmitter {
         destroyCanvasContextMenu();
         e.stopPropagation();
 
-        Observability.userBehavior.recordInteraction('app_preview_as_chatbot_click', {});
+        Observability.observeInteraction('app_preview_as_chatbot_click', {});
 
         const embodimentTestButton = document.querySelector('#btn-emb-chatbot-main');
         const embodimentOpened = document.querySelector(

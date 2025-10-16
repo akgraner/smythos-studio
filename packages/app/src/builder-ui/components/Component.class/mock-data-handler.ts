@@ -210,7 +210,7 @@ export function saveMockOutputs(component: Component) {
             try {
               await insertOrUpdateMockData(component.uid, { enabled: true, data: { outputs } });
 
-              Observability.userBehavior.recordFeatureUsage('app_set_mock_data', {});
+              Observability.observeInteraction('app_set_mock_data', {});
 
               resolve('saved');
             } finally {
@@ -441,7 +441,7 @@ export async function addMockDataToggleButton(component: Component) {
               await insertOrUpdateMockData(component.uid, { enabled: false });
               MockDataToggleButtonState.turnOff(component);
             } else {
-              Observability.userBehavior.recordInteraction('app_mock_screen_impression', {
+              Observability.observeInteraction('app_mock_screen_impression', {
                 source: 'use_mock_data_button',
               });
               await saveMockOutputs(component);

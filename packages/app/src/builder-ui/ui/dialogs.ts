@@ -289,7 +289,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   const chatbotButton = document.getElementById('btn-emb-chatbot-main');
   if (chatbotButton) {
     chatbotButton.addEventListener('click', async (event) => {
-      Observability.userBehavior.recordInteraction('test_embodiment_click', {
+      Observability.observeInteraction('test_embodiment_click', {
         position: 'top right of builder dropdown',
       });
 
@@ -431,14 +431,14 @@ export async function createEmbodimentSidebar(title?, content?, actions?, toolti
       switch (key.toLowerCase()) {
         case 'llm':
           if (window.workspace) {
-            Observability.userBehavior.recordInteraction('agentLLM_embodiment_click', {
+            Observability.observeInteraction('agentLLM_embodiment_click', {
               position: 'embodiment sidebar tab',
             });
             openLLMEmbodiment(window.workspace, embodimentHandlers.openEmbodimentDialog);
           }
           break;
         case 'api':
-          Observability.userBehavior.recordInteraction('api_embodiment_click', {
+          Observability.observeInteraction('api_embodiment_click', {
             position: 'embodiment sidebar tab',
           });
           embodimentHandlers.openAPIEmbodiment?.();
@@ -446,7 +446,7 @@ export async function createEmbodimentSidebar(title?, content?, actions?, toolti
         case 'chat':
           const chatContCls = convertTitleToClass(EMBODIMENT_DESCRIPTIONS.chat.title);
           if (!sidebarContent.querySelector(`.${chatContCls}`)) {
-            Observability.userBehavior.recordInteraction('chatbot_embodiment_click', {
+            Observability.observeInteraction('chatbot_embodiment_click', {
               position: 'embodiment sidebar tab',
             });
             embodimentHandlers.openChatbotEmbodiment?.();
@@ -471,26 +471,26 @@ export async function createEmbodimentSidebar(title?, content?, actions?, toolti
           }
           break;
         case 'chatgpt':
-          Observability.userBehavior.recordInteraction('chatgpt_embodiment_click', {
+          Observability.observeInteraction('chatgpt_embodiment_click', {
             position: 'embodiment sidebar tab',
           });
           embodimentHandlers.openChatGPTEmbodiment?.();
           break;
         case 'postman':
-          Observability.userBehavior.recordInteraction('postman_embodiment_click', {
+          Observability.observeInteraction('postman_embodiment_click', {
             position: 'embodiment sidebar tab',
           });
           embodimentHandlers.openPostmanEmbodiment?.();
           break;
         case 'alexa':
-          Observability.userBehavior.recordInteraction('alexa_embodiment_click', {
+          Observability.observeInteraction('alexa_embodiment_click', {
             position: 'embodiment sidebar tab',
           });
           embodimentHandlers.openAlexaEmbodiment?.();
           break;
         case 'agent_skill':
           const agentSkillContCls = convertTitleToClass(EMBODIMENT_DESCRIPTIONS.agent_skill.title);
-          Observability.userBehavior.recordInteraction('form_preview_embodiment_click', {
+          Observability.observeInteraction('form_preview_embodiment_click', {
             position: 'embodiment sidebar tab',
           });
           if (!sidebarContent.querySelector(`.${agentSkillContCls}`)) {
@@ -511,7 +511,7 @@ export async function createEmbodimentSidebar(title?, content?, actions?, toolti
           break;
 
         case 'mcp':
-          Observability.userBehavior.recordInteraction('mcp_embodiment_click', {
+          Observability.observeInteraction('mcp_embodiment_click', {
             position: 'embodiment sidebar tab',
           });
           embodimentHandlers.openMCPEmbodiment?.();

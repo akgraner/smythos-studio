@@ -54,7 +54,7 @@ export function AgentCard({ agent, loadAgents, updateAgentInPlace }: AgentCardPr
   const [featureFlagPayload, setFeatureFlagPayload] = useState<unknown>(undefined);
 
   // Load feature flag payload
-  // Use PostHog's onFeatureFlags callback to wait for flags to be ready
+  // Use Observability API to wait for flags to be ready
   useEffect(() => {
     const loadFeatureFlag = () => {
       const payload = Observability.features.getFeatureFlagPayload(
@@ -63,14 +63,8 @@ export function AgentCard({ agent, loadAgents, updateAgentInPlace }: AgentCardPr
       setFeatureFlagPayload(payload);
     };
 
-    // Use PostHog's built-in callback for when flags are ready
-    const posthog = (window as { posthog?: any }).posthog;
-    if (posthog?.onFeatureFlags) {
-      posthog.onFeatureFlags(loadFeatureFlag);
-    } else {
-      // Fallback: if PostHog already loaded or not available, try immediately
-      loadFeatureFlag();
-    }
+    // Wait for feature flags to be fully loaded before reading payload
+    Observability.features.onFeatureFlagsReady(loadFeatureFlag);
   }, []);
 
   // Modal states

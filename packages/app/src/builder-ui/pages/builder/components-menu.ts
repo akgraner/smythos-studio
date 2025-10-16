@@ -748,7 +748,7 @@ function setupBuilderMenuDragDrop() {
         return;
       }
 
-      Observability.userBehavior.recordFeatureUsage('app_component_used', {
+      Observability.observeInteraction('app_component_used', {
         name: event.relatedTarget.getAttribute('smt-component'),
         type: !!templateId ? 'integration' : 'component',
       });
@@ -914,7 +914,7 @@ function setupBuilderMenuDragDrop() {
 }
 
 function renderUpgradeModal() {
-  Observability.userBehavior.recordInteraction('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: '/builder',
     source: 'adding integrations to the agent',
   });
@@ -940,7 +940,7 @@ function renderUpgradeModal() {
           cssClass:
             'bg-primary-100 text-white rounded-md px-4 py-1.5 hover:opacity-75 cursor-pointer w-full',
           callback: (_, dialog) => {
-            Observability.userBehavior.recordInteraction('upgrade_click', {
+            Observability.observeInteraction('upgrade_click', {
               page_url: '/builder',
               source: 'adding integrations in the agent',
             });
@@ -977,7 +977,7 @@ function renderCompUpgradeModal({
     page_url: string;
   };
 }) {
-  Observability.userBehavior.recordInteraction('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: analytics.page_url,
     source: analytics.source,
   });
@@ -1090,7 +1090,7 @@ function isLegacyPlan() {
 }
 
 function renderRestrictedAccessModal(feature: string) {
-  Observability.userBehavior.recordInteraction('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: '/builder',
     source: `adding ${feature}`,
   });
@@ -1148,7 +1148,7 @@ function renderRestrictedAccessModal(feature: string) {
 }
 
 function renderRestrictedAccessModalWebTools() {
-  Observability.userBehavior.recordInteraction('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: '/builder',
     source: 'adding web tools',
   });

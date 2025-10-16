@@ -17,10 +17,10 @@ const FormFill = ({ setIsFormVisible }: { setIsFormVisible: (value: boolean) => 
   const dynamicValidationSchema = generateComponentInputsSchema(selectedSkill?.inputsTypes);
   const handleSubmit = async (values: any, { resetForm }: { resetForm: () => void }) => {
     setIsFormVisible(false);
-    Observability.userBehavior.recordInteraction('app_form_preview_run_button_click', {});
+    Observability.observeInteraction('app_form_preview_run_button_click', {});
     callSkillMutation.mutate(values, {
       onSuccess: () => {
-        Observability.userBehavior.recordWorkflowCompletion('app_workflow_test_completed', {
+        Observability.observeInteraction('app_workflow_test_completed', {
           status: 'success',
           source: 'form preview',
         });
@@ -28,7 +28,7 @@ const FormFill = ({ setIsFormVisible }: { setIsFormVisible: (value: boolean) => 
         setView('home');
       },
       onError: () => {
-        Observability.systemInsight.recordError('app_workflow_test_completed', {
+        Observability.observeInteraction('app_workflow_test_completed', {
           status: 'failed',
           source: 'form preview',
         });
