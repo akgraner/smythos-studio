@@ -356,9 +356,9 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
       await Promise.all(promises);
 
-      if (postHogEvent.app_LLM_selected) {
+      if (postHogEvent.app_LLM_selected && chatGptModelChanged) {
         await Observability.observeInteraction(EVENTS.AGENT_SETTINGS_EVENTS.app_LLM_selected, {
-          model: formik.values.chatGptModel,
+          model: currentFormValues.current.chatGptModel,
         });
         setPostHogEvent((prev) => ({ ...prev, app_LLM_selected: null }));
       }
