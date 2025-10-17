@@ -1,6 +1,6 @@
 import { Request } from 'express';
 import Joi from 'joi';
-import { VAULT_SCOPE_AGENT_LLM } from '../../../shared/constants/general';
+import { MANAGED_VAULT_SCOPES } from '../../../shared/constants/general';
 import { type VaultKeyObj } from '../../../shared/types';
 import { vault } from '../../services/SmythVault.class';
 
@@ -17,7 +17,7 @@ const scope = [
   '_hidden',
   'ALL_NON_GLOBAL_KEYS',
   'CUSTOM_LLM',
-  VAULT_SCOPE_AGENT_LLM,
+  ...MANAGED_VAULT_SCOPES,
 ];
 const fields = ['name', 'scope', 'key', 'owner', 'team', 'isInvalid'];
 

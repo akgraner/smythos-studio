@@ -1,4 +1,5 @@
-import { getTeamSettingsObj } from '../../../services/team-data.service';
+import { vault } from '@src/backend/services/SmythVault.class';
+import { getTeamSettingsObj } from '@src/backend/services/team-data.service';
 
 export const isKeyTemplateVariable = (str: string): boolean => {
   if (!str) return false;
@@ -34,11 +35,8 @@ export const replaceTemplateVariablesOptimized = async (req) => {
   // Extract request body
   const reqBody = req.body;
 
-  // Fetch all team settings
-  const allKeys = await getTeamSettingsObj(req, 'vault');
-
   // Fetch template variables and their corresponding values
-  const templateValues = fetchTemplateValues(reqBody, allKeys, keysToCheck, req._team?.id);
+  const templateValues = await fetchTemplateValues(req, keysToCheck);
 
   // Map template variables to their fetched values
   const valuesObj = mapTemplateValues(templateValues, reqBody);
@@ -50,14 +48,27 @@ export const replaceTemplateVariablesOptimized = async (req) => {
 };
 
 // Function to fetch template values asynchronously
-export const fetchTemplateValues = (reqBody, allKeys, keysToCheck, teamId) => {
+export const fetchTemplateValues = async (req, keysToCheck) => {
+  /*
+  This is supposed to search the keys in agent settings (legacy) and if not, search in the VAULT
+  */
+  const reqBody = req.body;
+  const teamId = req._team?.id;
+  // Fetch all team settings
+  const allKeys = await getTeamSettingsObj(req, 'vault');
   const templateValues = [];
 
   for (const key of keysToCheck) {
     if (isKeyTemplateVariable(reqBody[key])) {
-      const keyNames = getKeyIdsFromTemplateVars(reqBody[key]);
-      const filteredKeys = filter(allKeys, { team: teamId, keyName: keyNames[0] });
-      const value = Object.values(filteredKeys).length ? Object.values(filteredKeys)[0] : null;
+      const keyName = getKeyIdsFromTemplateVars(reqBody[key])[0];
+      const filteredKeys = filter(allKeys, { team: teamId, keyName });
+      // 1. search in agent settings
+      let value = Object.values(filteredKeys).length ? Object.values(filteredKeys)[0] : null;
+
+      // 2. search in vault
+      if (!value) {
+        value = (await vault.get({ team: teamId, keyName }, req)).key;
+      }
       templateValues.push({ key, value });
     }
   }
@@ -72,7 +83,7 @@ export const mapTemplateValues = (templateValues, reqBody) => {
   templateValues.forEach(({ key, value }) => {
     if (value) {
       valuesObj[key] = value;
-      reqBody[key] = value['key']; // Assuming 'key' is the property to be assigned
+      reqBody[key] = typeof value === 'object' ? value['key'] : value;
     }
   });
 

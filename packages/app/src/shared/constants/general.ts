@@ -98,6 +98,8 @@ export const WEAVER_REQUIRE_CREDITS = 'Weaver requires credits';
 export const AGENTS_WITH_NEXT_STEPS_SHOWN = 'agentsWithNextStepsShown';
 
 export const VAULT_SCOPE_AGENT_LLM = 'AgentLLM';
+export const VAULT_SCOPE_OAUTH_CONNECTIONS = 'OAuthConnections';
+export const MANAGED_VAULT_SCOPES = [VAULT_SCOPE_AGENT_LLM, VAULT_SCOPE_OAUTH_CONNECTIONS];
 
 type EmbodimentDescription = {
   title: string;
