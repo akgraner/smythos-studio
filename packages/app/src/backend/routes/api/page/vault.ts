@@ -347,7 +347,8 @@ async function deleteVaultKeys(entry: any, team: string, req: any) {
   console.log('WE SHOULD DELETE', vaultKeys);
   await Promise.all(
     vaultKeys.map(async (key) => {
-      return await vault.delete(key, team, req);
+      const result = await vault.delete(key, team, req);
+      console.log('DELETED KEY. Result: ', key, result);
     }),
   );
 }
@@ -371,6 +372,7 @@ async function storeSensitiveKeysInVault(entry: { [key: string]: any }, entryId:
       data: keyData,
       keyId: keyName,
     });
+    console.log('STORED KEY. Result: ', result);
     if (!result?.success) {
       console.error(`Failed to store sensitive key ${field} in vault:`, result?.error);
       throw new Error(`Failed to store sensitive key ${field} in vault: ${result?.error}`);
@@ -480,7 +482,7 @@ router.put('/oauth-connections', includeTeamDetails, async (req, res) => {
       };
     }
 
-    await deleteVaultKeys(existingEntry, req?._team?.id, req);
+    // await deleteVaultKeys(existingEntry, req?._team?.id, req);
     // 5. Merge and normalize the settings using helper (now both are guaranteed to be objects)
     let preparedNewSettings = mergeAuthSettings(existingEntry, parsedNewSettings);
     preparedNewSettings = await storeSensitiveKeysInVault(preparedNewSettings, entryId, req);

@@ -578,7 +578,8 @@ class SmythVault {
   ): Promise<Record<string, any>> {
     const cacheKey = generateKey(this.settingsKey + team, 'vault');
     const idToken = getUserToken(req);
-    let cacheResult = await cache.get(cacheKey, 60 * 60); // extend ttl by 1 hour every time we get the keys
+    // let cacheResult = await cache.get(cacheKey, 60 * 60); // extend ttl by 1 hour every time we get the keys
+    let cacheResult = undefined;
 
     let settings = cacheResult?.data || {}; // removed cache for now
     // let settings = {};
