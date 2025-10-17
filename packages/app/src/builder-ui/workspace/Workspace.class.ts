@@ -1005,7 +1005,6 @@ export class Workspace extends EventEmitter {
         this.panzoom.handleMove(event);
       });
       document.addEventListener('pointerup', (event) => {
-        if (this.hoveredElement != this.container && this.hoveredElement != this.domElement) return;
         this.panzoom.handleUp(event);
       });
 

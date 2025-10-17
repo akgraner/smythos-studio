@@ -106,6 +106,7 @@ export class APICall extends Component {
         //validate: `required maxlength=${maxUriLength} ${isLocalhost ? 'url' : ''}`,
         validate: `required maxlength=${maxUriLength} custom=isUrlValid`,
         validateMessage: 'Provide a valid URL',
+        doNotValidateOnLoad: true,
         attributes: { 'data-template-vars': 'true' },
         cls: 'pr-4',
         help: `Enter the website address and add any path or query parts.\n <a href="${SMYTHOS_DOCS_URL}/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=url#step-1-choose-method-and-url" target="_blank" class="text-blue-600 hover:text-blue-800">See URL patterns</a>`,

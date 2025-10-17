@@ -15,16 +15,18 @@ import { LLMRegistry } from '@src/shared/services/LLMRegistry.service';
 import { llmModelsStore } from '@src/shared/state_stores/llm-models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFormik } from 'formik';
-import { pick } from 'lodash-es';
 import {
   createContext,
   Dispatch,
   SetStateAction,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
+import { FaCheck } from 'react-icons/fa';
 import * as Yup from 'yup';
 
 // Create the context type
@@ -51,7 +53,7 @@ interface WidgetsContextType {
     app_LLM_selected: string | null;
     setPostHogEvent: Dispatch<SetStateAction<{ app_LLM_selected: string | null }>>;
   };
-  isSaving: boolean;
+  updateCurrentFormValues: (values: FormValues) => void;
 }
 
 // Create the context with a default value
@@ -69,7 +71,6 @@ export const useWidgetsContext = () => {
 interface FormValues {
   chatGptModel?: string;
   behavior?: string;
-  // introMessage?: string;
   name?: string;
   shortDescription?: string;
 }
@@ -80,7 +81,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
   const [postHogEvent, setPostHogEvent] = useState({ app_LLM_selected: null });
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
+  const [savingStatus, setSavingStatus] = useState<'idle' | 'saving' | 'saved'>('idle');
   const [isLLMModelsLoading, setIsLLMModelsLoading] = useState<boolean>(true);
   const [llmModels, setLlmModels] = useState<
     Array<{
@@ -90,6 +91,18 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     }>
   >([]);
   const [defaultModel, setDefaultModel] = useState<string>('');
+
+  const initialValues: FormValues = {
+    chatGptModel: '',
+    behavior: '',
+    name: '',
+    shortDescription: '',
+  };
+
+  // Contains the current form values
+  const currentFormValues = useRef<FormValues>(initialValues);
+  // Contains the previous form values to compare with the current form values
+  const initialFormValues = useRef<FormValues>(initialValues);
 
   // Memoized validation schema that uses dynamic models
   const validationSchema = useMemo(
@@ -109,12 +122,29 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
             'Invalid model',
           ),
         behavior: Yup.string().optional(),
-        // introMessage: Yup.string()
-        //   .required('Intro Message is required')
-        //   .max(190, 'Intro Message cannot exceed 190 characters'),
       }),
     [llmModels], // Only recreate when models change
   );
+
+  const formik = useFormik({
+    initialValues: initialValues,
+    validationSchema: validationSchema,
+    onSubmit: async (_, { setSubmitting }) => {
+      await handleSave();
+
+      setSubmitting(false);
+    },
+    enableReinitialize: false, // Don't reinitialize form when initialValues change
+  });
+
+  formik.handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    currentFormValues.current = {
+      ...currentFormValues.current,
+      [e.target.name]: e.target.value,
+    };
+    formik.setFieldValue(e.target.name, e.target.value, false);
+    formik.validateField(e.target.name);
+  };
 
   // Initialize LLM models store on component mount
   useEffect(() => {
@@ -170,126 +200,87 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     return chatbotEmbodiment;
   }, [agentEmbodiments.data]);
 
-  const initialValues: FormValues = useMemo(() => {
-    return {
-      chatGptModel:
-        settingsQuery.data?.settings?.chatGptModel ||
-        chatbotEmbodiment?.properties?.chatGptModel ||
-        defaultModel,
-      behavior: workspace ? workspace.agent.data.behavior : agentQuery.data?.data?.behavior || '',
-      // introMessage:
-      //   workspace?.agent?.data?.introMessage ||
-      //   settingsQuery.data?.settings?.introMessage ||
-      //   chatbotEmbodiment?.properties?.introMessage ||
-      //   `Hi, I'm ${agentQuery.data?.name || 'an AI Agent'}. How can I help you today?`,
-      name: agentQuery.data?.name || '',
-      shortDescription: agentQuery.data?.data?.shortDescription || '',
-    };
-  }, [chatbotEmbodiment, settingsQuery.data, agentQuery.data, workspace, defaultModel]);
+  // Populate form with API data once it's available
+  useEffect(() => {
+    const isInitialMount = !formik.values.chatGptModel && !formik.values.name;
+    if (agentQuery.data && settingsQuery.data && isInitialMount) {
+      const values = {
+        chatGptModel:
+          settingsQuery.data?.settings?.chatGptModel ||
+          chatbotEmbodiment?.properties?.chatGptModel ||
+          defaultModel,
+        behavior: workspace ? workspace.agent.data.behavior : agentQuery.data?.data?.behavior || '',
+        name: agentQuery.data?.name || '',
+        shortDescription: agentQuery.data?.data?.shortDescription || '',
+      };
 
-  const formik = useFormik({
-    initialValues: initialValues,
-    validationSchema: validationSchema,
-    onSubmit: async (values, { setSubmitting }) => {
-      setIsSaving(true);
+      formik.setValues(values);
+      currentFormValues.current = values;
+      initialFormValues.current = values;
+    }
+  }, [agentQuery.data, settingsQuery.data, chatbotEmbodiment, workspace, defaultModel, formik]);
 
-      await handleSave();
+  const updateAgentDataSettingsCache = useCallback((): void => {
+    queryClient.setQueryData(['agent_data_settings'], (oldData: Agent) => {
+      if (!oldData) return oldData;
 
-      setSubmitting(false);
-      setIsSaving(false);
-    },
-    enableReinitialize: true,
-  });
-
-  function handleWorkSpaceChange() {
-    if (workspace?.agent?.data) {
-      // Immediately update form with workspace values
-      formik.resetForm({
-        values: {
-          chatGptModel: formik.values.chatGptModel, // Keep existing model
-          behavior: workspace.agent.data.behavior,
-          // introMessage: workspace.agent.data.introMessage,
-          name: workspace.agent.name,
-          shortDescription: workspace.agent.data.shortDescription,
+      return {
+        ...oldData,
+        name: currentFormValues.current.name.trim(),
+        data: {
+          ...(oldData.data || {}),
+          shortDescription: currentFormValues.current.shortDescription.trim(),
+          behavior: currentFormValues.current.behavior.trim(),
         },
+      };
+    });
+  }, [queryClient]);
+
+  const updateAgentSettingsCache = useCallback(
+    (model: string) => {
+      queryClient.setQueryData(['agent_settings', agentId], (oldData: any) => {
+        return {
+          ...oldData,
+          settings: {
+            ...oldData.settings,
+            chatGptModel: model,
+          },
+        };
       });
+    },
+    [queryClient, agentId],
+  );
 
-      // Then refetch settings for completeness
-      settingsQuery.refetch().then((values) => {
-        if (values?.data?.settings?.chatGptModel) {
-          formik.setFieldValue('chatGptModel', values.data.settings.chatGptModel);
-        }
-      });
-    }
-  }
-
-  /**
-   * Resets all modified fields (name and description) to their original values.
-   */
-  const handleResetAll = (): void => {
-    formik.setFieldValue('name', agentQuery.data?.name || '');
-    formik.setFieldValue('shortDescription', agentQuery.data?.data?.shortDescription || '');
-
-    formik.setFieldValue(
-      'chatGptModel',
-      settingsQuery.data?.settings?.chatGptModel ||
-        chatbotEmbodiment?.properties?.chatGptModel ||
-        defaultModel,
-    );
-    formik.setFieldValue('behavior', agentQuery.data?.data?.behavior || '');
-  };
-
-  async function handleSave(): Promise<void> {
-    const hasError = false;
-
-    // Show toast if there are errors in global variables widget.
-    if (hasError) {
-      errorToast('Error! please check your variables.');
-      return;
-    }
+  const handleSave = useCallback(async (): Promise<void> => {
+    setSavingStatus('saving');
 
     if (agentQuery.isLoading || !agentQuery.isSuccess || !agentQuery.data || !agentQuery.data.data)
       return;
-
-    // TODO: uncomment this when intro message is implemented
-    // if (formik.initialValues.introMessage !== values.introMessage) {
-    //   promises.push(
-    //     saveAgentSettingByKey(SETTINGS_KEYS.introMessage, values.introMessage, agentId).catch((e) => {
-    //       toast('Failed to save intro message', 'Error', 'alert');
-    //     failedFields.push(SETTINGS_KEYS.introMessage);
-    //   }),
-    // );
-
-    // if (workspace) {
-    //   try {
-    //     workspace.agent.data.introMessage = values.introMessage;
-    //     // workspace.agent.introMessage = values.introMessage;
-    //     const data = await workspace.export();
-    //     await workspace.saveAgent(workspace.agent.name, null, data, workspace.agent.id);
-    //   } catch (e) {
-    //     toast('Failed to update workspace with intro message', 'Error', 'alert');
-    //       failedFields.push(SETTINGS_KEYS.introMessage);
-    //     }
-    //   }
-    // }
 
     let lockId = null;
     const promises = [];
     const failedFields = [];
 
-    const nameChanged: boolean = formik.values.name.trim() !== agentQuery.data?.name;
+    const nameChanged: boolean =
+      currentFormValues.current.name?.trim() !== initialFormValues.current.name;
     const descriptionChanged: boolean =
-      formik.values.shortDescription.trim() !== agentQuery.data?.data?.shortDescription;
+      currentFormValues.current.shortDescription?.trim() !==
+      initialFormValues.current.shortDescription;
 
     const chatGptModelChanged: boolean =
-      formik.initialValues.chatGptModel !== formik.values.chatGptModel;
-    const behaviorChanged: boolean = formik.initialValues.behavior !== formik.values.behavior;
+      currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel;
+    const behaviorChanged: boolean =
+      currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
+
+    // store the initial form values in a temporary variable
+    const tempInitialFormValues = { ...initialFormValues.current };
+    initialFormValues.current = { ...currentFormValues.current };
 
     if (chatGptModelChanged) {
       promises.push(
         saveAgentSettingByKey(
           SETTINGS_KEYS.chatGptModel,
-          formik.values.chatGptModel,
+          currentFormValues.current.chatGptModel,
           agentId,
         ).catch((e) => {
           errorToast('Failed to save model');
@@ -302,21 +293,24 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       if (workspace) {
         // Only update changed fields in workspace
         if (nameChanged) {
-          workspace.agent.name = formik.values.name.trim();
+          workspace.agent.name = currentFormValues.current.name?.trim();
         }
         if (descriptionChanged) {
-          workspace.agent.data.shortDescription = formik.values.shortDescription.trim();
+          workspace.agent.data.shortDescription =
+            currentFormValues.current.shortDescription?.trim();
         }
 
         if (behaviorChanged) {
-          workspace.agent.data.behavior = formik.values.behavior;
+          workspace.agent.data.behavior = currentFormValues.current.behavior?.trim();
         }
 
         if (nameChanged || descriptionChanged || behaviorChanged) {
           const data = await workspace.export();
           const id = workspace.agent.id || agentId;
 
-          promises.push(workspace.saveAgent(formik.values.name.trim(), null, data, id));
+          promises.push(
+            workspace.saveAgent(currentFormValues.current.name?.trim(), null, data, id),
+          );
         }
       } else {
         const lockResponse = await agentSettingsUtils.accquireLock(agentId);
@@ -330,20 +324,20 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
         // Only include changed fields in the update
         if (nameChanged) {
-          updatedData.name = formik.values.name.trim();
+          updatedData.name = currentFormValues.current.name?.trim();
         }
 
         if (descriptionChanged) {
           updatedData.data = {
             ...agentQuery.data?.data,
-            shortDescription: formik.values.shortDescription?.trim(),
+            shortDescription: currentFormValues.current.shortDescription?.trim() || '',
           };
         }
 
         if (behaviorChanged) {
           updatedData.data = {
             ...agentQuery.data?.data,
-            behavior: formik.values.behavior,
+            behavior: currentFormValues.current.behavior?.trim() || '',
           };
         }
 
@@ -369,12 +363,14 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
         setPostHogEvent((prev) => ({ ...prev, app_LLM_selected: null }));
       }
 
-      updateAgentSettingsCache(formik.values.chatGptModel);
+      updateAgentSettingsCache(currentFormValues.current.chatGptModel);
       updateAgentDataSettingsCache();
 
-      formik.resetForm({
-        values: { ...formik.values, ...pick(formik.initialValues, failedFields) },
-      });
+      setSavingStatus('saved');
+      const timeout = setTimeout(() => {
+        setSavingStatus('idle');
+        clearTimeout(timeout);
+      }, 1000);
     } catch (error) {
       console.error('Error in save operation:', error);
 
@@ -385,54 +381,29 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       } else {
         errorToast('Failed to save settings');
       }
+
+      initialFormValues.current = { ...tempInitialFormValues };
+      currentFormValues.current = { ...tempInitialFormValues };
+      setSavingStatus('idle');
     } finally {
       if (lockId) {
         await agentSettingsUtils.releaseLock(agentId, lockId).catch((e) => console.error(e));
       }
     }
-  }
+  }, [
+    agentQuery.data,
+    agentQuery.isLoading,
+    agentQuery.isSuccess,
+    agentId,
+    postHogEvent.app_LLM_selected,
+    workspace,
+    updateAgentDataSettingsCache,
+    updateAgentSettingsCache,
+  ]);
 
   const handleModalClose = () => {
     setIsModalOpen(false);
   };
-
-  function updateAgentDataSettingsCache(): void {
-    queryClient.setQueryData(['agent_data_settings'], (oldData: Agent) => {
-      if (!oldData) return oldData;
-
-      return {
-        ...oldData,
-        name: formik.values.name.trim(),
-        data: {
-          ...(oldData.data || {}),
-          shortDescription: formik.values.shortDescription.trim(),
-        },
-      };
-    });
-  }
-
-  const updateAgentSettingsCache = (model: string) => {
-    queryClient.setQueryData(['agent_settings', agentId], (oldData: any) => {
-      return {
-        ...oldData,
-        settings: {
-          ...oldData.settings,
-          chatGptModel: model,
-        },
-      };
-    });
-  };
-
-  useEffect(() => {
-    if (workspace) {
-      workspace.on('AgentSaved', handleWorkSpaceChange);
-
-      // Cleanup subscription on unmount
-      return () => {
-        workspace.off('AgentSaved', handleWorkSpaceChange);
-      };
-    }
-  }, [workspace]);
 
   useEffect(
     function migration() {
@@ -466,6 +437,45 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
     [chatbotEmbodiment, settingsQuery.data],
   );
 
+  const [callAPI, setCallAPI] = useState(false);
+
+  // Auto-save with debouncing
+  useEffect(() => {
+    const currentTimeoutId = setTimeout(() => {
+      // Skip auto-save on initial mount
+      if (!agentQuery.data || !settingsQuery.data) {
+        return;
+      }
+
+      // Check if fields have actually changed
+      const hasChanges =
+        currentFormValues.current.name?.trim() !== initialFormValues.current.name ||
+        currentFormValues.current.shortDescription?.trim() !==
+          initialFormValues.current.shortDescription ||
+        currentFormValues.current.chatGptModel !== initialFormValues.current.chatGptModel ||
+        currentFormValues.current.behavior?.trim() !== initialFormValues.current.behavior;
+
+      if (!hasChanges || !isWriteAccess || savingStatus !== 'idle') {
+        return;
+      }
+
+      setCallAPI(true);
+    }, 500);
+
+    return () => clearTimeout(currentTimeoutId);
+  }, [formik, isWriteAccess, savingStatus, agentQuery.data, settingsQuery.data]);
+
+  useEffect(() => {
+    if (callAPI) {
+      formik.submitForm();
+      setCallAPI(false);
+    }
+  }, [callAPI, formik]);
+
+  const updateCurrentFormValues = useCallback((values: FormValues) => {
+    currentFormValues.current = { ...currentFormValues.current, ...values };
+  }, []);
+
   // Create the context value
   const contextValue = useMemo<WidgetsContextType>(
     () => ({
@@ -487,7 +497,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
         app_LLM_selected: postHogEvent.app_LLM_selected,
         setPostHogEvent,
       },
-      isSaving,
+      updateCurrentFormValues,
     }),
     [
       formik,
@@ -497,17 +507,11 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
       agentEmbodiments.isLoading,
       isModalOpen,
       postHogEvent,
-      isSaving,
       isLLMModelsLoading,
       llmModels,
+      updateCurrentFormValues,
     ],
   );
-
-  const fieldChanged =
-    formik.values.name.trim() !== agentQuery.data?.name ||
-    formik.values.shortDescription.trim() !== agentQuery.data?.data?.shortDescription ||
-    formik.initialValues.chatGptModel !== formik.values.chatGptModel ||
-    formik.initialValues.behavior !== formik.values.behavior;
 
   return (
     <WidgetsContext.Provider value={contextValue}>
@@ -515,12 +519,7 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
         <AgentInfoWidget />
         <SettingsWidget />
 
-        <FloatingButtonContainer
-          showFloatingButton={fieldChanged}
-          isSaving={isSaving}
-          handleCancel={() => handleResetAll()}
-          handleSave={() => formik.submitForm()}
-        />
+        <FloatingButtonContainer savingState={savingStatus} />
       </div>
     </WidgetsContext.Provider>
   );
@@ -528,63 +527,41 @@ const OverviewWidgetsContainer = ({ isWriteAccess }: { isWriteAccess: boolean })
 
 export default OverviewWidgetsContainer;
 
-const FloatingButtonContainer = ({
-  showFloatingButton,
-  isSaving,
-  handleCancel,
-  handleSave,
-}: {
-  showFloatingButton: boolean;
-  isSaving: boolean;
-  handleCancel: () => void;
-  handleSave: () => void;
-}) => {
+const FloatingButtonContainer = ({ savingState }: { savingState: 'idle' | 'saving' | 'saved' }) => {
   return (
     <div
-      className={`sticky bottom-0 flex justify-end w-full bg-gray-50 p-4 rounded-lg border border-solid border-gray-200 ${
-        showFloatingButton ? 'block' : 'hidden'
+      className={`sticky bottom-2 right-2 flex items-center justify-end ml-auto  w-fit bg-gray-50 p-3 rounded-full border border-solid border-gray-200 ${
+        savingState !== 'idle' ? 'block' : 'hidden'
       }`}
     >
-      {!isSaving && (
-        <button
-          type="button"
-          className="font-medium bg-transparent text-sm text-gray-500"
-          disabled={isSaving}
-          onClick={handleCancel}
-        >
-          Cancel
-        </button>
+      {savingState === 'saving' && (
+        <div role="status" className="flex items-center">
+          <svg
+            aria-hidden="true"
+            className="w-4 h-4 me-2 text-gray-200 animate-spin fill-v2-blue"
+            viewBox="0 0 100 101"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
+              fill="currentColor"
+            />
+            <path
+              d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
+              fill="currentFill"
+            />
+          </svg>
+          <span className="text-sm text-gray-500">Saving...</span>
+        </div>
       )}
-      <button
-        type="button"
-        className="bg-transparent ml-5 font-semibold text-sm text-v2-blue flex items-center"
-        disabled={isSaving}
-        onClick={handleSave}
-      >
-        {isSaving ? (
-          <div role="status" className="flex items-center">
-            <svg
-              aria-hidden="true"
-              className="w-4 h-4 me-2 text-gray-200 animate-spin fill-v2-blue"
-              viewBox="0 0 100 101"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M100 50.5908C100 78.2051 77.6142 100.591 50 100.591C22.3858 100.591 0 78.2051 0 50.5908C0 22.9766 22.3858 0.59082 50 0.59082C77.6142 0.59082 100 22.9766 100 50.5908ZM9.08144 50.5908C9.08144 73.1895 27.4013 91.5094 50 91.5094C72.5987 91.5094 90.9186 73.1895 90.9186 50.5908C90.9186 27.9921 72.5987 9.67226 50 9.67226C27.4013 9.67226 9.08144 27.9921 9.08144 50.5908Z"
-                fill="currentColor"
-              />
-              <path
-                d="M93.9676 39.0409C96.393 38.4038 97.8624 35.9116 97.0079 33.5539C95.2932 28.8227 92.871 24.3692 89.8167 20.348C85.8452 15.1192 80.8826 10.7238 75.2124 7.41289C69.5422 4.10194 63.2754 1.94025 56.7698 1.05124C51.7666 0.367541 46.6976 0.446843 41.7345 1.27873C39.2613 1.69328 37.813 4.19778 38.4501 6.62326C39.0873 9.04874 41.5694 10.4717 44.0505 10.1071C47.8511 9.54855 51.7191 9.52689 55.5402 10.0491C60.8642 10.7766 65.9928 12.5457 70.6331 15.2552C75.2735 17.9648 79.3347 21.5619 82.5849 25.841C84.9175 28.9121 86.7997 32.2913 88.1811 35.8758C89.083 38.2158 91.5421 39.6781 93.9676 39.0409Z"
-                fill="currentFill"
-              />
-            </svg>
-            <span className="sr-only">Loading...</span>
-          </div>
-        ) : (
-          'Save'
-        )}
-      </button>
+
+      {savingState === 'saved' && (
+        <div role="status" className="flex items-center">
+          <FaCheck className="w-4 h-4 me-2 text-v2-blue" />
+          <span className="text-sm text-gray-500">Saved</span>
+        </div>
+      )}
     </div>
   );
 };

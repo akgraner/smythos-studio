@@ -1089,6 +1089,7 @@ export async function editSettings(component: Component) {
               onBeforeCancel: onBeforeCancelTemplate,
               onCancel,
               onLoad: onTemplateCreateLoad.bind(component),
+              component,
             });
           },
         },
@@ -1127,6 +1128,7 @@ export async function editSettings(component: Component) {
     onLoad: onComponentLoad.bind(component),
     helpTooltip: helpTooltip,
     isSettingsChanged: isSettingsChanged.bind(component),
+    component: component,
   });
 
   component.emit('settingsOpened', component.getSettingsSidebar());
