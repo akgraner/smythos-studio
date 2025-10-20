@@ -826,11 +826,12 @@ export const userCustomModelService = {
   },
 
   /**
-   * Gets a user custom LLM model with decrypted credentials
+   * Gets a vault key value by its name
+   * Uses the vault key name directly without needing to fetch model info first
    */
-  getUserCustomModelWithCredentials: async (modelId: string): Promise<UserCustomModel> => {
+  getVaultKeyByName: async (keyName: string): Promise<string> => {
     try {
-      const response = await fetch(`/api/page/vault/user-custom-llm/${modelId}/with-credentials`, {
+      const response = await fetch(`/api/page/vault/keys/name/${encodeURIComponent(keyName)}`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -838,41 +839,18 @@ export const userCustomModelService = {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to get user custom model with credentials');
+        throw new Error('Failed to get vault key');
       }
 
       const result = await response.json();
       if (!result.success) {
-        throw new Error(result.error || 'Failed to get user custom model with credentials');
+        throw new Error(result.error || 'Failed to get vault key');
       }
 
-      const modelData = result.data;
-
-      // Transform the data to match UserCustomModel format
-      const transformedModel: UserCustomModel = {
-        id: modelData.id,
-        name: modelData.name,
-        modelId: modelData.modelId,
-        // Remove '.forbidden' from baseURL if present
-        baseURL: modelData.baseURL?.replace(/\.forbidden/gi, '') || modelData.baseURL,
-        provider: modelData.provider,
-        contextWindow:
-          modelData.contextWindow !== undefined ? modelData.contextWindow : modelData.tokens,
-        maxOutputTokens:
-          modelData.maxOutputTokens !== undefined
-            ? modelData.maxOutputTokens
-            : modelData.completionTokens,
-        fallbackLLM: modelData.fallbackLLM || '',
-        features: modelData.features || ['text'],
-        credentials: modelData.credentials,
-      };
-
-      return transformedModel;
+      return result.data?.data?.key || '';
     } catch (error) {
-      console.error('Error getting user custom model with credentials:', error);
-      throw new Error(
-        error.error || error.message || 'Failed to get user custom model with credentials',
-      );
+      console.error('Error getting vault key:', error);
+      throw new Error(error.error || error.message || 'Failed to get vault key');
     }
   },
 

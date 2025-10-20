@@ -181,7 +181,8 @@ export function CreateUserCustomModelModal({
       // Extract API key info from template variable if present
       const apiKeyTemplateVariable = editModel.credentials?.apiKey || '';
       const extractedKeyName = extractKeyNameFromTemplate(apiKeyTemplateVariable);
-      const hasVaultKey = editModel.credentials?.isUserKey === true && extractedKeyName !== '';
+      // If we successfully extracted a key name, it means there's a vault key
+      const hasVaultKey = extractedKeyName !== '';
 
       // Update formData with latest editModel values
       // Only update apiKey field if it's currently empty (not revealed) or if modal is just opening
@@ -369,22 +370,19 @@ export function CreateUserCustomModelModal({
 
   /**
    * Handles revealing the API key from vault
-   * Fetches the decrypted API key and populates the form field
+   * Fetches the decrypted API key using the key name we already have
    * If key cannot be retrieved, sets empty value allowing user to enter a new key
    */
   const handleRevealApiKey = async () => {
-    if (!editModel?.id) return;
+    if (!formData.apiKeyName) return;
 
     setIsLoadingApiKey(true);
     try {
-      const modelWithCredentials = await userCustomModelService.getUserCustomModelWithCredentials(
-        editModel.id,
-      );
+      // Use the vault key name we already extracted from credentials when modal opened
+      // No need to fetch the model again - we already have the key name
+      const apiKey = await userCustomModelService.getVaultKeyByName(formData.apiKeyName);
 
-      // Validate that we received an actual API key, not a template variable
-      const apiKey = modelWithCredentials.credentials?.apiKey || '';
-
-      // Check if we got the actual key or if it's still a template variable
+      // Check if we got an actual key (not a template variable or empty string)
       // If it's a template or empty, set empty string so user can enter a new key
       const actualKey = apiKey && !apiKey.startsWith('{{KEY(') ? apiKey : '';
 

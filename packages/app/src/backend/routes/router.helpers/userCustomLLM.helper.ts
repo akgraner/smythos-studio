@@ -109,6 +109,10 @@ async function saveUserCustomLLM(req: Request, params: UserCustomLLMInputParams)
     };
 
     const teamId = params.teamId || req?._team?.id;
+
+    // userEmail is required for vault key management when storing API keys.
+    // The vault service uses it to track ownership, maintain audit trails,
+    // and manage access control for sensitive credentials.
     const userEmail = params.userEmail || req?._user?.email;
 
     if (!teamId || !userEmail) {
@@ -363,75 +367,6 @@ async function getAllUserCustomLLMs(req: Request): Promise<Record<string, UserCu
 }
 
 /**
- * Gets a user custom LLM configuration with credentials (API key from vault)
- * @param req - Express request object
- * @param entryId - The ID of the entry to retrieve
- * @returns Promise with the model info including decrypted API key
- */
-async function getUserCustomLLMWithCredentials(
-  req: Request,
-  entryId: string,
-): Promise<UserCustomLLMInfo | null> {
-  try {
-    const teamId = req?._team?.id;
-    const accessToken = req?.user?.accessToken;
-    const idToken = req?.session?.idToken;
-
-    if (!teamId) {
-      throw new Error('Team ID is required');
-    }
-
-    // Get the model info first
-    const modelInfo = await getUserCustomLLMByEntryId(req, entryId);
-
-    if (!modelInfo) {
-      return null;
-    }
-
-    // If the model has credentials with a vault key template variable, retrieve the actual key
-    if (modelInfo.credentials?.isUserKey && modelInfo.credentials?.apiKey) {
-      const apiKeyTemplateVariable = modelInfo.credentials.apiKey;
-
-      // Extract the key name from the template variable {{KEY(...)}}
-      const match = apiKeyTemplateVariable.match(/\{\{KEY\((.+?)\)\}\}/);
-
-      if (match && match[1]) {
-        const apiKeyName = match[1];
-
-        // Retrieve the key from vault
-        try {
-          const keyEntry = await vault.get(
-            {
-              team: teamId,
-              keyName: apiKeyName,
-            },
-            req,
-          );
-
-          // Return the model info with the decrypted API key
-          return {
-            ...modelInfo,
-            credentials: {
-              apiKey: keyEntry?.key || '',
-              isUserKey: true,
-            },
-          };
-        } catch (vaultError) {
-          console.warn('Error retrieving API key from vault:', vaultError?.message);
-          // Return model info without the key if vault retrieval fails
-          return modelInfo;
-        }
-      }
-    }
-
-    return modelInfo;
-  } catch (error) {
-    console.error('Error getting user custom LLM with credentials:', error?.message);
-    throw error;
-  }
-}
-
-/**
  * Deletes a user custom LLM configuration
  * @param req - Express request object
  * @param entryId - The ID of the entry to delete
@@ -479,7 +414,6 @@ export const userCustomLLMHelper = {
   saveUserCustomLLM,
   getUserCustomLLMByName,
   getUserCustomLLMByEntryId,
-  getUserCustomLLMWithCredentials,
   getAllUserCustomLLMs,
   deleteUserCustomLLM,
 };
