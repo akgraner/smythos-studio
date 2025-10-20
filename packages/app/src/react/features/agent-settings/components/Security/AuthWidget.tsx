@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useState } from 'react';
 
 import { saveAgentAuthData } from '@react/features/agent-settings/clients/agent-auth';
 import { isValidURL } from '@react/features/agent-settings/utils';
-import * as agentSettingsUtils from '@react/features/agents/utils';
 import { Button as CustomButton } from '@react/shared/components/ui/newDesign/button';
+import { SkeletonLoader } from '@src/react/shared/components/ui/skeleton-loader';
 import { errorToast, successToast } from '@src/shared/components/toast';
 import { useQuery } from '@tanstack/react-query';
 import { FaEye, FaEyeSlash } from 'react-icons/fa6';
@@ -49,8 +49,7 @@ type ValidationErrors = {
 };
 
 const AuthWidget = ({ isWriteAccess }: Props) => {
-  const { agentQuery, workspace, agentId, serverStatusQuery, serverStatusData, agentAuthData } =
-    useAgentSettingsCtx();
+  const { workspace, agentId, serverStatusData, agentAuthData } = useAgentSettingsCtx();
   const [selectedAuth, setSelectedAuth] = useState<AuthMethod | null>(null);
   const [oauthConfig, setOauthConfig] = useState<OAuthConfig>({
     OIDCConfigURL: '',
@@ -74,7 +73,7 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
 
   const serverData = serverStatusData;
 
-  function setAuthData() {
+  const setAuthData = useCallback(() => {
     let d = null;
 
     // when saving auth settings, we don't want to update the UI until the save is complete
@@ -101,15 +100,15 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
         }
       }
     }
-  }
+  }, [selectedAuth, setOauthConfig, setBearerConfig, agentAuthData, isBusySavingVariables]);
 
   useEffect(() => {
     setAuthData();
-  }, [agentAuthData]);
+  }, [agentAuthData, setAuthData]);
 
-  function handleWorkSpaceChange() {
+  const handleWorkSpaceChange = useCallback(() => {
     setAuthData();
-  }
+  }, [setAuthData]);
 
   useEffect(() => {
     if (workspace) {
@@ -120,7 +119,7 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
         workspace.off('AgentSaved', handleWorkSpaceChange);
       };
     }
-  }, [workspace]);
+  }, [workspace, handleWorkSpaceChange]);
 
   // Query for domains list
   const { data: domainData } = useQuery({
@@ -154,8 +153,8 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
     const prodDomain = userDomain?.[0]
       ? `${userDomain?.[0]}`
       : serverData?.prod_agent_domain
-      ? `${agentId}.${serverData?.prod_agent_domain}`
-      : '';
+        ? `${agentId}.${serverData?.prod_agent_domain}`
+        : '';
 
     setTestAuthorizeEndpoint(`https://${testDomain}/oauth/authorize`);
     setTestTokenEndpoint(`https://${testDomain}/oauth/token`);
@@ -165,81 +164,84 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
     setProdTokenEndpoint(`${prodEndpoints}/oauth/token`);
   }, [serverData, agentId, userDomain, selectedAuth]);
 
-  async function saveWorkSpaceAuth(authData) {
-    // Here we need to implement the API call similar to workspace.saveAgent()
-    // Original code used: await workspace.saveAgent(undefined, undefined, workspace.agent.data)
-    try {
-      // Save the auth method only to decide whether we should get auth data from agent settings in SRE
+  const saveWorkSpaceAuth = useCallback(
+    async (authData) => {
+      // Here we need to implement the API call similar to workspace.saveAgent()
+      // Original code used: await workspace.saveAgent(undefined, undefined, workspace.agent.data)
+      try {
+        // Save the auth method only to decide whether we should get auth data from agent settings in SRE
 
-      await saveAgentAuthData(agentId, authData);
-      if (workspace?.agent?.data) {
-        workspace.agent.data.auth = {
-          method: authData.method,
-        };
-        await workspace.saveAgent(undefined, undefined, workspace.agent.data);
+        await saveAgentAuthData(agentId, authData);
+        if (workspace?.agent?.data) {
+          workspace.agent.data.auth = {
+            method: authData.method,
+          };
+          await workspace.saveAgent(undefined, undefined, workspace.agent.data);
+        }
+
+        successToast('Auth settings saved successfully');
+      } catch (error) {
+        console.error('Save auth settings error:', error);
+        errorToast('Failed to save auth settings');
       }
+    },
+    [agentId, workspace],
+  );
 
-      successToast('Auth settings saved successfully');
-    } catch (error) {
-      console.error('Save auth settings error:', error);
-      errorToast('Failed to save auth settings');
-    }
-  }
+  // async function saveAuthDirectly(authData) {
+  //   let lockId = null;
+  //   try {
+  //     const lockResponse = await agentSettingsUtils.accquireLock(agentId);
+  //     lockId = lockResponse.lockId;
+  //     const currData = agentQuery.data;
+  //     currData.data['auth'] = authData;
 
-  async function saveAuthDirectly(authData) {
-    let lockId = null;
-    try {
-      const lockResponse = await agentSettingsUtils.accquireLock(agentId);
-      lockId = lockResponse.lockId;
-      let currData = agentQuery.data;
-      currData.data['auth'] = authData;
+  //     await saveAgentAuthData(agentId, authData);
+  //     await fetch('/api/agent', {
+  //       method: 'POST',
+  //       body: JSON.stringify({
+  //         ...currData,
+  //         id: agentId,
+  //         lockId,
+  //       }),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+  //   } catch (e) {
+  //     errorToast('Failed to update agent auth settings. Please try again.');
+  //   } finally {
+  //     await agentSettingsUtils.releaseLock(agentId, lockId).catch((e) => console.error(e));
+  //   }
+  // }
 
-      await saveAgentAuthData(agentId, authData);
-      await fetch('/api/agent', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...currData,
-          id: agentId,
-          lockId,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (e) {
-      errorToast('Failed to update agent auth settings. Please try again.');
-    } finally {
-      await agentSettingsUtils.releaseLock(agentId, lockId).catch((e) => console.error(e));
-    }
-  }
+  // async function saveAuthAPI(authData) {
+  //   let lockId = null;
 
-  async function saveAuthAPI(authData) {
-    let lockId = null;
+  //   try {
+  //     const lockResponse = await agentSettingsUtils.accquireLock(agentId);
+  //     lockId = lockResponse.lockId;
 
-    try {
-      const lockResponse = await agentSettingsUtils.accquireLock(agentId);
-      lockId = lockResponse.lockId;
+  //     const newData = agentQuery.data;
+  //     newData.data['auth'] = authData;
 
-      let newData = agentQuery.data;
-      newData.data['auth'] = authData;
-
-      await fetch('/api/agent', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...newData,
-          id: agentId,
-          lockId,
-        }),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-    } catch (e) {
-      errorToast('Failed to update agent auth settings. Please try again.');
-    } finally {
-      await agentSettingsUtils.releaseLock(agentId, lockId).catch((e) => console.error(e));
-    }
-  }
+  //     await fetch('/api/agent', {
+  //       method: 'POST',
+  //       body: JSON.stringify({
+  //         ...newData,
+  //         id: agentId,
+  //         lockId,
+  //       }),
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //     });
+  //   } catch (e) {
+  //     errorToast('Failed to update agent auth settings. Please try again.');
+  //   } finally {
+  //     await agentSettingsUtils.releaseLock(agentId, lockId).catch((e) => console.error(e));
+  //   }
+  // }
   /**
    * Handles saving auth settings
    * Validates required fields and saves configuration
@@ -287,11 +289,11 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
           allowedEmails: Array.isArray(oauthConfig.allowedEmails)
             ? oauthConfig.allowedEmails
             : oauthConfig.allowedEmails.length
-            ? oauthConfig.allowedEmails
-                .split(',')
-                .map((e) => e.trim())
-                .filter((e) => e)
-            : [],
+              ? oauthConfig.allowedEmails
+                  .split(',')
+                  .map((e) => e.trim())
+                  .filter((e) => e)
+              : [],
         },
         'api-key-bearer': {
           token: bearerConfig.token,
@@ -309,11 +311,16 @@ const AuthWidget = ({ isWriteAccess }: Props) => {
     } finally {
       setIsBusySavingVariables(false);
     }
-  }, [selectedAuth, oauthConfig, bearerConfig, workspace, saveWorkSpaceAuth, saveAuthDirectly]);
+  }, [selectedAuth, oauthConfig, bearerConfig, saveWorkSpaceAuth]);
+
+  if (!agentAuthData) return <SkeletonLoader title="Auth" />;
 
   return (
     <WidgetCard title="" isWriteAccess={isWriteAccess}>
-      <div className="flex flex-col rounded-lg border border-gray-600 p-4 bg-gray-50" data-qa="security-tab-container">
+      <div
+        className="flex flex-col rounded-lg border border-gray-600 p-4 bg-gray-50"
+        data-qa="security-tab-container"
+      >
         <div className="flex justify-between items-center">
           <div>
             <div className="flex items-center">
