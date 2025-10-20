@@ -150,7 +150,7 @@ export const apiKeyService = {
   fetchAPIKeys: async (): Promise<{ keys?: ApiKey[]; error?: string }> => {
     try {
       const response = await fetch(
-        '/api/page/vault/keys?excludeScope=global,' + VAULT_SCOPE_AGENT_LLM,
+        '/api/page/vault/keys?excludeScope=global,_hidden,' + VAULT_SCOPE_AGENT_LLM,
         {
           method: 'GET',
           headers: {
@@ -356,7 +356,8 @@ export const userCustomModelService = {
         id: value.id || id,
         name: value.name,
         modelId: value.modelId,
-        baseURL: value.baseURL,
+        // Transform baseURL to remove '.forbidden' added by backend for security
+        baseURL: value.baseURL?.replace(/\.forbidden/gi, '') || value.baseURL,
         provider: value.provider,
         // Check for new field name first, then fall back to old field name
         contextWindow: value.contextWindow !== undefined ? value.contextWindow : value.tokens,
@@ -364,6 +365,7 @@ export const userCustomModelService = {
           value.maxOutputTokens !== undefined ? value.maxOutputTokens : value.completionTokens,
         fallbackLLM: value.fallbackLLM || '', // Provide default empty string for backward compatibility with cached data
         features: value.features,
+        credentials: value.credentials, // Include credentials info (apiKey template variable, isUserKey flag)
       }));
 
       return models;
@@ -440,21 +442,93 @@ export const userCustomModelService = {
         throw new Error(result.error || 'Failed to update user custom model');
       }
 
-      // Return the updated model
+      // After updating, fetch the complete model to ensure we have the latest transformed data
+      // This is especially important for credentials which get transformed into template variables
+      const freshModelResponse = await fetch(`/api/page/vault/user-custom-llm/${modelId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!freshModelResponse.ok) {
+        // If fetch fails, return data from update response as fallback
+        return {
+          id: modelId,
+          name: result.data.name || updatedFields.name || '',
+          modelId: result.data.modelId || updatedFields.modelId || '',
+          baseURL: result.data.baseURL?.replace(/\.forbidden/gi, '') || updatedFields.baseURL || '',
+          provider: result.data.provider || updatedFields.provider || '',
+          contextWindow:
+            result.data.contextWindow !== undefined
+              ? result.data.contextWindow
+              : updatedFields.contextWindow,
+          maxOutputTokens:
+            result.data.maxOutputTokens !== undefined
+              ? result.data.maxOutputTokens
+              : updatedFields.maxOutputTokens,
+          fallbackLLM: result.data.fallbackLLM || updatedFields.fallbackLLM || '',
+          features: result.data.features || updatedFields.features || [],
+          credentials: result.data.credentials,
+        };
+      }
+
+      const freshResult = await freshModelResponse.json();
+      if (!freshResult.success) {
+        throw new Error(freshResult.error || 'Failed to fetch updated model');
+      }
+
+      const freshModel = freshResult.data;
+
+      // Return the complete fresh model with all transformed data including credentials
       return {
         id: modelId,
-        name: result.data.name,
-        modelId: updatedFields.modelId || '',
-        baseURL: updatedFields.baseURL || '',
-        provider: updatedFields.provider || '',
-        contextWindow: updatedFields.contextWindow,
-        maxOutputTokens: updatedFields.maxOutputTokens,
-        fallbackLLM: updatedFields.fallbackLLM || '',
-        features: updatedFields.features,
+        name: freshModel.name || '',
+        modelId: freshModel.modelId || '',
+        baseURL: freshModel.baseURL?.replace(/\.forbidden/gi, '') || '',
+        provider: freshModel.provider || '',
+        contextWindow:
+          freshModel.contextWindow !== undefined ? freshModel.contextWindow : freshModel.tokens,
+        maxOutputTokens:
+          freshModel.maxOutputTokens !== undefined
+            ? freshModel.maxOutputTokens
+            : freshModel.completionTokens,
+        fallbackLLM: freshModel.fallbackLLM || '',
+        features: freshModel.features || [],
+        credentials: freshModel.credentials, // Credentials with transformed API key template variable
       };
     } catch (error) {
       console.error('Error updating user custom model:', error);
       throw new Error(error.error || error.message || 'Failed to update user custom model');
+    }
+  },
+
+  /**
+   * Gets a vault key value by its name
+   * Uses the vault key name directly without needing to fetch model info first
+   */
+  getVaultKeyByName: async (keyName: string): Promise<string> => {
+    try {
+      const response = await fetch(`/api/page/vault/keys/name/${encodeURIComponent(keyName)}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to get vault key');
+      }
+
+      const result = await response.json();
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to get vault key');
+      }
+
+      return result.data?.data?.key || '';
+    } catch (error) {
+      console.error('Error getting vault key:', error);
+      throw new Error(error.error || error.message || 'Failed to get vault key');
     }
   },
 
