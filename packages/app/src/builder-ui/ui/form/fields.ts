@@ -453,13 +453,11 @@ async function handleExpandTextarea(
   const hasCodeEditor = !!code;
 
   // Create modal content container
-  const modalContent = document.createElement('div');
-  modalContent.style.cssText = 'padding: 16px;';
 
   // Create modal textarea
   const modalTextarea = document.createElement('textarea') as TextAreaWithEditor;
   modalTextarea.value = originalTextarea.value;
-  modalTextarea.classList.add('form-control');
+  modalTextarea.classList.add('form-control', 'h-full');
 
   // Apply styles based on editor type
   applyTextareaStyles(modalTextarea, hasCodeEditor);
@@ -474,12 +472,17 @@ async function handleExpandTextarea(
     });
   }
 
-  modalContent.appendChild(modalTextarea);
 
   // Open modal dialog (content must be HTML string, not element)
   await twModalDialog({
     title: label || 'Edit',
-    content: modalContent.outerHTML,
+    content: modalTextarea.outerHTML,
+    size: {
+      width: '80vw',
+      height: '80vh',
+      maxWidth: '1200px',
+      maxHeight: '800px',
+    },
     actions: [
       {
         label: 'Done',
