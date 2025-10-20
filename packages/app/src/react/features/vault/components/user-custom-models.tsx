@@ -80,7 +80,10 @@ export function UserCustomModels({ pageAccess }: { pageAccess: { write: boolean 
         modelId: editingModel.id,
         updatedFields: data,
       });
+
       successToast('Custom model updated successfully');
+
+      // Close modal - the cache has been updated with complete data including credentials
       setEditingModel(undefined);
     } catch (error) {
       console.error('Error updating user custom model:', error);
@@ -170,7 +173,7 @@ export function UserCustomModels({ pageAccess }: { pageAccess: { write: boolean 
                   {models.map((model) => (
                     <div key={model.id} className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
-                        <span className="inline-flex h-5 items-center rounded-md bg-blue-100 px-2 text-xs font-medium text-blue-800">
+                        <span className="inline-flex h-5 items-center rounded-md px-2 text-xs font-medium bg-[#BFECE8] text-[#0F5257]">
                           Custom
                         </span>
                         <span className="font-medium text-[#374151] max-w-[200px] truncate">
