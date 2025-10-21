@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { Chat, ScrollToBottomButton } from '@react/features/ai-chat/components';
+import { Chat } from '@react/features/ai-chat/components';
 import { useChatContext } from '@react/features/ai-chat/contexts';
 import { useDragAndDrop } from '@react/features/ai-chat/hooks';
 import { AgentDetails } from '@src/react/shared/types/agent-data.types';
@@ -10,9 +10,7 @@ interface MessagesProps {
   agent: AgentDetails;
   messages: IChatMessage[];
   handleScroll: () => void;
-  showScrollButton: boolean;
   containerRef: RefObject<HTMLElement>;
-  scrollToBottom: (smooth?: boolean) => void;
   smartScrollToBottom: (smooth?: boolean) => void;
   handleFileDrop: (droppedFiles: File[]) => Promise<void>;
 }
@@ -31,7 +29,7 @@ const combineRefs =
 
 export const Chats: FC<MessagesProps> = (props) => {
   const { agent, messages, containerRef, handleFileDrop, ...scroll } = props;
-  const { handleScroll, scrollToBottom, smartScrollToBottom, showScrollButton } = scroll;
+  const { handleScroll, smartScrollToBottom } = scroll;
 
   const ref = useRef<HTMLDivElement>(null);
   const { isRetrying, retryLastMessage } = useChatContext();
@@ -88,8 +86,6 @@ export const Chats: FC<MessagesProps> = (props) => {
             );
           })}
         </div>
-
-        {showScrollButton && <ScrollToBottomButton onClick={() => scrollToBottom(true)} />}
       </div>
     </div>
   );
