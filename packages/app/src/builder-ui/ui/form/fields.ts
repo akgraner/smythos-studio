@@ -3,6 +3,7 @@ import { Tooltip } from 'flowbite-react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { delay } from '../../utils';
+import { handleTemplateVars } from './misc';
 
 declare var Metro;
 
@@ -452,12 +453,17 @@ async function handleExpandTextarea(
   const { twModalDialog, setCodeEditor } = await getModalImports(!!code);
   const hasCodeEditor = !!code;
 
+  // Get current component for template variables
+  const currentComponent = (window as any).Component?.curComponentSettings || null;
+  
   // Create modal content container
+  const modalContainer = document.createElement('div');
+  modalContainer.classList.add('h-full', 'flex', 'flex-col', 'form-group');
 
   // Create modal textarea
   const modalTextarea = document.createElement('textarea') as TextAreaWithEditor;
   modalTextarea.value = originalTextarea.value;
-  modalTextarea.classList.add('form-control', 'h-full');
+  modalTextarea.classList.add('form-control', 'flex-1', 'resize-none');
 
   // Apply styles based on editor type
   applyTextareaStyles(modalTextarea, hasCodeEditor);
@@ -472,11 +478,18 @@ async function handleExpandTextarea(
     });
   }
 
+  // Create template variable buttons container
+  const templateVarsContainer = document.createElement('div');
+  templateVarsContainer.classList.add('template-var-buttons', 'mt-2');
+  templateVarsContainer.style.display = 'none';
+
+  modalContainer.appendChild(modalTextarea);
+  modalContainer.appendChild(templateVarsContainer);
 
   // Open modal dialog (content must be HTML string, not element)
   await twModalDialog({
     title: label || 'Edit',
-    content: modalTextarea.outerHTML,
+    content: modalContainer.outerHTML,
     size: {
       width: '80vw',
       height: '80vh',
@@ -529,6 +542,15 @@ async function handleExpandTextarea(
         );
       } else {
         initializeRegularTextarea(modalTextareaInDialog);
+      }
+
+      // Set up template variable functionality if the textarea has template vars attribute
+      const hasTemplateVars = modalTextareaInDialog.getAttribute('data-template-vars') === 'true';
+      const hasAgentVars = modalTextareaInDialog.getAttribute('data-agent-vars') === 'true';
+      
+      if (hasTemplateVars || hasAgentVars) {
+        // Just use the existing handleTemplateVars function directly on the modal container
+        handleTemplateVars(dialogElm, currentComponent);
       }
     },
   });
