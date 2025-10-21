@@ -1109,17 +1109,7 @@ export async function openAlexaEmbodiment() {
     actions,
     EMBODIMENT_DESCRIPTIONS.alexa.title,
     EMBODIMENT_DESCRIPTIONS.alexa.tooltipTitle,
-  ).then(() => {
-    console.log('openEmbodimentDialog');
-    const talkToAgentWrapper = document.querySelector(
-      '#alexa-embodiment-wrapper #talk-to-agent-wrapper',
-    );
-    const isProd = window.location.hostname.includes('smythos.com');
-
-    if (talkToAgentWrapper && isProd) {
-      talkToAgentWrapper.classList.add('hidden');
-    }
-  });
+  );
 
   // on prod domain change, update the url
   builderStore.subscribe(
