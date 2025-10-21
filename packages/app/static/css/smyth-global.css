@@ -1215,7 +1215,7 @@ html {
 
 /* Ensure tooltip links stay on one line */
 .tooltip a,
-[role="tooltip"] a,
+[role='tooltip'] a,
 .smt-hint a {
   white-space: nowrap !important;
   display: inline-block;
@@ -1226,7 +1226,7 @@ html {
 }
 
 .tooltip a:hover,
-[role="tooltip"] a:hover,
+[role='tooltip'] a:hover,
 .smt-hint a:hover {
   text-decoration: underline;
   opacity: 0.8;
@@ -1524,4 +1524,18 @@ textarea[class*='resize-none']::-webkit-resizer {
   opacity: 0 !important;
   width: 0 !important;
   height: 0 !important;
+}
+/**
+ * Breadcrumb link styling
+ * Override default link styling within breadcrumb navigation
+ * to ensure consistent gray color without underlines
+ */
+nav[aria-label='Breadcrumb'] a {
+  color: #6b7280; /* gray-500 */
+  text-decoration: none;
+}
+
+nav[aria-label='Breadcrumb'] a:hover {
+  color: #374151; /* gray-700 */
+  text-decoration: none;
 }
