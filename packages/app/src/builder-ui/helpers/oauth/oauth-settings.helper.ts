@@ -124,7 +124,7 @@ export class oAuthSettings {
               this.component.data[this.setting_name] &&
               this.component.data[this.setting_name] !== 'None',
             events: {
-              click: () => this.handleOAuthConnectionAction(),
+              click: () => this.handleOAuthConnectionAction(this.component.data.oauth_con_id),
             },
           },
         ],
@@ -296,7 +296,7 @@ export class oAuthSettings {
   /**
    * Handles OAuth connection creation/editing
    */
-  private async handleOAuthConnectionAction(): Promise<void> {
+  private async handleOAuthConnectionAction(currentValue: string): Promise<void> {
     if (!this.oauthService || !this.uiHelper) {
       errorToast('OAuth service not initialized', 'Error', 'alert');
       return;

@@ -212,4 +212,19 @@ export interface UserCustomModel {
    * List of features supported by the model (e.g., 'text', 'tools')
    */
   features?: string[];
+
+  /**
+   * Credentials configuration for the model (optional)
+   */
+  credentials?: {
+    /**
+     * API key name or vault key template variable (e.g., {{KEY(API Key Name)}})
+     */
+    apiKey?: string;
+
+    /**
+     * Indicates if this is a user-provided key stored in vault
+     */
+    isUserKey?: boolean;
+  };
 }

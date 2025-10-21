@@ -34,6 +34,7 @@ export const V4_ENTERPRISE_PLANS = [
   'Enterprise T2',
   'Enterprise T3',
   'Enterprise T4',
+  'Business Unlimited',
 ];
 
 export const WIDGETS_PRICING_ALERT_TEXT = {

@@ -286,16 +286,14 @@ export class Agent extends EventEmitter {
       this.lock.promisedToLock = false;
       if (!this.lock.isAgentLockedPopupShown) {
         this.lock.isAgentLockedPopupShown = true;
-        alert('Agent Locked', errMsg, 'OK')
-          .then(() => {
-            console.log('EROR IN LOAD');
-            this.emit('lock-as-view-mode', this.lockStatus);
-            this.lockStatus = 'lock-as-view-mode';
-            this.retryToAccquireLock(id, { registerTimer: true });
-            alert('Agent Locked', errMsg, 'OK', null, () => {
-              this.showViewOnlyOverlay();
-            });
-          })
+        console.log('EROR IN LOAD');
+        this.emit('lock-as-view-mode', this.lockStatus);
+        this.lockStatus = 'lock-as-view-mode';
+        this.retryToAccquireLock(id, { registerTimer: true });
+        alert('Agent Locked', errMsg, 'OK', null, () => {
+          this.showViewOnlyOverlay();
+        })
+          .then(() => {})
           .catch((error) => {})
           .finally(() => {
             this.lock.isAgentLockedPopupShown = false;

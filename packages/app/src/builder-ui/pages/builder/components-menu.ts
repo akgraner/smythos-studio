@@ -5,7 +5,7 @@ import { Workspace } from '../../workspace/Workspace.class';
 import { PRICING_PLAN_REDIRECT } from '@react/shared/constants/navigation';
 import { V4_ENTERPRISE_PLANS } from '@src/react/features/agent-settings/constants';
 import { LEGACY_PLANS } from '@src/shared/constants/general';
-import { Analytics } from '@src/shared/posthog/services/analytics';
+import { Observability } from '@src/shared/observability';
 import interact from 'interactjs';
 import { Agent } from '../../Agent.class';
 import config from '../../config';
@@ -610,11 +610,16 @@ function isDroppedInCanvasArea(
 }
 
 function setupBuilderMenuDragDrop() {
+  // Store interact instances
+  const interactInstances = [];
+
   // Initialize the dummy dragging div
   let dummyDiv = null;
-  interact(
+  const leftMenuInteract = interact(
     '#left-menu a[smt-component], #left-sidebar-integrations-menu a[smt-component]',
-  ).draggable({
+  );
+  interactInstances.push(leftMenuInteract);
+  leftMenuInteract.draggable({
     // Create the dummy div when starting the drag
     onstart: function (event) {
       if (workspace?.locked) return false;
@@ -688,7 +693,9 @@ function setupBuilderMenuDragDrop() {
     },
   });
 
-  interact('#workspace-container').dropzone({
+  const workspaceContainerInteract = interact('#workspace-container');
+  interactInstances.push(workspaceContainerInteract);
+  workspaceContainerInteract.dropzone({
     // Only accept elements matching this CSS selector
     accept: 'a[smt-component]',
     // Listen for drop related events
@@ -741,7 +748,7 @@ function setupBuilderMenuDragDrop() {
         return;
       }
 
-      Analytics.track('app_component_used', {
+      Observability.observeInteraction('app_component_used', {
         name: event.relatedTarget.getAttribute('smt-component'),
         type: !!templateId ? 'integration' : 'component',
       });
@@ -797,7 +804,11 @@ function setupBuilderMenuDragDrop() {
     },
   });
 
-  interact('#right-sidebar,#embodiment-sidebar,#agent-settings-sidebar')
+  const rightSidebarInteract = interact(
+    '#right-sidebar,#embodiment-sidebar,#agent-settings-sidebar',
+  );
+  interactInstances.push(rightSidebarInteract);
+  rightSidebarInteract
     .resizable({
       margin: 5,
       // Enable resize from right edge; preset cursor styles
@@ -857,7 +868,9 @@ function setupBuilderMenuDragDrop() {
     });
 
   // temporary debug console height: move to a better place
-  interact('#bottom-bar')
+  const bottomBarInteract = interact('#bottom-bar');
+  interactInstances.push(bottomBarInteract);
+  bottomBarInteract
     .resizable({
       margin: 5,
       edges: { left: false, right: false, bottom: false, top: true },
@@ -887,10 +900,21 @@ function setupBuilderMenuDragDrop() {
 
       localStorage.setItem(`debug-console-height`, event.target.style.height);
     });
+
+  // Add cleanup on page unload
+  window.addEventListener('beforeunload', () => {
+    try {
+      interactInstances.forEach((interactInstance) => {
+        interactInstance?.unset();
+      });
+    } catch (error) {
+      console.error(error);
+    }
+  });
 }
 
 function renderUpgradeModal() {
-  Analytics.track('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: '/builder',
     source: 'adding integrations to the agent',
   });
@@ -916,7 +940,7 @@ function renderUpgradeModal() {
           cssClass:
             'bg-primary-100 text-white rounded-md px-4 py-1.5 hover:opacity-75 cursor-pointer w-full',
           callback: (_, dialog) => {
-            Analytics.track('upgrade_click', {
+            Observability.observeInteraction('upgrade_click', {
               page_url: '/builder',
               source: 'adding integrations in the agent',
             });
@@ -953,7 +977,7 @@ function renderCompUpgradeModal({
     page_url: string;
   };
 }) {
-  Analytics.track('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: analytics.page_url,
     source: analytics.source,
   });
@@ -1066,7 +1090,7 @@ function isLegacyPlan() {
 }
 
 function renderRestrictedAccessModal(feature: string) {
-  Analytics.track('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: '/builder',
     source: `adding ${feature}`,
   });
@@ -1124,7 +1148,7 @@ function renderRestrictedAccessModal(feature: string) {
 }
 
 function renderRestrictedAccessModalWebTools() {
-  Analytics.track('upgrade_impression', {
+  Observability.observeInteraction('upgrade_impression', {
     page_url: '/builder',
     source: 'adding web tools',
   });

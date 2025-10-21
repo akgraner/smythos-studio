@@ -11,7 +11,7 @@ import { readFormValues, syncCompositeValues } from '../../ui/form';
 import { ComponentDocLinks } from '@src/builder-ui/enums/doc-links.enum';
 import { errorToast, successToast, warningToast } from '@src/shared/components/toast';
 import { SMYTHOS_DOCS_URL } from '@src/shared/constants/general';
-import { PostHog } from '@src/shared/posthog';
+import { Observability } from '@src/shared/observability';
 import { jsonrepair } from 'jsonrepair';
 import { isEqual } from 'lodash-es';
 import { TooltipV2 } from '../../../react/shared/components/_legacy/ui/tooltip/tooltipV2';
@@ -526,7 +526,7 @@ export class Component extends EventEmitter {
         `Missing Settings ${missingSettings.map((e) => e.name).join(', ')}`,
         'alert pointer',
         () => {
-          PostHog.track('app_component_alert_click', {
+          Observability.observeInteraction('app_component_alert_click', {
             type: 'missing settings',
           });
           this.editSettings();
@@ -626,7 +626,7 @@ export class Component extends EventEmitter {
 
       if (missingSettings.length > 0) {
         this.addComponentMessage(`Missing Settings`, 'alert pointer', () => {
-          PostHog.track('app_component_alert_click', {
+          Observability.observeInteraction('app_component_alert_click', {
             type: 'missing settings',
           });
           this.editSettings();
@@ -748,7 +748,7 @@ export class Component extends EventEmitter {
           `Missing Key "${keyName}"`,
           'alert pointer',
           () => {
-            PostHog.track('app_component_alert_click', {
+            Observability.observeInteraction('app_component_alert_click', {
               type: 'missing key',
             });
             missingKeyMessageClickHandler.bind(this, keyName)();
@@ -780,7 +780,14 @@ export class Component extends EventEmitter {
   }
   public destroy() {
     this._destroyed = true;
-    this.domElement.remove();
+    if (this.domElement) {
+      try {
+        interact(this.domElement).unset();
+        this.domElement.remove();
+      } catch (error) {
+        console.error(error);
+      }
+    }
   }
   public getSettingsSidebar() {
     if (Component.curComponentSettings !== this) return null;
@@ -1016,6 +1023,7 @@ export class Component extends EventEmitter {
         contentClasses: 'min-h-[335px]',
         dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
         showCloseButton: true,
+        component: this,
       });
 
       if (!newValues) return;
@@ -1435,6 +1443,7 @@ export class Component extends EventEmitter {
         contentClasses: 'min-h-[425px] px-2',
         dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
         showCloseButton: true,
+        component: this,
       });
       if (!newValues) return;
       if (newValues.name !== name) {
@@ -2799,6 +2808,7 @@ export class Component extends EventEmitter {
       contentClasses: 'min-h-[425px] px-2',
       dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
       showCloseButton: true,
+      component: this,
     });
     if (newValues?.name) {
       const inputDiv: any = await this.addInput(this.inputContainer, newValues.name, newValues);
@@ -2910,6 +2920,7 @@ export class Component extends EventEmitter {
       contentClasses: 'min-h-[335px]',
       dialogClasses: 'dialog-center rounded-[18px] p-2 pb-3',
       showCloseButton: true,
+      component: this,
     });
     if (newValues?.name) {
       const outputDiv: any = await this.addOutput(this.outputContainer, newValues.name, newValues);
@@ -2946,7 +2957,7 @@ export class Component extends EventEmitter {
     operation: 'step' | 'run' = 'step',
     prefillValues?: Record<string, any>,
   ) {
-    PostHog.track('app_debug_inject_click', {});
+    Observability.observeInteraction('app_debug_inject_click', {});
     event.stopPropagation();
     event.stopImmediatePropagation();
     const debugBtn = this.domElement.querySelector('.btn-debug');
@@ -3019,8 +3030,18 @@ export class Component extends EventEmitter {
 
             debugBtn.classList.add('active');
 
-            await this.workspace.debugger.injectComponentDebugInfo(agent.id, this._uid, data);
-            const stepResponse = await this.workspace.debugger.readDebugStep(agent.id);
+            const injResult = await this.workspace.debugger.injectComponentDebugInfo(
+              agent.id,
+              this._uid,
+              data,
+            );
+            const stepResponse = await this.workspace.debugger.processDebugStep(
+              injResult.newState,
+              agent.id,
+            );
+
+            //console.log('Step Response', stepResponse);
+            //console.log('Inj Result', injResult.newState);
 
             resolve({ status: 'success' });
             return stepResponse;
@@ -3516,7 +3537,7 @@ function addMissingKey({
       await saveKey({ ...fieldValues, apiKey: mockKey }, dialog);
 
       // #region enable mock data
-      PostHog.track('app_mock_screen_impression', {
+      Observability.observeInteraction('app_mock_screen_impression', {
         source: 'skip_and_set_mock_data',
       });
       await saveMockOutputs(component);

@@ -6,6 +6,7 @@ export const JSON_FIELD_CLASS = '_smythos_json_field';
 
 export enum LLM_PROVIDERS {
   OPENAI = 'OpenAI',
+  XAI = 'xAI',
   RUNWARE = 'Runware',
   GOOGLEAI = 'GoogleAI',
 }
@@ -13,6 +14,11 @@ export enum LLM_PROVIDERS {
 export const COMPONENT_STATE_KEY = 'component:state';
 
 export const REASONING_EFFORTS = [
+  {
+    // GPT-5-pro only supports 'high' reasoning effort
+    pattern: /^(gpt-5-pro|smythos\/gpt-5-pro)/i,
+    options: [{ text: 'High', value: 'high' }],
+  },
   {
     pattern: /^(gpt|smythos\/gpt)/i,
     options: [

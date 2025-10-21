@@ -168,8 +168,8 @@ async function moveFlow(wf, x, y) {
     dom.style.transition = '0.2s ease-in-out';
     const left = parseInt(dom.style.left) + x;
     const top = parseInt(dom.style.top) + y;
-    dom.style.left = `${left}px`;
-    dom.style.top = `${top}px`;
+    dom.style.left = `${~~left}px`;
+    dom.style.top = `${~~top}px`;
   }
 
   await delay(300);
@@ -189,13 +189,24 @@ async function alignBoxes(objects) {
     return [];
   }
 
+  //do we have an agent card .
+  const agentCard: HTMLElement = document.querySelector('.agent-card');
+  const agentBoundingBox = {
+    x: parseFloat(agentCard.style.left) || 0,
+    y: parseFloat(agentCard.style.top) || 0,
+    width: agentCard.clientWidth || 0,
+    height: agentCard.clientHeight || 0,
+  };
+
   // Find the leftmost x-coordinate
-  const minX = Math.min(...objects.map((obj) => obj.box.x));
+  const minX = agentBoundingBox
+    ? agentBoundingBox.x + agentBoundingBox.width + 150
+    : Math.min(...objects.map((obj) => obj.box.x));
 
   // Sort objects by their original y-coordinates
   objects.sort((a, b) => a.box.y - b.box.y);
 
-  let currentY = 0; // Start positioning from 0
+  let currentY = agentBoundingBox ? agentBoundingBox.y - objects.length * 20 : 0; // Start positioning from 0
 
   for (let obj of objects) {
     await moveFlow(obj, minX - obj.box.x, currentY - obj.box.y);
@@ -205,7 +216,7 @@ async function alignBoxes(objects) {
   }
 
   await delay(200);
-  workspace.jsPlumbInstance.repaintEverything();
+  workspace.jsPlumbInstance.repaint(agentCard);
 }
 
 //align components within workflow
@@ -249,8 +260,8 @@ async function organizeComponents(components, initialX, initialY) {
       if (!dom) continue;
 
       dom.style.transition = '0.1s ease-in-out';
-      dom.style.left = `${xPos}px`;
-      dom.style.top = `${yPos}px`;
+      dom.style.left = `${~~xPos}px`;
+      dom.style.top = `${~~yPos}px`;
 
       yPos += (dom.offsetHeight || 0) + 100; // Adjust based on height and gap
       dom.style.transition = '';
@@ -268,7 +279,8 @@ async function organizeComponents(components, initialX, initialY) {
 }
 
 export async function sortAgent() {
-  if (document.querySelector('.component.selected')) {
+  const selected = [...document.querySelectorAll('.component.selected')];
+  if (selected.length > 1) {
     await sortSelection();
   } else {
     await sortAll();
@@ -305,7 +317,7 @@ async function sortAll() {
     await delay(100);
     await alignBoxes(workflows);
     await delay(200); // Increased delay to ensure DOM updates are complete
-    workspace.jsPlumbInstance.repaintEverything();
+    //workspace.jsPlumbInstance.repaintEverything();
   } catch (error) {
     console.error('Error during sort:', error);
   } finally {
@@ -376,7 +388,7 @@ async function sortSelection() {
     await delay(100);
     alignBoxes(selectedWorkflows);
     await delay(100);
-    workspace.jsPlumbInstance.repaintEverything();
+    //workspace.jsPlumbInstance.repaintEverything();
   } catch (error) {
     console.error('Error during sort:', error);
   } finally {

@@ -1,17 +1,17 @@
-# Docker Setup Guide for SmythOS UI
+# Docker Setup Guide for SmythOS Studio
 
-This guide explains how to run SmythOS UI using Docker, both with the standalone Dockerfile and the complete docker compose setup.
+This guide explains how to run SmythOS Studio using Docker, both with the standalone Dockerfile and the complete docker compose setup.
 
 ## Contents
 
-- [Docker Setup Guide for SmythOS UI](#docker-setup-guide-for-smythos-ui)
+- [Docker Setup Guide for SmythOS Studio](#docker-setup-guide-for-smythos-studio)
   - [Contents](#contents)
   - [Prerequisites](#prerequisites)
-  - [Quick Start with Docker Compose (Recommended)](#quick-start-with-docker compose-recommended)
+  - [Quick Start with Docker Compose (Recommended)](#quick-start-with-docker-compose-recommended)
     - [1. Environment Setup](#1-environment-setup)
     - [2. Start All Services](#2-start-all-services)
     - [3. Access the Application](#3-access-the-application)
-  - [Docker Compose Architecture](#docker compose-architecture)
+  - [Docker Compose Architecture](#docker-compose-architecture)
     - [Services Overview](#services-overview)
     - [Network Architecture](#network-architecture)
     - [Volume Management](#volume-management)
@@ -41,7 +41,7 @@ This guide explains how to run SmythOS UI using Docker, both with the standalone
 
 ## Quick Start with Docker Compose (Recommended)
 
-The docker compose setup provides a complete production-ready environment with all necessary services.
+The docker compose setup provides a ready environment with all necessary services.
 
 ### 1. Clone the Repository
 

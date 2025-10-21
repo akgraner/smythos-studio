@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { Chat, ScrollToBottomButton } from '@react/features/ai-chat/components';
+import { Chat } from '@react/features/ai-chat/components';
 import { useChatContext } from '@react/features/ai-chat/contexts';
 import { useDragAndDrop } from '@react/features/ai-chat/hooks';
 import { AgentDetails } from '@src/react/shared/types/agent-data.types';
@@ -10,9 +10,7 @@ interface MessagesProps {
   agent: AgentDetails;
   messages: IChatMessage[];
   handleScroll: () => void;
-  showScrollButton: boolean;
   containerRef: RefObject<HTMLElement>;
-  scrollToBottom: (smooth?: boolean) => void;
   smartScrollToBottom: (smooth?: boolean) => void;
   handleFileDrop: (droppedFiles: File[]) => Promise<void>;
 }
@@ -31,7 +29,7 @@ const combineRefs =
 
 export const Chats: FC<MessagesProps> = (props) => {
   const { agent, messages, containerRef, handleFileDrop, ...scroll } = props;
-  const { handleScroll, scrollToBottom, smartScrollToBottom, showScrollButton } = scroll;
+  const { handleScroll, smartScrollToBottom } = scroll;
 
   const ref = useRef<HTMLDivElement>(null);
   const { isRetrying, retryLastMessage } = useChatContext();
@@ -58,38 +56,34 @@ export const Chats: FC<MessagesProps> = (props) => {
       className="w-full h-full overflow-auto relative scroll-smooth mt-16 flex justify-center items-center"
     >
       <div
-        className="w-full h-full max-w-4xl"
+        ref={ref}
         onScroll={handleScroll}
-        ref={combineRefs(containerRef, dropzoneRef)}
+        className="w-full h-full max-w-4xl flex-1 pb-4 space-y-6 px-2.5"
       >
-        <div className="w-full flex-1 pb-4 space-y-6 px-2.5" ref={ref}>
-          {messages.map((message, i) => {
-            const isLast = i === messages.length - 1;
-            const onRetryClick = message.isError && isLast ? retryLastMessage : undefined;
-            const retry = isRetrying && isLast;
+        {messages.map((message, i) => {
+          const isLast = i === messages.length - 1;
+          const onRetryClick = message.isError && isLast ? retryLastMessage : undefined;
+          const retry = isRetrying && isLast;
 
-            return (
-              <div key={i}>
-                <Chat
-                  {...message}
-                  avatar={avatar}
-                  isRetrying={retry}
-                  isError={message.isError}
-                  onRetryClick={onRetryClick}
-                  scrollToBottom={smartScrollToBottom}
-                />
+          return (
+            <div key={i}>
+              <Chat
+                {...message}
+                avatar={avatar}
+                isRetrying={retry}
+                isError={message.isError}
+                onRetryClick={onRetryClick}
+                scrollToBottom={smartScrollToBottom}
+              />
 
-                {retry && (
-                  <button onClick={retryLastMessage} className="pt-1.5">
-                    Retry
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        {showScrollButton && <ScrollToBottomButton onClick={() => scrollToBottom(true)} />}
+              {retry && (
+                <button onClick={retryLastMessage} className="pt-1.5">
+                  Retry
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

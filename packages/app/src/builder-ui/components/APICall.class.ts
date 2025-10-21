@@ -106,6 +106,7 @@ export class APICall extends Component {
         //validate: `required maxlength=${maxUriLength} ${isLocalhost ? 'url' : ''}`,
         validate: `required maxlength=${maxUriLength} custom=isUrlValid`,
         validateMessage: 'Provide a valid URL',
+        doNotValidateOnLoad: true,
         attributes: { 'data-template-vars': 'true' },
         cls: 'pr-4',
         help: `Enter the website address and add any path or query parts.\n <a href="${SMYTHOS_DOCS_URL}/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=url#step-1-choose-method-and-url" target="_blank" class="text-blue-600 hover:text-blue-800">See URL patterns</a>`,
@@ -171,6 +172,7 @@ export class APICall extends Component {
       },
       body: {
         type: 'textarea',
+        expandable: true,
         label: 'Body',
         attributes: { 'data-template-vars': 'true', 'data-vault': `${COMP_NAMES.apiCall},All` },
         help: 'Write what you want to send and use variables from earlier steps.',
@@ -209,8 +211,7 @@ export class APICall extends Component {
             visible: () => true, // Always visible
             events: {
               click: () => {
-                this.data.oauth_con_id = 'None';
-                this.handleOAuthConnectionAction();
+                this.handleOAuthConnectionAction('None');
               },
             },
           },
@@ -219,10 +220,10 @@ export class APICall extends Component {
             label: 'Edit',
             icon: 'fa-regular fa-pen-to-square',
             id: 'editOAuthConnection',
-            cls: 'mt-[7px] !mr-[24px] !pt-[10px]',
+            cls: 'mt-[2px] !mr-[24px] !pt-[10px]',
             visible: () => this.data.oauth_con_id && this.data.oauth_con_id !== 'None',
             events: {
-              click: () => this.handleOAuthConnectionAction(),
+              click: () => this.handleOAuthConnectionAction(this.data.oauth_con_id),
             },
           },
         ],
@@ -1595,13 +1596,13 @@ export class APICall extends Component {
     }
 
     // Update the action button icon and tooltip
-    this.updateOAuthActionButton();
+    // Pass the selected value directly instead of relying on this.data.oauth_con_id
+    this.updateOAuthActionButton(selectedValue);
   }
 
-  private async handleOAuthConnectionAction() {
-    const currentValue = this.data.oauth_con_id;
+  private async handleOAuthConnectionAction(currentValue: string) {
     const isNone = !currentValue || currentValue === 'None';
-    // console.log('[OAuth Edit] Action started. Current Value:', currentValue, 'Is None:', isNone);
+
     // Fetch existing OAuth connections ONLY when editing to avoid modal delay on "Add New"
     if (!isNone) {
       try {
@@ -2047,14 +2048,21 @@ export class APICall extends Component {
     }
   }
 
-  private updateOAuthActionButton() {
+  /**
+   * Updates the OAuth action button visibility and styling.
+   * @param connectionValue - Optional value to check instead of this.data.oauth_con_id
+   */
+  private updateOAuthActionButton(connectionValue?: string) {
     const sidebar: any = this.getSettingsSidebar();
     if (!sidebar) return;
 
     // Find or create the action buttons
     const createBtn: any = sidebar.querySelector('#createOAuthConnection');
     const editBtn: any = sidebar.querySelector('#editOAuthConnection');
-    const isNone: boolean = !this.data.oauth_con_id || this.data.oauth_con_id === 'None';
+
+    // Use provided value or fall back to this.data.oauth_con_id
+    const valueToCheck = connectionValue !== undefined ? connectionValue : this.data.oauth_con_id;
+    const isNone: boolean = !valueToCheck || valueToCheck === 'None';
 
     if (createBtn) createBtn.style.display = 'inline-block';
     if (editBtn) editBtn.style.display = isNone ? 'none' : 'inline-block';

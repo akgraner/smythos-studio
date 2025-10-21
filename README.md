@@ -6,9 +6,12 @@
 
 The complete visual interface for building, deploying, and managing intelligent AI agents. SmythOS UI provides an intuitive drag-and-drop workspace where you can create sophisticated agent workflows without writing code, while still offering the flexibility of custom integrations when needed.
 
-[🚀 Getting Started](#quick-start) | [📖 Documentation](#documentation) | [🐳 Docker Setup](#docker-quick-start) | [🤝 Contributing](CONTRIBUTING.md)
+[🚀 Getting Started](#quick-start) | [📖 Documentation](#documentation) | [🐳 Docker Setup](DOCKER_COMPOSE.md) | [🤝 Contributing](CONTRIBUTING.md)
 
-## Why SmythOS UI exists
+
+[![SmythOS Studio Presentation](https://github.com/user-attachments/assets/34ee4e90-57be-4741-b587-f89eeab51667)](https://www.youtube.com/watch?v=3JCEK5So6_k)
+
+## Why SmythOS Studio 
 
 1. **Visual Agent Building**: Creating AI agents should be as intuitive as drawing a flowchart.
 2. **No-Code to Pro-Code**: Start with visual building, extend with custom code when needed.
@@ -33,6 +36,9 @@ This approach makes AI agent development **accessible to everyone** - from busin
 - **Collaborative Development**: Share and collaborate on agent projects with your team
 
 ## Quick Start
+
+[![SmythOS Studio Tutorial](https://github.com/user-attachments/assets/54c12bb7-e6d2-4f0c-bc0f-77f812920802)](https://www.youtube.com/watch?v=iEpW5j-h6BM)
+
 
 ### Method 1: Docker Quick Start
 
@@ -110,7 +116,7 @@ Core API services and database management for the SmythOS UI platform.
 
 ### ⚡ Runtime Package - `packages/runtime`
 
-The execution server that uses (SRE Core Engine)[https://github.com/SmythOS/sre/tree/main] to execute the agents.
+The execution server that uses [SRE Core Engine](https://github.com/SmythOS/sre/tree/main) to execute the agents.
 
 **Features:**
 
