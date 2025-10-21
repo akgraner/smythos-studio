@@ -5,6 +5,7 @@ export class JSONFilter extends Component {
     this.settings = {
       fields: {
         type: 'textarea',
+        expandable: true,
         label: 'Fields',
         value: '',
         validate: `maxlength=1000`,

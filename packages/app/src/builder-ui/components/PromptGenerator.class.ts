@@ -282,6 +282,7 @@ export class PromptGenerator extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         validate: `required`, // Omit maximum length, as the tokens counted in backend may be different from the frontend.
         class: 'mt-1',

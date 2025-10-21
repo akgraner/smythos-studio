@@ -172,6 +172,7 @@ export class APICall extends Component {
       },
       body: {
         type: 'textarea',
+        expandable: true,
         label: 'Body',
         attributes: { 'data-template-vars': 'true', 'data-vault': `${COMP_NAMES.apiCall},All` },
         help: 'Write what you want to send and use variables from earlier steps.',

@@ -171,6 +171,7 @@ export class AgentPlugin extends Component {
         label: 'Description for Model',
         value: this.descForModel,
         attributes: { 'data-template-vars': 'true' }, // Note: for Agent Plugin we will need to check if we should allow the default input `Prompt` as template variable
+        expandable: true,
       },
       agentId: {
         type: 'hidden',
