@@ -132,6 +132,18 @@ export async function handleKvFieldEditBtnForParams(options?: {
       const newUrl = urlObj.href.replace(/%7B/g, '{').replace(/%7D/g, '}');
 
       urlField.value = this.data.url = newUrl;
+
+      // Dispatch events to trigger auto-save
+      const changeEvent = new Event('change');
+      urlField.dispatchEvent(changeEvent);
+
+      const inputEvent = new Event('input', { bubbles: true });
+      urlField.dispatchEvent(inputEvent);
+
+      // Trigger workspace save to propagate changes (similar to APIEndpoint component)
+      setTimeout(() => {
+        this.workspace.saveAgent();
+      }, 100);
     } catch {
       console.warn('Invalid URL', url);
       errorToast('Please enter a valid URL before setting the query parameters');
