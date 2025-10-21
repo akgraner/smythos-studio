@@ -3,22 +3,10 @@ import { FC } from 'react';
 import { FaRegPenToSquare } from 'react-icons/fa6';
 import { Link } from 'react-router-dom';
 
+import { Skeleton } from '@react/features/ai-chat/components';
 import { CloseIcon } from '@react/features/ai-chat/components/icons';
 import { DEFAULT_AVATAR_URL } from '@react/features/ai-chat/constants';
 import { useChatContext } from '@react/features/ai-chat/contexts';
-import { cn } from '@src/react/shared/utils/general';
-
-/**
- * Skeleton component
- */
-const Skeleton: FC<{ className?: string }> = ({ className }) => (
-  <div
-    className={cn(
-      'bg-gradient-to-r from-gray-200 via-gray-300 to-gray-200 animate-pulse',
-      className,
-    )}
-  />
-);
 
 interface ChatHeaderProps {
   avatar?: string;
@@ -64,12 +52,12 @@ export const ChatHeader: FC<ChatHeaderProps> = (props) => {
               className="cursor-pointer w-6 h-6 flex items-center justify-center"
               onClick={clearChatSession}
             >
-              <FaRegPenToSquare className="text-gray-500 w-4 h-4" />
+              <FaRegPenToSquare className="text-slate-500 w-4 h-4" />
             </button>
           </Tooltip>
           <Tooltip content="Exit" placement="bottom">
             <Link to="/agents">
-              <CloseIcon className="text-gray-500 w-6 h-6" />
+              <CloseIcon className="text-slate-500 w-6 h-6" />
             </Link>
           </Tooltip>
         </div>
