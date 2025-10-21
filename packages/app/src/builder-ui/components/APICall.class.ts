@@ -219,7 +219,7 @@ export class APICall extends Component {
             label: 'Edit',
             icon: 'fa-regular fa-pen-to-square',
             id: 'editOAuthConnection',
-            cls: 'mt-[7px] !mr-[24px] !pt-[10px]',
+            cls: 'mt-[2px] !mr-[24px] !pt-[10px]',
             visible: () => this.data.oauth_con_id && this.data.oauth_con_id !== 'None',
             events: {
               click: () => this.handleOAuthConnectionAction(this.data.oauth_con_id),
@@ -1595,12 +1595,13 @@ export class APICall extends Component {
     }
 
     // Update the action button icon and tooltip
-    this.updateOAuthActionButton();
+    // Pass the selected value directly instead of relying on this.data.oauth_con_id
+    this.updateOAuthActionButton(selectedValue);
   }
 
   private async handleOAuthConnectionAction(currentValue: string) {
     const isNone = !currentValue || currentValue === 'None';
-    
+
     // Fetch existing OAuth connections ONLY when editing to avoid modal delay on "Add New"
     if (!isNone) {
       try {
@@ -2046,14 +2047,21 @@ export class APICall extends Component {
     }
   }
 
-  private updateOAuthActionButton() {
+  /**
+   * Updates the OAuth action button visibility and styling.
+   * @param connectionValue - Optional value to check instead of this.data.oauth_con_id
+   */
+  private updateOAuthActionButton(connectionValue?: string) {
     const sidebar: any = this.getSettingsSidebar();
     if (!sidebar) return;
 
     // Find or create the action buttons
     const createBtn: any = sidebar.querySelector('#createOAuthConnection');
     const editBtn: any = sidebar.querySelector('#editOAuthConnection');
-    const isNone: boolean = !this.data.oauth_con_id || this.data.oauth_con_id === 'None';
+
+    // Use provided value or fall back to this.data.oauth_con_id
+    const valueToCheck = connectionValue !== undefined ? connectionValue : this.data.oauth_con_id;
+    const isNone: boolean = !valueToCheck || valueToCheck === 'None';
 
     if (createBtn) createBtn.style.display = 'inline-block';
     if (editBtn) editBtn.style.display = isNone ? 'none' : 'inline-block';
