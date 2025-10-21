@@ -46,7 +46,7 @@ const AIChat = () => {
   const agentSettings = settingsData?.settings;
 
   // Custom Hooks - optimized
-  const { setShowScrollButton, smartScrollToBottom, ...scroll } =
+  const { setShowScrollButton, smartScrollToBottom, scrollToBottom, showScrollButton, ...scroll } =
     useScrollToBottom(chatContainerRef);
 
   const {
@@ -190,9 +190,11 @@ const AIChat = () => {
           smartScrollToBottom={smartScrollToBottom}
         />
         <Footer
-          uploadError={uploadError}
           clearError={clearError}
+          uploadError={uploadError}
           chatInputRef={chatInputRef}
+          scrollToBottom={scrollToBottom}
+          showScrollButton={showScrollButton}
           submitDisabled={isChatCreating || isAgentLoading || uploadingFiles.size > 0}
         />
       </Container>
