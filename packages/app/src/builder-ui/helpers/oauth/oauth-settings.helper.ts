@@ -111,7 +111,7 @@ export class oAuthSettings {
             events: {
               click: () => {
                 this.component.data[this.setting_name] = 'None';
-                this.handleOAuthConnectionAction();
+                this.handleOAuthConnectionAction('None');
               },
             },
           },
@@ -302,7 +302,7 @@ export class oAuthSettings {
       return;
     }
 
-    const currentValue = this.component.data[this.setting_name];
+    //const currentValue = this.component.data[this.setting_name];
 
     try {
       const connections = await this.oauthService.loadConnections();
