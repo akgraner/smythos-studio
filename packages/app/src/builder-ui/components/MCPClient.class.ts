@@ -57,6 +57,7 @@ export class MCPClient extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         value: '{{Prompt}}',
         validate: `required`,
@@ -78,6 +79,7 @@ export class MCPClient extends Component {
       },
       descForModel: {
         type: 'textarea',
+        expandable: true,
         label: 'System Prompt',
         help: 'Set rules for all calls, like allowed tools, tone, and required output format.',
         section: 'Advanced',

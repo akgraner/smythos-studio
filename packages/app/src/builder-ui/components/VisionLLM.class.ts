@@ -115,6 +115,7 @@ export class VisionLLM extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         class: 'mb-6',
         validate: `required`, // Omit maximum length, as the tokens counted in backend may be different from the frontend.

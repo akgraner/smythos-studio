@@ -24,6 +24,7 @@ export class MemoryWriteKeyVal extends Component {
       },
       value: {
         type: 'textarea',
+        expandable: true,
         label: 'Value',
         value: '{{Value}}',
         help: 'Data to remember for reuse in later steps and workflows.',

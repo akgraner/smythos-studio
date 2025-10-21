@@ -492,6 +492,7 @@ export class GenAILLM extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         validate: `required`, // Omit maximum length, as the tokens counted in backend may be different from the frontend.
         validateMessage: `Please provide a prompt. It's required!`,

@@ -34,6 +34,12 @@ interface ContentDialogSettings {
   onDOMReady?: (dialog: HTMLElement) => void; //callback when dialog is ready but not yet displayed
   onLoad?: (dialog: HTMLElement) => void; //callback when dialog is loaded
   onCloseClick?: (data?: any, dialog?: HTMLElement) => void; //callback when default dialog close buttons [X] is clicked, if this function is not defined, the dialog will not have a corner close button
+  size?: {
+    width?: string; // e.g., '80vw', '80%'
+    height?: string; // e.g., '80vh', '80%'
+    maxWidth?: string; // e.g., '1200px', '90vw'
+    maxHeight?: string; // e.g., '800px', '90vh'
+  };
 }
 
 export function editValuesDialog({
@@ -271,6 +277,7 @@ export async function twModalDialog({
   onDOMReady,
   onLoad,
   onCloseClick,
+  size,
 }: ContentDialogSettings) {
   const dialoTpl = document.querySelector('#editValuesDialogTpl');
   if (!dialoTpl) return;
@@ -290,6 +297,28 @@ export async function twModalDialog({
   dialogTitle.innerHTML = title;
 
   dialogContent.innerHTML = content;
+
+  // Apply size styles if provided
+  if (size) {
+    const dialogElement = dialogDialog as HTMLElement;
+    dialogElement.classList.add('flex', 'flex-col');
+    dialogContent.classList.add('h-full', 'p-4');
+    
+    if (size.width) {
+      dialogElement.style.width = size.width;
+    }
+    if (size.height) {
+      dialogElement.style.height = size.height;
+    }
+    if (size.maxWidth) {
+      dialogElement.style.maxWidth = size.maxWidth;
+      dialogElement.classList.remove('max-w-2xl');
+    }
+    if (size.maxHeight) {
+      dialogElement.style.maxHeight = size.maxHeight;
+      dialogElement.classList.remove('max-h-screen');
+    }
+  }
 
   const buttons = [];
 

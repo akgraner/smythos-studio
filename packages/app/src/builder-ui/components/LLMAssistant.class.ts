@@ -127,6 +127,7 @@ export class LLMAssistant extends Component {
 
       behavior: {
         type: 'textarea',
+        expandable: true,
         label: 'Behavior',
         class: '',
         validate: `required maxlength=30000`,

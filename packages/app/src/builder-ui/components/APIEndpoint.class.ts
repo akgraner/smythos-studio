@@ -137,6 +137,7 @@ export class APIEndpoint extends Component {
         arrowClasses: '-ml-11',
         validate: `maxlength=5000`,
         validateMessage: 'Your text exceeds the 5,000 character limit.',
+        expandable: true,
       },
       ai_exposed: {
         type: 'toggle',
@@ -161,6 +162,7 @@ export class APIEndpoint extends Component {
         validate: `maxlength=1000`,
         validateMessage: 'Your text exceeds the 1,000 character limit.',
         section: 'Advanced',
+        expandable: true,
       },
 
       advancedModeEnabled: {
@@ -248,6 +250,7 @@ export class APIEndpoint extends Component {
         validateMessage: 'Your text exceeds the 240 character limit.',
         section: 'Advanced',
         attributes: { placeholder: 'Starting {skill_name}… this may take ~{estimated_duration}.' },
+        expandable: true,
       },
     };
 
@@ -267,6 +270,7 @@ export class APIEndpoint extends Component {
           attributes: {
             placeholder: `Describe input behavior, formatting (e.g., MM-DD-YY), and requirements`,
           },
+          expandable: true,
         },
       },
     };
