@@ -14,9 +14,13 @@ import {
   mapInternalToServiceName,
   mapServiceNameToInternal,
 } from '@src/shared/helpers/oauth/oauth.utils';
+import { hasVaultKeys, resolveVaultKeys } from '@src/shared/helpers/oauth/vault-key-resolver';
 import { builderStore } from '../../shared/state_stores/builder/store';
 import { COMP_NAMES } from '../config';
-import { generateOAuthModalHTML } from '../helpers/oauth/oauth-modal.helper';
+import {
+  generateOAuthModalHTML,
+  generateOAuthModalLoadingSkeleton,
+} from '../helpers/oauth/oauth-modal.helper';
 import { createBadge } from '../ui/badges'; // *** ADDED: Import createBadge ***
 import { destroyCodeEditor, toggleMode } from '../ui/dom';
 import { closeTwDialog, twEditValuesWithCallback } from '../ui/tw-dialogs';
@@ -1600,7 +1604,7 @@ export class APICall extends Component {
 
   private async handleOAuthConnectionAction(currentValue: string) {
     const isNone = !currentValue || currentValue === 'None';
-    
+
     // Fetch existing OAuth connections ONLY when editing to avoid modal delay on "Add New"
     if (!isNone) {
       try {
@@ -1628,174 +1632,120 @@ export class APICall extends Component {
       ? currentConnectionRaw.auth_settings
       : currentConnectionRaw; // Assume old structure if new one isn't present
 
-    const currentOauthInfo = this.getConnectionOauthInfo(currentSettings, currentValue) || {}; // Support both structures
+    let currentOauthInfo = this.getConnectionOauthInfo(currentSettings, currentValue) || {}; // Support both structures
     const currentName = currentSettings?.name || ''; // Get name from the settings part
 
     //console.log('[OAuth Edit] Identified Current Connection Settings:', currentSettings);
     //console.log('[OAuth Edit] Identified Current OAuth Info:', currentOauthInfo);
 
     // Determine service name and platform from the extracted settings
-    const currentService = currentSettings
+    let currentService = currentSettings
       ? mapInternalToServiceName(currentOauthInfo.service)
       : 'None';
-    const currentPlatform = currentOauthInfo.platform || '';
+    let currentPlatform = currentOauthInfo.platform || '';
+
+    // Check if we need to resolve vault keys
+    const needsVaultResolution = !isNone && hasVaultKeys(currentOauthInfo);
 
     // Extract values needed for later use in onDOMReady
-    const consumerKeyValue = currentOauthInfo.consumerKey || '';
-    const consumerSecretValue = currentOauthInfo.consumerSecret || '';
+    let consumerKeyValue = currentOauthInfo.consumerKey || '';
+    let consumerSecretValue = currentOauthInfo.consumerSecret || '';
 
-    // Generate form HTML using helper function
-    const formHTML = generateOAuthModalHTML(
-      currentName,
-      currentPlatform,
-      currentService,
-      currentOauthInfo,
-    );
+    // Generate initial form HTML - use loading skeleton if vault keys need resolution
+    let initialFormHTML = needsVaultResolution
+      ? generateOAuthModalLoadingSkeleton()
+      : generateOAuthModalHTML(currentName, currentPlatform, currentService, currentOauthInfo);
 
     // Show dialog using twEditValuesWithCallback, passing HTML content
     await twEditValuesWithCallback(
       {
         title: isNone ? 'Add OAuth Connection' : 'Edit OAuth Connection',
-        content: formHTML,
-        onDOMReady: (dialog) => {
-          // Get all containers
-          const oauth1Container = dialog.querySelector('#oauth1-fields');
-          const oauth2Container = dialog.querySelector('#oauth2-fields');
-          const callbackDisplayContainer = dialog.querySelector('#callback-url-display');
-          const serviceSelect = dialog.querySelector('#oauthService') as HTMLSelectElement;
-          const initialServiceValue = serviceSelect?.value || 'None';
+        content: initialFormHTML,
+        onDOMReady: async (dialog) => {
+          // If we need to resolve vault keys, do it now
+          if (needsVaultResolution) {
+            console.log('[OAuth Vault Resolution] Starting vault key resolution...');
+            try {
+              // Resolve vault keys
+              console.log('[OAuth Vault Resolution] Resolving vault keys...');
+              currentOauthInfo = await resolveVaultKeys(currentOauthInfo);
+              console.log('[OAuth Vault Resolution] Vault keys resolved successfully');
+              currentPlatform = currentOauthInfo.platform || '';
+              consumerKeyValue = currentOauthInfo.consumerKey || '';
+              consumerSecretValue = currentOauthInfo.consumerSecret || '';
 
-          // Force-set OAuth1 fields (our working fix)
-          const consumerKeyInput = dialog.querySelector('#consumerKey') as HTMLInputElement;
-          const consumerSecretInput = dialog.querySelector('#consumerSecret') as HTMLInputElement;
-          if (consumerKeyInput && consumerKeyValue) {
-            consumerKeyInput.value = consumerKeyValue;
-          }
-          if (consumerSecretInput && consumerSecretValue) {
-            consumerSecretInput.value = consumerSecretValue;
-          }
+              // Generate the actual form HTML with resolved values
+              const resolvedFormHTML = generateOAuthModalHTML(
+                currentName,
+                currentPlatform,
+                currentService,
+                currentOauthInfo,
+              );
 
-          // Force-set OAuth2 fields the same way
-          const clientIDInput = dialog.querySelector('#clientID') as HTMLInputElement;
-          const clientSecretInput = dialog.querySelector('#clientSecret') as HTMLInputElement;
-          const tokenURLInput = dialog.querySelector('#tokenURL') as HTMLInputElement;
-          const authURLInput = dialog.querySelector('#authorizationURL') as HTMLInputElement;
-          const scopeInput = dialog.querySelector('#scope') as HTMLTextAreaElement;
+              // Find the content container and update it
+              // Try multiple selectors to find the right container
+              let contentContainer =
+                dialog.querySelector('.tw-dialog-content') ||
+                dialog.querySelector('.grid.gap-4.py-4')?.parentElement ||
+                dialog.querySelector('[role="document"]') ||
+                dialog;
 
-          if (clientIDInput && currentOauthInfo.clientID) {
-            clientIDInput.value = currentOauthInfo.clientID;
-          }
-          if (clientSecretInput && currentOauthInfo.clientSecret) {
-            clientSecretInput.value = currentOauthInfo.clientSecret;
-          }
-          if (tokenURLInput && currentOauthInfo.tokenURL) {
-            tokenURLInput.value = currentOauthInfo.tokenURL;
-          }
-          if (authURLInput && currentOauthInfo.authorizationURL) {
-            authURLInput.value = currentOauthInfo.authorizationURL;
-          }
-          if (scopeInput && currentOauthInfo.scope) {
-            scopeInput.value = currentOauthInfo.scope;
-          }
+              console.log(
+                '[OAuth Vault Resolution] Found content container:',
+                contentContainer?.className,
+              );
 
-          // Comprehensive update field visibility function
-          const updateFieldVisibility = (selectedValue: string) => {
-            const isOAuth2 = ['Google', 'LinkedIn', 'Custom OAuth2.0'].includes(selectedValue);
-            const isOAuth1 = ['Twitter', 'Custom OAuth1.0'].includes(selectedValue);
-            const isClientCreds = selectedValue === 'OAuth2 Client Credentials';
+              if (contentContainer) {
+                contentContainer.innerHTML = resolvedFormHTML;
+                console.log('[OAuth Vault Resolution] Updated content with resolved values');
+              } else {
+                console.error('[OAuth Vault Resolution] Could not find content container');
+              }
 
-            // Show/hide main containers
-            oauth1Container?.classList.toggle('hidden', !isOAuth1);
-            oauth2Container?.classList.toggle('hidden', !(isOAuth2 || isClientCreds));
+              // Re-run the setup logic after content is loaded
+              this.setupOAuthModalHandlers(
+                dialog,
+                currentOauthInfo,
+                consumerKeyValue,
+                consumerSecretValue,
+              );
+            } catch (error) {
+              console.error('Error resolving vault keys:', error);
+              errorToast('Failed to load connection details. Please try again.', 'Error', 'alert');
 
-            // Toggle specific fields within OAuth2
-            const scopeGroup = dialog.querySelector('[data-oauth-field="scope"]');
-            const authURLGroup = dialog.querySelector('#authorizationURL')?.closest('.form-group');
+              // Show form anyway with placeholders
+              const fallbackHTML = generateOAuthModalHTML(
+                currentName,
+                currentPlatform,
+                currentService,
+                currentOauthInfo,
+              );
 
-            if (scopeGroup) {
-              scopeGroup.classList.toggle('hidden', isClientCreds || !isOAuth2);
+              let contentContainer =
+                dialog.querySelector('.tw-dialog-content') ||
+                dialog.querySelector('.grid.gap-4.py-4')?.parentElement ||
+                dialog.querySelector('[role="document"]') ||
+                dialog;
+
+              if (contentContainer) {
+                contentContainer.innerHTML = fallbackHTML;
+              }
+
+              this.setupOAuthModalHandlers(
+                dialog,
+                currentOauthInfo,
+                consumerKeyValue,
+                consumerSecretValue,
+              );
             }
-            if (authURLGroup) {
-              authURLGroup.classList.toggle('hidden', isClientCreds || !isOAuth2);
-            }
-
-            // Handle callback URL display
-            callbackDisplayContainer?.classList.toggle(
-              'hidden',
-              isClientCreds || (!isOAuth2 && !isOAuth1),
+          } else {
+            // No vault keys, setup handlers immediately
+            this.setupOAuthModalHandlers(
+              dialog,
+              currentOauthInfo,
+              consumerKeyValue,
+              consumerSecretValue,
             );
-            if (!callbackDisplayContainer?.classList.contains('hidden')) {
-              const callbackUrlDiv = callbackDisplayContainer?.querySelector('div.col-span-3');
-              const service = selectedValue === 'None' ? '' : selectedValue;
-              let callbackURL = '';
-
-              try {
-                const baseUrl = window.location.origin;
-                const serviceInternal = APICall.prototype.mapServiceNameToInternal.call(
-                  this,
-                  service,
-                );
-                if (serviceInternal && serviceInternal !== 'none') {
-                  callbackURL = `${baseUrl}/oauth/${serviceInternal}/callback`;
-                }
-              } catch (e) {
-                console.error('Error creating callback URL:', e);
-              }
-
-              if (callbackUrlDiv) {
-                callbackUrlDiv.textContent = callbackURL;
-              }
-            }
-          };
-
-          // Apply initial visibility
-          updateFieldVisibility(initialServiceValue);
-
-          // Re-add change handler
-          if (serviceSelect) {
-            serviceSelect.addEventListener('change', (e) => {
-              const target = e.target as HTMLSelectElement;
-              updateFieldVisibility(target.value);
-
-              // Add this code to prefill values when service changes
-              const selectedService = target.value;
-              if (['Google', 'Twitter', 'LinkedIn'].includes(selectedService)) {
-                // Get default configuration for selected service
-                const baseUrl = window.location.origin;
-                const service = this.mapServiceNameToInternal(selectedService);
-                const callbackUrl = `${baseUrl}/oauth/${service}/callback`;
-
-                // Set default values based on service
-                if (selectedService === 'Google') {
-                  (dialog.querySelector('#authorizationURL') as HTMLInputElement).value =
-                    'https://accounts.google.com/o/oauth2/v2/auth';
-                  (dialog.querySelector('#tokenURL') as HTMLInputElement).value =
-                    'https://oauth2.googleapis.com/token';
-                  (dialog.querySelector('#scope') as HTMLTextAreaElement).value =
-                    'https://www.googleapis.com/auth/gmail.readonly';
-                } else if (selectedService === 'LinkedIn') {
-                  (dialog.querySelector('#authorizationURL') as HTMLInputElement).value =
-                    'https://www.linkedin.com/oauth/v2/authorization';
-                  (dialog.querySelector('#tokenURL') as HTMLInputElement).value =
-                    'https://www.linkedin.com/oauth/v2/accessToken';
-                  (dialog.querySelector('#scope') as HTMLTextAreaElement).value =
-                    'r_liteprofile r_emailaddress';
-                } else if (selectedService === 'Twitter') {
-                  (dialog.querySelector('#requestTokenURL') as HTMLInputElement).value =
-                    'https://api.twitter.com/oauth/request_token';
-                  (dialog.querySelector('#accessTokenURL') as HTMLInputElement).value =
-                    'https://api.twitter.com/oauth/access_token';
-                  (dialog.querySelector('#userAuthorizationURL') as HTMLInputElement).value =
-                    'https://api.twitter.com/oauth/authorize';
-                }
-
-                // Update callback URL display
-                const callbackUrlDiv = callbackDisplayContainer?.querySelector('div.col-span-3');
-                if (callbackUrlDiv) {
-                  callbackUrlDiv.textContent = callbackUrl;
-                }
-              }
-            });
           }
         },
         actions: [
@@ -2172,5 +2122,153 @@ export class APICall extends Component {
 
     oauth_button.innerHTML = isAuthenticated ? 'Sign Out' : 'Authenticate';
     oauth_button.disabled = false;
+  }
+
+  /**
+   * Sets up the OAuth modal handlers (field visibility, change events, etc.)
+   * Extracted from onDOMReady to allow reuse after vault key resolution
+   */
+  private setupOAuthModalHandlers(
+    dialog: HTMLElement,
+    currentOauthInfo: any,
+    consumerKeyValue: string,
+    consumerSecretValue: string,
+  ) {
+    // Get all containers
+    const oauth1Container = dialog.querySelector('#oauth1-fields');
+    const oauth2Container = dialog.querySelector('#oauth2-fields');
+    const callbackDisplayContainer = dialog.querySelector('#callback-url-display');
+    const serviceSelect = dialog.querySelector('#oauthService') as HTMLSelectElement;
+    const initialServiceValue = serviceSelect?.value || 'None';
+
+    // Force-set OAuth1 fields (our working fix)
+    const consumerKeyInput = dialog.querySelector('#consumerKey') as HTMLInputElement;
+    const consumerSecretInput = dialog.querySelector('#consumerSecret') as HTMLInputElement;
+    if (consumerKeyInput && consumerKeyValue) {
+      consumerKeyInput.value = consumerKeyValue;
+    }
+    if (consumerSecretInput && consumerSecretValue) {
+      consumerSecretInput.value = consumerSecretValue;
+    }
+
+    // Force-set OAuth2 fields the same way
+    const clientIDInput = dialog.querySelector('#clientID') as HTMLInputElement;
+    const clientSecretInput = dialog.querySelector('#clientSecret') as HTMLInputElement;
+    const tokenURLInput = dialog.querySelector('#tokenURL') as HTMLInputElement;
+    const authURLInput = dialog.querySelector('#authorizationURL') as HTMLInputElement;
+    const scopeInput = dialog.querySelector('#scope') as HTMLTextAreaElement;
+
+    if (clientIDInput && currentOauthInfo.clientID) {
+      clientIDInput.value = currentOauthInfo.clientID;
+    }
+    if (clientSecretInput && currentOauthInfo.clientSecret) {
+      clientSecretInput.value = currentOauthInfo.clientSecret;
+    }
+    if (tokenURLInput && currentOauthInfo.tokenURL) {
+      tokenURLInput.value = currentOauthInfo.tokenURL;
+    }
+    if (authURLInput && currentOauthInfo.authorizationURL) {
+      authURLInput.value = currentOauthInfo.authorizationURL;
+    }
+    if (scopeInput && currentOauthInfo.scope) {
+      scopeInput.value = currentOauthInfo.scope;
+    }
+
+    // Comprehensive update field visibility function
+    const updateFieldVisibility = (selectedValue: string) => {
+      const isOAuth2 = ['Google', 'LinkedIn', 'Custom OAuth2.0'].includes(selectedValue);
+      const isOAuth1 = ['Twitter', 'Custom OAuth1.0'].includes(selectedValue);
+      const isClientCreds = selectedValue === 'OAuth2 Client Credentials';
+
+      // Show/hide main containers
+      oauth1Container?.classList.toggle('hidden', !isOAuth1);
+      oauth2Container?.classList.toggle('hidden', !(isOAuth2 || isClientCreds));
+
+      // Toggle specific fields within OAuth2
+      const scopeGroup = dialog.querySelector('[data-oauth-field="scope"]');
+      const authURLGroup = dialog.querySelector('#authorizationURL')?.closest('.form-group');
+
+      if (scopeGroup) {
+        scopeGroup.classList.toggle('hidden', isClientCreds || !isOAuth2);
+      }
+      if (authURLGroup) {
+        authURLGroup.classList.toggle('hidden', isClientCreds || !isOAuth2);
+      }
+
+      // Handle callback URL display
+      callbackDisplayContainer?.classList.toggle(
+        'hidden',
+        isClientCreds || (!isOAuth2 && !isOAuth1),
+      );
+      if (!callbackDisplayContainer?.classList.contains('hidden')) {
+        const callbackUrlDiv = callbackDisplayContainer?.querySelector('div.col-span-3');
+        const service = selectedValue === 'None' ? '' : selectedValue;
+        let callbackURL = '';
+
+        try {
+          const baseUrl = window.location.origin;
+          const serviceInternal = APICall.prototype.mapServiceNameToInternal.call(this, service);
+          if (serviceInternal && serviceInternal !== 'none') {
+            callbackURL = `${baseUrl}/oauth/${serviceInternal}/callback`;
+          }
+        } catch (e) {
+          console.error('Error creating callback URL:', e);
+        }
+
+        if (callbackUrlDiv) {
+          callbackUrlDiv.textContent = callbackURL;
+        }
+      }
+    };
+
+    // Apply initial visibility
+    updateFieldVisibility(initialServiceValue);
+
+    // Re-add change handler
+    if (serviceSelect) {
+      serviceSelect.addEventListener('change', (e) => {
+        const target = e.target as HTMLSelectElement;
+        updateFieldVisibility(target.value);
+
+        // Add this code to prefill values when service changes
+        const selectedService = target.value;
+        if (['Google', 'Twitter', 'LinkedIn'].includes(selectedService)) {
+          // Get default configuration for selected service
+          const baseUrl = window.location.origin;
+          const service = this.mapServiceNameToInternal(selectedService);
+          const callbackUrl = `${baseUrl}/oauth/${service}/callback`;
+
+          // Set default values based on service
+          if (selectedService === 'Google') {
+            (dialog.querySelector('#authorizationURL') as HTMLInputElement).value =
+              'https://accounts.google.com/o/oauth2/v2/auth';
+            (dialog.querySelector('#tokenURL') as HTMLInputElement).value =
+              'https://oauth2.googleapis.com/token';
+            (dialog.querySelector('#scope') as HTMLTextAreaElement).value =
+              'https://www.googleapis.com/auth/gmail.readonly';
+          } else if (selectedService === 'LinkedIn') {
+            (dialog.querySelector('#authorizationURL') as HTMLInputElement).value =
+              'https://www.linkedin.com/oauth/v2/authorization';
+            (dialog.querySelector('#tokenURL') as HTMLInputElement).value =
+              'https://www.linkedin.com/oauth/v2/accessToken';
+            (dialog.querySelector('#scope') as HTMLTextAreaElement).value =
+              'r_liteprofile r_emailaddress';
+          } else if (selectedService === 'Twitter') {
+            (dialog.querySelector('#requestTokenURL') as HTMLInputElement).value =
+              'https://api.twitter.com/oauth/request_token';
+            (dialog.querySelector('#accessTokenURL') as HTMLInputElement).value =
+              'https://api.twitter.com/oauth/access_token';
+            (dialog.querySelector('#userAuthorizationURL') as HTMLInputElement).value =
+              'https://api.twitter.com/oauth/authorize';
+          }
+
+          // Update callback URL display
+          const callbackUrlDiv = callbackDisplayContainer?.querySelector('div.col-span-3');
+          if (callbackUrlDiv) {
+            callbackUrlDiv.textContent = callbackUrl;
+          }
+        }
+      });
+    }
   }
 }
