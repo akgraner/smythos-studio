@@ -56,36 +56,34 @@ export const Chats: FC<MessagesProps> = (props) => {
       className="w-full h-full overflow-auto relative scroll-smooth mt-16 flex justify-center items-center"
     >
       <div
-        className="w-full h-full max-w-4xl"
+        ref={ref}
         onScroll={handleScroll}
-        ref={combineRefs(containerRef, dropzoneRef)}
+        className="w-full h-full max-w-4xl flex-1 pb-4 space-y-6 px-2.5"
       >
-        <div className="w-full flex-1 pb-4 space-y-6 px-2.5" ref={ref}>
-          {messages.map((message, i) => {
-            const isLast = i === messages.length - 1;
-            const onRetryClick = message.isError && isLast ? retryLastMessage : undefined;
-            const retry = isRetrying && isLast;
+        {messages.map((message, i) => {
+          const isLast = i === messages.length - 1;
+          const onRetryClick = message.isError && isLast ? retryLastMessage : undefined;
+          const retry = isRetrying && isLast;
 
-            return (
-              <div key={i}>
-                <Chat
-                  {...message}
-                  avatar={avatar}
-                  isRetrying={retry}
-                  isError={message.isError}
-                  onRetryClick={onRetryClick}
-                  scrollToBottom={smartScrollToBottom}
-                />
+          return (
+            <div key={i}>
+              <Chat
+                {...message}
+                avatar={avatar}
+                isRetrying={retry}
+                isError={message.isError}
+                onRetryClick={onRetryClick}
+                scrollToBottom={smartScrollToBottom}
+              />
 
-                {retry && (
-                  <button onClick={retryLastMessage} className="pt-1.5">
-                    Retry
-                  </button>
-                )}
-              </div>
-            );
-          })}
-        </div>
+              {retry && (
+                <button onClick={retryLastMessage} className="pt-1.5">
+                  Retry
+                </button>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
