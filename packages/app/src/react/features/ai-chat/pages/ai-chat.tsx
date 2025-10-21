@@ -190,9 +190,9 @@ const AIChat = () => {
           smartScrollToBottom={smartScrollToBottom}
         />
         <Footer
+          ref={chatInputRef}
           clearError={clearError}
           uploadError={uploadError}
-          chatInputRef={chatInputRef}
           scrollToBottom={scrollToBottom}
           showScrollButton={showScrollButton}
           submitDisabled={isChatCreating || isAgentLoading || uploadingFiles.size > 0}
