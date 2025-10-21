@@ -58,11 +58,13 @@
   <div class="overlay-secondary hidden"></div>
   <div id="modal-root"></div>
 
+  <% if (page !== 'dev-vite-react.ejs') { %>
   <script>
     window.__LLM_MODELS__ = JSON.parse(
       `<% if (typeof LLMModels !== 'undefined') { %><%- JSON.stringify(LLMModels) %><% } %>`,
     );
   </script>
+  <% } %>
 
   <script src="/metroui/js/metro.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.js"></script>
