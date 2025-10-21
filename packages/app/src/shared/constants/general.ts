@@ -12,6 +12,7 @@ export const V4_ALL_PLANS = [
   'enterprise t2',
   'enterprise t3',
   'enterprise t4',
+  'business unlimited',
   'scaleup',
   'builder',
   'startup',
