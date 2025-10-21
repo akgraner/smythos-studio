@@ -15,6 +15,11 @@ export const COMPONENT_STATE_KEY = 'component:state';
 
 export const REASONING_EFFORTS = [
   {
+    // GPT-5-pro only supports 'high' reasoning effort
+    pattern: /^(gpt-5-pro|smythos\/gpt-5-pro)/i,
+    options: [{ text: 'High', value: 'high' }],
+  },
+  {
     pattern: /^(gpt|smythos\/gpt)/i,
     options: [
       { text: 'Minimal', value: 'minimal' },
