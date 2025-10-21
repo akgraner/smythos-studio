@@ -1,4 +1,4 @@
-import { PostHog } from '@src/shared/posthog';
+import { Observability } from '@src/shared/observability';
 import { debounce } from 'lodash-es';
 import { EMBODIMENT_DESCRIPTIONS } from '../../shared/constants/general';
 import EventEmitter from '../EventEmitter.class';
@@ -383,7 +383,7 @@ export class APIEndpoint extends Component {
 
     const missingSettings = requiredSettings.filter((setting) => !this.data[setting.id]);
     if (missingSettings.length === 0 && this.properties?.inputProps?.length > 0) {
-      PostHog.track('app_form_preview_impression', {});
+      Observability.observeInteraction('app_form_preview_impression', {});
       this.formPreviewButton = this.addComponentButton(
         `<div class="fa-solid fa-play" id="form-preview-button-icon"></div><p class="ml-2 font-semibold">Form Preview</p>`,
         ' ',
@@ -670,7 +670,7 @@ export class APIEndpoint extends Component {
   }
 
   private async handleFormPreviewBtnClick() {
-    PostHog.track('app_form_preview_click', {});
+    Observability.observeInteraction('app_form_preview_click', {});
     let autoFillDataJson = this.cachedAutoFillDataJson;
 
     const formPreviewButton = this.domElement.querySelector(
