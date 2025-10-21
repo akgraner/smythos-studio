@@ -15,6 +15,15 @@ import { queryClient } from '@src/react/shared/query-client';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useState } from 'react';
 
+const fetchOptions = {
+  refetchOnWindowFocus: false,
+  refetchOnMount: false,
+  refetchOnReconnect: false,
+  refetchInterval: false,
+  refetchIntervalInBackground: false,
+} as const;
+
+
 export function useVault() {
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,10 +70,12 @@ export function useVault() {
     }
   };
 
+  
   const useUserModels = (options = {}) => {
     return useQuery<UserModel[], Error>({
       queryKey: ['get_vault_user_models'],
       queryFn: () => userModelService.fetchUserModels(),
+      ...fetchOptions,
       ...options,
     });
   };
@@ -114,6 +125,7 @@ export function useVault() {
     return useQuery<ApiKeysResponse, Error>({
       queryKey: ['get_vault_api_keys'],
       queryFn: () => apiKeyService.fetchAPIKeys(),
+      ...fetchOptions,
       ...options,
     });
   };
@@ -220,6 +232,7 @@ export function useUserCustomModels() {
   return useQuery({
     queryKey: USER_CUSTOM_MODEL_QUERY_KEYS.USER_CUSTOM_MODELS,
     queryFn: () => userCustomModelService.getUserCustomModels(),
+    ...fetchOptions,
   });
 }
 

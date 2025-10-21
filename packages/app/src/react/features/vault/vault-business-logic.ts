@@ -1,4 +1,4 @@
-import { VAULT_SCOPE_AGENT_LLM } from '@src/shared/constants/general';
+import { MANAGED_VAULT_SCOPES } from '@src/shared/constants/general';
 import type { ApiKey, BuiltInModel, UserCustomModel, UserModel } from './types/types';
 
 export const builtInModelService = {
@@ -150,7 +150,7 @@ export const apiKeyService = {
   fetchAPIKeys: async (): Promise<{ keys?: ApiKey[]; error?: string }> => {
     try {
       const response = await fetch(
-        '/api/page/vault/keys?excludeScope=global,_hidden,' + VAULT_SCOPE_AGENT_LLM,
+        `/api/page/vault/keys?excludeScope=global,${MANAGED_VAULT_SCOPES.join(',')}`,
         {
           method: 'GET',
           headers: {
@@ -361,6 +361,8 @@ export const userCustomModelService = {
         provider: value.provider,
         // Check for new field name first, then fall back to old field name
         contextWindow: value.contextWindow !== undefined ? value.contextWindow : value.tokens,
+        maxOutputTokens:
+          value.maxOutputTokens !== undefined ? value.maxOutputTokens : value.completionTokens,
         maxOutputTokens:
           value.maxOutputTokens !== undefined ? value.maxOutputTokens : value.completionTokens,
         fallbackLLM: value.fallbackLLM || '', // Provide default empty string for backward compatibility with cached data
