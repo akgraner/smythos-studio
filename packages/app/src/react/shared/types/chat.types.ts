@@ -12,46 +12,18 @@ export interface FileWithMetadata {
   id: string;
 }
 
-/**
- * Shared chat message interface
- * Backward compatible with legacy code while supporting new type system
- *
- * Note: Prefer using type-based discrimination for new code:
- * - Use `type === 'user'` instead of `me` boolean
- * - Use `type === 'loading'` instead of `isReplying`/`isRetrying`
- * - Use `type === 'error'` instead of `isError` boolean
- */
 export interface IChatMessage {
-  /** Legacy: whether message is from current user. Use `type === 'user'` instead */
   me: boolean;
-
-  /** Message content */
   message: string;
-
-  /**
-   * Message type - determines rendering and state
-   * New types: 'loading' (replaces isReplying/isRetrying), 'error' (replaces isError)
-   */
-  type?: 'user' | 'system' | 'thinking' | 'loading' | 'error';
-
-  /** Avatar URL for system messages */
+  type?: 'user' | 'system' | 'thinking';
   avatar?: string;
-
-  /** Legacy: AI is generating response. Use `type === 'loading'` instead */
   isReplying?: boolean;
-
-  /** Legacy: Error state. Use `type === 'error'` instead */
   isError?: boolean;
-
-  /** Attached files */
+  isFirstMessage?: boolean;
   files?: FileWithMetadata[];
-
-  /** Inline thinking message */
-  thinkingMessage?: string;
-
-  /** Legacy: Retry in progress. Use `type === 'loading'` instead */
-  isRetrying?: boolean;
-
-  /** Retry callback */
-  onRetryClick?: () => void;
+  hideMessage?: boolean;
+  thinkingMessage?: string; // Inline thinking message to show with system messages
+  isLast?: boolean; // Whether this is the last message in the chat
+  isRetrying?: boolean; // Whether this message is being retried
+  onRetryClick?: () => void; // Function to call when retry is clicked
 }
