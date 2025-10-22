@@ -1328,7 +1328,8 @@ ul.agents-list-dlg .btn-delete {
 
 .right-sidebar .form-group input,
 .right-sidebar .form-group textarea,
-.right-sidebar .form-group .form-control {
+.right-sidebar .form-group .form-control,
+.smyth-dialog #expanded-textarea {
   border-radius: 10px 10px 10px 10px;
   background-color: transparent;
   /* bg-gray-100 */
