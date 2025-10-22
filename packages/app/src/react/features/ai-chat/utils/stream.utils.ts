@@ -1,10 +1,11 @@
+/* eslint-disable no-unused-vars */
 /**
  * Stream processing utilities for chat responses
  * Handles JSON parsing, message formatting, and status updates
  * Updated: callback signatures now include TThinkingType parameter
  */
 
-import { IStreamChunk, TThinkingType } from '../types/chat.types';
+import { IStreamChunk, TThinkingType } from '@react/features/ai-chat/types/chat.types';
 
 /**
  * Function-specific thinking messages that cycle during function execution
@@ -372,7 +373,6 @@ export const processStreamChunk = (chunk: IStreamChunk) => {
     statusMessage: chunk.status_message || null,
     content: chunk.content || '',
     error: chunk.error || null,
-    errorType: chunk.errorType || null,
   };
 };
 
