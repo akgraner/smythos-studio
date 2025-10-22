@@ -1,13 +1,3 @@
-/**
- * Agent Chat Component - Professional Implementation
- * Uses new modern hooks with complete type safety and better architecture
- *
- * Architecture:
- * - Separated chat context logic into useAgentChatContext hook
- * - Clean component focused on rendering and UI interactions
- * - All business logic encapsulated in custom hooks
- */
-
 import { useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 
@@ -53,12 +43,8 @@ const AgentChat = () => {
     handleFileDrop,
   } = useAgentChatContext({
     agentId: agentId || '',
-    onChatReady: () => {
-      chatInputRef.current?.focus(); // Focus input when chat is ready
-    },
-    onChatCleared: () => {
-      chatInputRef.current?.focus(); // Focus input after clearing chat
-    },
+    onChatReady: () => chatInputRef.current?.focus(), // Focus input when chat is ready
+    onChatCleared: () => chatInputRef.current?.focus(), // Focus input after clearing chat
   });
 
   // ============================================================================
@@ -75,9 +61,7 @@ const AgentChat = () => {
    * Auto-focus input when agent is loaded and not disabled
    */
   useEffect(() => {
-    if (!isLoading.agent && !chatContextValue.inputDisabled) {
-      chatInputRef.current?.focus();
-    }
+    if (!isLoading.agent && !chatContextValue.inputDisabled) chatInputRef.current?.focus();
   }, [isLoading.agent, chatContextValue.inputDisabled]);
 
   // ============================================================================
