@@ -12,6 +12,7 @@ import '../styles/index.css';
 
 interface IChatProps extends IChatMessage {
   scrollToBottom?: () => void; // Callback to scroll chat to bottom
+  showCopyButton?: boolean; // Control copy button visibility for SystemMessage
 }
 
 /**
@@ -22,7 +23,16 @@ interface IChatProps extends IChatMessage {
  * @returns Appropriate message component
  */
 export const Chat: FC<IChatProps> = (props) => {
-  const { type, files, avatar, message, onRetryClick, thinkingMessage, scrollToBottom } = props;
+  const {
+    type,
+    files,
+    avatar,
+    message,
+    onRetryClick,
+    thinkingMessage,
+    scrollToBottom,
+    showCopyButton,
+  } = props;
 
   switch (type) {
     case 'loading':
@@ -40,11 +50,26 @@ export const Chat: FC<IChatProps> = (props) => {
           thinkingMessage={thinkingMessage}
           onTypingComplete={() => scrollToBottom?.()}
           onTypingProgress={() => scrollToBottom?.()}
+          showCopyButton={showCopyButton}
         />
       );
     case 'error':
-      return <SystemMessage isError message={message} onRetryClick={onRetryClick} />;
+      return (
+        <SystemMessage
+          isError
+          message={message}
+          onRetryClick={onRetryClick}
+          showCopyButton={showCopyButton}
+        />
+      );
     default:
-      return <SystemMessage isError message="Something went wrong!" onRetryClick={onRetryClick} />;
+      return (
+        <SystemMessage
+          isError
+          message="Something went wrong!"
+          onRetryClick={onRetryClick}
+          showCopyButton={showCopyButton}
+        />
+      );
   }
 };
