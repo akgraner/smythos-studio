@@ -1,7 +1,3 @@
-/**
- * Chats Component
- * Displays chat messages with auto-scroll, drag-and-drop, and retry functionality
- */
 /* eslint-disable no-unused-vars */
 import { IChatMessage } from '@react/features/ai-chat';
 import { Chat } from '@react/features/ai-chat/components';
@@ -13,24 +9,13 @@ import { FC, MutableRefObject, RefObject, useEffect, useRef } from 'react';
 /**
  * Chats component properties
  */
-interface MessagesProps {
-  /** Agent details for avatar display */
-  agent: AgentDetails;
-
-  /** Array of chat messages to display */
-  messages: IChatMessage[];
-
-  /** Scroll event handler */
-  handleScroll: () => void;
-
-  /** Container ref for scroll control */
-  containerRef: RefObject<HTMLElement>;
-
-  /** Smart scroll to bottom function */
-  smartScrollToBottom: (smooth?: boolean) => void;
-
-  /** File drop handler for drag-and-drop uploads */
-  handleFileDrop: (droppedFiles: File[]) => Promise<void>;
+interface IChatsProps {
+  agent: AgentDetails; // Agent details for avatar display
+  messages: IChatMessage[]; // Array of chat messages to display
+  handleScroll: () => void; // Scroll event handler
+  containerRef: RefObject<HTMLElement>; // Container ref for scroll control
+  smartScrollToBottom: (smooth?: boolean) => void; // Smart scroll to bottom function
+  handleFileDrop: (droppedFiles: File[]) => Promise<void>; // File drop handler for drag-and-drop uploads
 }
 
 /**
@@ -53,7 +38,7 @@ const combineRefs =
  * Chats Component
  * Renders chat messages with smart auto-scroll and drag-and-drop support
  */
-export const Chats: FC<MessagesProps> = (props) => {
+export const Chats: FC<IChatsProps> = (props) => {
   const { agent, messages, containerRef, handleFileDrop, ...scroll } = props;
   const { handleScroll, smartScrollToBottom } = scroll;
 
@@ -61,11 +46,6 @@ export const Chats: FC<MessagesProps> = (props) => {
   const { retryLastMessage } = useChatContext();
   const dropzoneRef = useDragAndDrop({ onDrop: handleFileDrop });
 
-  /**
-   * Smart auto-scroll effect
-   * Auto-scrolls only for system messages (AI responses), not user messages
-   * This ensures better UX - user stays in place when they send a message
-   */
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage) return;
@@ -94,8 +74,6 @@ export const Chats: FC<MessagesProps> = (props) => {
       >
         {messages.map((message, index) => {
           const isLastMessage = index === messages.length - 1;
-
-          // ✅ Use type-based discrimination - Only enable retry for error messages that are last
           const canRetry = message.type === 'error' && isLastMessage;
           const onRetryClick = canRetry ? retryLastMessage : undefined;
 
