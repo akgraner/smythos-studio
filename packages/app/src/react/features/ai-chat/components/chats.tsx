@@ -115,7 +115,7 @@ export const Chats: FC<IChatsProps> = (props) => {
       <div
         ref={ref}
         onScroll={handleScroll}
-        className="w-full h-full max-w-4xl flex-1 pb-4 space-y-2.5 px-2.5"
+        className="w-full h-full max-w-4xl flex-1 pb-4 space-y-3.5"
       >
         {groupedMessages.map((group, groupIndex) => {
           const isLastGroup = groupIndex === groupedMessages.length - 1;
