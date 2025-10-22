@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { FileWithMetadata, IChatMessage } from '@react/shared/types/chat.types';
+import { FileWithMetadata, IChatMessage } from '../types/chat.types';
 import { ChangeEvent, createContext, FC, PropsWithChildren, useContext } from 'react';
 
 interface ChatContextType {
