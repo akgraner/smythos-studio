@@ -84,11 +84,17 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   // Current AI message being constructed
   const currentAIMessageRef = useRef<string>('');
 
+  // Track if we're in thinking state to create new message after
+  const isThinkingRef = useRef<boolean>(false);
+  const hasThinkingOccurredRef = useRef<boolean>(false);
+
   // Stream management
   const { isStreaming, error, startStream, abortStream, clearError } = useChatStream({
     client,
     onStreamStart: () => {
       currentAIMessageRef.current = '';
+      isThinkingRef.current = false;
+      hasThinkingOccurredRef.current = false;
     },
     onStreamEnd: () => {
       setIsProcessing(false);
@@ -270,11 +276,32 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
           },
           {
             onContent: (content: string) => {
+              // If content comes after thinking, we need to:
+              // 1. Clear thinking message from current message
+              // 2. Create new message for new content
+              if (hasThinkingOccurredRef.current && isThinkingRef.current) {
+                // Clear thinking message from current message
+                updateThinkingMessage('');
+
+                // Mark that we've handled the thinking transition
+                isThinkingRef.current = false;
+
+                // Reset accumulator for new message
+                currentAIMessageRef.current = '';
+
+                // Add new AI message for content after thinking
+                addAIMessage();
+              }
+
               // Accumulate content
               currentAIMessageRef.current += content;
               updateAIMessage(currentAIMessageRef.current);
             },
             onThinking: (thinkingMsg: string, _type: TThinkingType) => {
+              // Mark that we're in thinking state
+              isThinkingRef.current = true;
+              hasThinkingOccurredRef.current = true;
+
               // Update thinking message
               updateThinkingMessage(thinkingMsg);
             },
