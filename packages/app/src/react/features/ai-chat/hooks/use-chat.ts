@@ -6,8 +6,9 @@
 import { useCallback, useRef, useState } from 'react';
 import { ChatAPIClient } from '../clients/chat-api.client';
 import {
-  IChatFileAttachment,
   IChatMessage,
+  IFileAttachment,
+  IMessageFile,
   IUseChatReturn,
   TThinkingType,
 } from '../types/chat.types';
@@ -108,7 +109,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   const uploadFiles = useCallback(
     async (
       files: File[] | Array<{ file: File; metadata: { publicUrl?: string; fileType?: string } }>,
-    ): Promise<IChatFileAttachment[]> => {
+    ): Promise<IFileAttachment[]> => {
       const clientInstance = client || new ChatAPIClient();
 
       // Check if files are already uploaded (have metadata with publicUrl)
@@ -155,16 +156,22 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
       const userMessage: IChatMessage = {
         id: Date.now(),
         message,
-        type: 'user',
-        me: true,
+        type: 'user', // Type determines user vs system - no me property needed!
         timestamp: Date.now(),
-        files: files?.map((file) => {
+        files: files?.map((file, index) => {
+          if ('metadata' in file && 'id' in file) {
+            return file as IMessageFile;
+          }
           if ('metadata' in file) {
-            return file as { file: File; metadata: { publicUrl?: string; fileType?: string } };
+            return {
+              ...(file as { file: File; metadata: { publicUrl?: string; fileType?: string } }),
+              id: `${Date.now()}-${index}`,
+            };
           }
           return {
             file: file as File,
             metadata: { fileType: (file as File).type, isUploading: false },
+            id: `${Date.now()}-${index}`,
           };
         }),
       };
@@ -181,10 +188,8 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
     const aiMessage: IChatMessage = {
       id: Date.now() + 1,
       message: '',
-      type: 'system',
-      me: false,
+      type: 'loading', // Type determines AI vs user - no me property needed!
       avatar,
-      isReplying: true,
       timestamp: Date.now(),
     };
 
@@ -199,12 +204,15 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
       const updated = [...prev];
       const lastMessageIndex = updated.length - 1;
 
-      if (lastMessageIndex >= 0 && updated[lastMessageIndex].type === 'system') {
+      if (
+        lastMessageIndex >= 0 &&
+        (updated[lastMessageIndex].type === 'system' ||
+          updated[lastMessageIndex].type === 'loading')
+      ) {
         updated[lastMessageIndex] = {
           ...updated[lastMessageIndex],
           message: content,
-          isReplying: false,
-          isError,
+          type: isError ? 'error' : 'system', // Set type based on error state
         };
       }
 
@@ -253,7 +261,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
         clearError();
 
         // Upload files if present
-        let attachments: IChatFileAttachment[] = [];
+        let attachments: IFileAttachment[] = [];
         if (files && files.length > 0) {
           attachments = await uploadFiles(files);
         }
@@ -307,11 +315,11 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
             },
             onToolCall: (toolName: string, args: Record<string, unknown>) => {
               // Log tool calls (can be extended for UI display)
-              console.log('Tool call:', toolName, args);
+              // console.log('Tool call:', toolName, args);
             },
             onDebug: (debug) => {
               // Log debug info (can be extended for debug UI)
-              console.log('Debug:', debug);
+              // console.log('Debug:', debug);
             },
             onError: (streamError) => {
               // Handle stream errors
@@ -321,9 +329,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
 
               updateAIMessage(errorMessage, true);
 
-              if (onError) {
-                onError(new Error(errorMessage));
-              }
+              if (onError) onError(new Error(errorMessage));
             },
             onComplete: () => {
               // Finalize message
@@ -393,10 +399,14 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
       const updated = [...prev];
       const lastMessageIndex = updated.length - 1;
 
-      if (lastMessageIndex >= 0 && updated[lastMessageIndex].type === 'system') {
+      if (
+        lastMessageIndex >= 0 &&
+        (updated[lastMessageIndex].type === 'system' ||
+          updated[lastMessageIndex].type === 'loading')
+      ) {
         updated[lastMessageIndex] = {
           ...updated[lastMessageIndex],
-          isReplying: false,
+          type: 'system', // Change from loading to system
           thinkingMessage: undefined,
         };
       }
@@ -427,8 +437,6 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
     isGenerating: isStreaming,
     isProcessing,
     error,
-    isRetrying: false, // Can be implemented if needed
-    lastUserMessage: lastUserMessageRef.current?.message || null,
 
     // Actions
     sendMessage,
