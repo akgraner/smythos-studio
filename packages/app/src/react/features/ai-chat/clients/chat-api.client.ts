@@ -10,8 +10,7 @@ import {
   IStreamCallbacks,
   IStreamChunk,
   IStreamConfig,
-  TErrorType,
-} from '../types/chat.types';
+} from '@react/features/ai-chat/types/chat.types';
 import {
   createThinkingManager,
   extractFunctionName,
@@ -19,7 +18,7 @@ import {
   formatStatusMessage,
   processStreamChunk,
   splitJSONStream,
-} from '../utils/stream.utils';
+} from '@react/features/ai-chat/utils/stream.utils';
 
 /**
  * Default configuration for the Chat API Client
@@ -265,7 +264,7 @@ export class ChatAPIClient {
     if (processed.hasError) {
       const error: IChatError = {
         message: processed.error || 'Unknown error occurred',
-        type: (processed.errorType as TErrorType) || 'stream',
+        type: 'stream',
       };
       onError(error);
       return;
