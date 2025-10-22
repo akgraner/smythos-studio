@@ -19,6 +19,7 @@ interface ISystemMessageProps {
   typingAnimation?: boolean;
   onTypingComplete?: () => void;
   onTypingProgress?: () => void;
+  showCopyButton?: boolean; // Control copy button visibility (default: true)
 }
 
 export const SystemMessage: FC<ISystemMessageProps> = (props) => {
@@ -32,6 +33,7 @@ export const SystemMessage: FC<ISystemMessageProps> = (props) => {
     onTypingComplete,
     onTypingProgress,
     typingAnimation = true,
+    showCopyButton = true, // Default to true for backward compatibility
   } = props;
   const [copied, setCopied] = useState(false);
   const contentRef = useRef<HTMLDivElement>(null);
@@ -63,7 +65,7 @@ export const SystemMessage: FC<ISystemMessageProps> = (props) => {
       ) : (
         <div
           ref={contentRef}
-          className="chat-rich-text-response space-y-1 rounded-lg p-3 text-[#141414]"
+          className="chat-rich-text-response space-y-1 rounded-lg px-3 text-[#141414]"
         >
           {typingAnimation ? (
             <Typewriter
@@ -79,19 +81,19 @@ export const SystemMessage: FC<ISystemMessageProps> = (props) => {
 
           {/* Display thinking message inline if present */}
           {thinkingMessage && <ThinkingMessage message={thinkingMessage} avatar={avatar} />}
-        </div>
-      )}
 
-      {!isError && !thinkingMessage && (
-        <div className="ps-2.5 -mt-2.5">
-          <Tooltip content={copied ? 'Copied!' : 'Copy'} placement="bottom">
-            <button
-              onClick={handleCopy}
-              className="text-gray-500 hover:text-gray-700 transition-colors"
-            >
-              {copied ? <FaCheck /> : <FaRegCopy />}
-            </button>
-          </Tooltip>
+          {!isError && !thinkingMessage && showCopyButton && (
+            <div className="pt-2.5">
+              <Tooltip content={copied ? 'Copied!' : 'Copy'} placement="bottom">
+                <button
+                  onClick={handleCopy}
+                  className="text-gray-500 hover:text-gray-700 transition-colors"
+                >
+                  {copied ? <FaCheck /> : <FaRegCopy />}
+                </button>
+              </Tooltip>
+            </div>
+          )}
         </div>
       )}
     </div>
