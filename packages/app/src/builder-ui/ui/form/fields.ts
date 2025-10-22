@@ -330,6 +330,153 @@ function createExpandButton(): HTMLButtonElement {
 }
 
 /**
+ * Get the current code configuration for a textarea based on its attributes and data
+ * This ensures the expandable textarea uses the current content type configuration
+ */
+function getCurrentCodeConfig(
+  textarea: HTMLTextAreaElement,
+  fallbackCode?: { mode?: string; theme?: string; disableWorker?: boolean },
+  attributes?: Record<string, string>,
+): { mode?: string; theme?: string; disableWorker?: boolean } | undefined {
+  // Priority 1: Check textarea data attributes (highest priority)
+  const textareaCodeConfig = getCodeConfigFromAttributes(textarea);
+  if (textareaCodeConfig) {
+    return textareaCodeConfig;
+  }
+
+  // Priority 2: Check if textarea has existing editor instance
+  if ((textarea as TextAreaWithEditor)._editor) {
+    return fallbackCode || getDefaultCodeConfig();
+  }
+
+  // Priority 3: Check content type (APICall components only)
+  const contentTypeConfig = getCodeConfigFromContentType(textarea);
+  if (contentTypeConfig) {
+    return contentTypeConfig;
+  }
+
+  // Priority 4: Check attributes parameter
+  if (attributes) {
+    const attributesCodeConfig = getCodeConfigFromAttributes(undefined, attributes);
+    if (attributesCodeConfig) {
+      return attributesCodeConfig;
+    }
+  }
+
+  // Priority 5: Fallback to entry-provided configuration
+  return fallbackCode;
+}
+
+/**
+ * Extract code configuration from element attributes or attributes object
+ */
+function getCodeConfigFromAttributes(
+  element?: HTMLTextAreaElement,
+  attributes?: Record<string, string>
+): { mode?: string; theme?: string; disableWorker?: boolean } | undefined {
+  const source = element || attributes;
+  if (!source) return undefined;
+
+  const getAttr = (name: string) => {
+    if (element) {
+      return element.getAttribute(name);
+    }
+    return attributes?.[name];
+  };
+
+  const mode = getAttr('data-code-mode');
+  const theme = getAttr('data-code-theme');
+  const disableWorker = getAttr('data-code-disable-worker');
+
+  if (mode || theme || disableWorker) {
+    return {
+      mode: mode || undefined,
+      theme: theme || undefined,
+      disableWorker: disableWorker === 'true' || undefined,
+    };
+  }
+
+  return undefined;
+}
+
+/**
+ * Get code configuration based on content type (APICall components)
+ */
+function getCodeConfigFromContentType(
+  textarea: HTMLTextAreaElement
+): { mode?: string; theme?: string; disableWorker?: boolean } | undefined {
+  const contentType = textarea.getAttribute('data-content-type');
+  
+  if (!contentType) return undefined;
+
+  const contentTypeModes: Record<string, string> = {
+    'application/json': 'json',
+    'application/javascript': 'javascript',
+    'text/html': 'html',
+  };
+
+  const mode = contentTypeModes[contentType];
+  if (mode) {
+    return {
+      mode,
+      theme: 'tomorrow',
+      disableWorker: false,
+    };
+  }
+
+  return undefined;
+}
+
+/**
+ * Get default code configuration
+ */
+function getDefaultCodeConfig(): { mode: string; theme: string; disableWorker: boolean } {
+  return {
+    mode: 'text',
+    theme: 'tomorrow',
+    disableWorker: false,
+  };
+}
+
+/**
+ * Apply all attributes and configurations to a textarea element
+ */
+function applyTextareaConfiguration(
+  textarea: HTMLTextAreaElement,
+  config: {
+    attributes?: Record<string, string>;
+    code?: { mode?: string; theme?: string; disableWorker?: boolean };
+  }
+): void {
+  const { attributes, code } = config;
+
+  // Apply all attributes to the textarea
+  if (attributes) {
+    Object.entries(attributes).forEach(([key, value]) => {
+      textarea.setAttribute(key, value);
+    });
+  }
+
+  // Store code configuration as data attributes for dynamic access
+  if (code) {
+    if (code.mode) textarea.setAttribute('data-code-mode', code.mode);
+    if (code.theme) textarea.setAttribute('data-code-theme', code.theme);
+    if (code.disableWorker !== undefined) {
+      textarea.setAttribute('data-code-disable-worker', code.disableWorker.toString());
+    }
+  }
+
+  // Store component UID in textarea data attribute for template variables
+  const currentComponent = (window as any).Component?.curComponentSettings || null;
+  const compUid =
+    currentComponent?._uid || document.querySelector('.component.active')?.getAttribute('id') || '';
+  if (compUid) {
+    textarea.setAttribute('data-component-uid', compUid);
+  }
+}
+
+
+/**
  * Apply styles to a textarea element based on whether it's a code editor or regular textarea
  */
 function applyTextareaStyles(textarea: HTMLTextAreaElement, isCodeEditor: boolean): void {
@@ -415,6 +562,39 @@ function initializeRegularTextarea(textarea: HTMLTextAreaElement): void {
 }
 
 /**
+ * Copy all relevant attributes from source textarea to target textarea
+ * This ensures the modal textarea has the same behavior and appearance as the original
+ */
+function copyTextareaAttributes(
+  sourceTextarea: HTMLTextAreaElement,
+  targetTextarea: HTMLTextAreaElement,
+  additionalAttributes?: Record<string, string>
+): void {
+  // Define all relevant attributes that should be copied
+  const relevantAttributes = [
+    // Form control attributes
+    'readonly',
+    'disabled',
+    'placeholder',
+  ];
+
+  // Copy all relevant attributes from source to target
+  relevantAttributes.forEach((attr) => {
+    const value = sourceTextarea.getAttribute(attr);
+    if (value !== null) {
+      targetTextarea.setAttribute(attr, value);
+    }
+  });
+
+  // Apply additional attributes from the attributes parameter
+  if (additionalAttributes) {
+    Object.entries(additionalAttributes).forEach(([key, value]) => {
+      targetTextarea.setAttribute(key, value);
+    });
+  }
+}
+
+/**
  * Handles the expansion of a textarea into a modal dialog
  * Creates modal content, handles code editor initialization, and manages value synchronization
  */
@@ -424,9 +604,14 @@ async function handleExpandTextarea(
   code: { mode?: string; theme?: string; disableWorker?: boolean } | undefined,
   attributes: Record<string, string> | undefined,
 ): Promise<void> {
+  // Dynamically determine code configuration from textarea attributes
+  // This ensures the expandable textarea uses the current content type configuration
+  // For APICall components, or falls back to the entry-provided configuration for other components
+  const currentCodeConfig = getCurrentCodeConfig(originalTextarea, code, attributes);
+
   // Load required modules
-  const { twModalDialog, setCodeEditor } = await getModalImports(!!code);
-  const hasCodeEditor = !!code;
+  const { twModalDialog, setCodeEditor } = await getModalImports(!!currentCodeConfig);
+  const hasCodeEditor = !!currentCodeConfig;
 
   // Get component UID for template variables - try multiple approaches
 
@@ -478,18 +663,14 @@ async function handleExpandTextarea(
       // Set initial value
       modalTextareaInDialog.value = originalTextarea.value;
 
-      // Apply all attributes to the modal textarea
-      if (attributes) {
-        Object.entries(attributes).forEach(([key, value]) => {
-          modalTextareaInDialog.setAttribute(key, value);
-        });
-      }
+      // Copy all relevant attributes from the original textarea to the modal textarea
+      copyTextareaAttributes(originalTextarea, modalTextareaInDialog, attributes);
 
       // Initialize based on editor type
-      if (hasCodeEditor && code && setCodeEditor) {
-        const mode = code.mode || '';
-        const theme = code.theme || 'tomorrow';
-        const disableWorker = code.disableWorker;
+      if (hasCodeEditor && currentCodeConfig && setCodeEditor) {
+        const mode = currentCodeConfig.mode || '';
+        const theme = currentCodeConfig.theme || 'tomorrow';
+        const disableWorker = currentCodeConfig.disableWorker;
 
         await initializeCodeEditor(
           modalTextareaInDialog,
@@ -558,6 +739,7 @@ export const createTextArea = (entry: {
     disableWorker?: boolean;
   };
 }): HTMLTextAreaElement | { textarea: HTMLTextAreaElement; container: HTMLDivElement } => {
+  console.log('entry', entry);
   const { value = '', fieldCls = '', autoSize = true, expandable, label, attributes, code } = entry;
   const textarea = document.createElement('textarea');
   textarea.setAttribute('data-role', 'textarea');
@@ -570,20 +752,8 @@ export const createTextArea = (entry: {
 
   textarea.setAttribute('data-auto-size', `${autoSize}`);
 
-  // Apply all attributes to the textarea
-  if (attributes) {
-    Object.entries(attributes).forEach(([key, value]) => {
-      textarea.setAttribute(key, value);
-    });
-  }
-
-  // Store component UID in textarea data attribute for template variables
-  const currentComponent = (window as any).Component?.curComponentSettings || null;
-  const compUid =
-    currentComponent?._uid || document.querySelector('.component.active')?.getAttribute('id') || '';
-  if (compUid) {
-    textarea.setAttribute('data-component-uid', compUid);
-  }
+  // Apply all attributes and configurations to the textarea
+  applyTextareaConfiguration(textarea, { attributes, code });
 
   // If expandable is true, wrap textarea with container and add expand button
   if (expandable) {
@@ -600,7 +770,9 @@ export const createTextArea = (entry: {
       e.stopPropagation();
 
       try {
-        await handleExpandTextarea(textarea, label, code, attributes);
+        // Get current code configuration dynamically from textarea attributes
+        const currentCodeConfig = getCurrentCodeConfig(textarea, code, attributes);
+        await handleExpandTextarea(textarea, label, currentCodeConfig, attributes);
       } catch (error) {
         console.error('Error opening textarea modal:', error);
       }
