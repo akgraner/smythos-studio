@@ -104,7 +104,7 @@ const AgentChat = () => {
         />
 
         <Footer
-          ref={chatInputRef}
+          chatInputRef={chatInputRef}
           clearError={chatContextValue.clearError}
           uploadError={chatContextValue.uploadError}
           scrollToBottom={scrollToBottom}
