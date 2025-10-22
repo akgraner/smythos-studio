@@ -1,7 +1,3 @@
-/**
- * Chat Message Component
- * Routes to appropriate message component based on message type
- */
 import { FC } from 'react';
 
 import { IChatMessage } from '@react/features/ai-chat';
@@ -14,12 +10,8 @@ import {
 
 import '../styles/index.css';
 
-/**
- * Chat component properties
- */
-interface ChatProps extends IChatMessage {
-  /** Callback to scroll chat to bottom */
-  scrollToBottom?: () => void;
+interface IChatProps extends IChatMessage {
+  scrollToBottom?: () => void; // Callback to scroll chat to bottom
 }
 
 /**
@@ -29,61 +21,31 @@ interface ChatProps extends IChatMessage {
  * @param props - Chat message properties
  * @returns Appropriate message component
  */
-export const Chat: FC<ChatProps> = ({
-  type,
-  files,
-  avatar,
-  message,
-  onRetryClick,
-  thinkingMessage,
-  scrollToBottom,
-}) => {
-  // ✅ Type-based discrimination - type is single source of truth
+export const Chat: FC<IChatProps> = (props) => {
+  const { type, files, avatar, message, onRetryClick, thinkingMessage, scrollToBottom } = props;
 
   // Loading state (replying/retrying)
-  if (type === 'loading') {
-    return <ReplyLoader />;
-  }
+  if (type === 'loading') return <ReplyLoader />;
 
   // Thinking message
-  if (type === 'thinking') {
-    return <ThinkingMessage message={message} avatar={avatar} />;
-  }
+  if (type === 'thinking') return <ThinkingMessage message={message} avatar={avatar} />;
 
   // User message
-  if (type === 'user') {
-    return <UserMessage message={message} files={files} />;
-  }
+  if (type === 'user') return <UserMessage message={message} files={files} />;
 
   // Error message
-  if (type === 'error') {
-    return (
-      <SystemMessage
-        avatar={avatar}
-        message={message || 'Something went wrong'}
-        isError={true}
-        onRetryClick={onRetryClick}
-        isRetrying={false}
-        thinkingMessage={thinkingMessage}
-        onTypingProgress={() => scrollToBottom?.()}
-        onTypingComplete={() => scrollToBottom?.()}
-        typingAnimation={false}
-      />
-    );
-  }
+  if (type === 'error')
+    return <SystemMessage isError message={message} onRetryClick={onRetryClick} />;
 
-  // System message with typing animation
+  // System message (default)
   return (
     <SystemMessage
       avatar={avatar}
       message={message}
-      isError={false}
-      onRetryClick={onRetryClick}
-      isRetrying={false}
+      typingAnimation
       thinkingMessage={thinkingMessage}
-      onTypingProgress={() => scrollToBottom?.()}
       onTypingComplete={() => scrollToBottom?.()}
-      typingAnimation={true}
+      onTypingProgress={() => scrollToBottom?.()}
     />
   );
 };

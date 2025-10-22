@@ -9,7 +9,7 @@ import {
   Typewriter,
 } from '@react/features/ai-chat/components';
 
-interface ISystemMessageBubble {
+interface ISystemMessageProps {
   message: string;
   avatar?: string;
   isError?: boolean;
@@ -21,7 +21,7 @@ interface ISystemMessageBubble {
   onTypingProgress?: () => void;
 }
 
-export const SystemMessage: FC<ISystemMessageBubble> = ({
+export const SystemMessage: FC<ISystemMessageProps> = ({
   avatar,
   message,
   isError,
