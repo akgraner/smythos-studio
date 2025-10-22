@@ -1,9 +1,10 @@
 /**
  * Stream processing utilities for chat responses
  * Handles JSON parsing, message formatting, and status updates
+ * Updated: callback signatures now include TThinkingType parameter
  */
 
-import { IChatStreamChunk, TThinkingType } from '../types/chat.types';
+import { IStreamChunk, TThinkingType } from '../types/chat.types';
 
 /**
  * Function-specific thinking messages that cycle during function execution
@@ -43,7 +44,7 @@ const GENERAL_THINKING_MESSAGES = [
  * // Returns: [{ content: 'Hello' }, { content: ' World' }]
  * ```
  */
-export const splitJSONStream = (data: string): IChatStreamChunk[] => {
+export const splitJSONStream = (data: string): IStreamChunk[] => {
   // Handle empty or invalid data
   if (!data || typeof data !== 'string') {
     return [];
@@ -88,13 +89,13 @@ export const splitJSONStream = (data: string): IChatStreamChunk[] => {
           return null;
         }
 
-        return JSON.parse(str) as IChatStreamChunk;
+        return JSON.parse(str) as IStreamChunk;
       } catch {
         // Silently skip invalid JSON
         return null;
       }
     })
-    .filter((chunk): chunk is IChatStreamChunk => chunk !== null);
+    .filter((chunk): chunk is IStreamChunk => chunk !== null);
 
   return parsedChunks;
 };
@@ -226,7 +227,7 @@ export class ThinkingMessageManager {
   private intervalId: NodeJS.Timeout | null = null;
   private functionName: string = '';
   private statusMessage: string = '';
-  private callback: ((message: string) => void) | null = null;
+  private callback: ((message: string, type: TThinkingType) => void) | null = null;
 
   /**
    * Starts thinking messages with priority system
@@ -239,7 +240,7 @@ export class ThinkingMessageManager {
    */
   start(
     type: TThinkingType,
-    callback: (message: string) => void,
+    callback: (message: string, type: TThinkingType) => void,
     functionName?: string,
     statusMessage?: string,
   ): void {
@@ -269,7 +270,7 @@ export class ThinkingMessageManager {
 
     // Show first message immediately
     const initialMessage = this.getCurrentMessage();
-    callback(initialMessage);
+    callback(initialMessage, type);
 
     // Start interval only for general and function types
     if (type !== 'status') {
@@ -277,8 +278,8 @@ export class ThinkingMessageManager {
       this.intervalId = setInterval(() => {
         this.currentIndex = (this.currentIndex + 1) % this.getMessagesArray().length;
         const message = this.getCurrentMessage();
-        if (this.callback) {
-          this.callback(message);
+        if (this.callback && this.currentType) {
+          this.callback(message, this.currentType);
         }
       }, intervalTime);
     }
@@ -293,7 +294,7 @@ export class ThinkingMessageManager {
     if (this.currentType === 'status' && this.callback) {
       const formattedMessage = formatStatusMessage(newStatusMessage);
       this.statusMessage = formattedMessage;
-      this.callback(formattedMessage);
+      this.callback(formattedMessage, 'status');
     }
   }
 
@@ -360,7 +361,7 @@ export class ThinkingMessageManager {
  * @param chunk - Stream chunk to process
  * @returns Processed information
  */
-export const processStreamChunk = (chunk: IChatStreamChunk) => {
+export const processStreamChunk = (chunk: IStreamChunk) => {
   return {
     hasContent: Boolean(chunk.content && chunk.content.trim() !== ''),
     hasDebug: Boolean(chunk.debug),
@@ -378,4 +379,4 @@ export const processStreamChunk = (chunk: IChatStreamChunk) => {
 /**
  * Creates a singleton instance of ThinkingMessageManager
  */
-export const createThinkingManager = () => new ThinkingMessageManager();
+export const createThinkingManager = (): ThinkingMessageManager => new ThinkingMessageManager();
