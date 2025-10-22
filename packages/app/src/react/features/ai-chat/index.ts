@@ -4,26 +4,10 @@
  */
 
 // === Type Definitions ===
-export type {
-  IChatAPIConfig,
-  IChatActions,
-  IChatError,
-  IChatFileAttachment,
-  IChatMessage,
-  IChatState,
-  IChatStreamCallbacks,
-  IChatStreamChunk,
-  IChatStreamConfig,
-  IFileUploadMetadata,
-  IThinkingManagerState,
-  IUseChatReturn,
-  TChatErrorType,
-  TChatMessageType,
-  TThinkingType,
-} from './types/chat.types';
+export * from './types/chat.types';
 
 // === API Client ===
-export { ChatAPIClient, chatAPI, createChatClient } from './clients/chat-api.client';
+export { chatAPI, ChatAPIClient, createChatClient } from './clients/chat-api.client';
 
 // === React Hooks ===
 export {
@@ -36,13 +20,13 @@ export { useChatStream } from './hooks/use-chat-stream';
 
 // === Utilities ===
 export {
-  ThinkingMessageManager,
   createThinkingManager,
   extractFunctionName,
   formatFunctionName,
   formatStatusMessage,
   processStreamChunk,
   splitJSONStream,
+  ThinkingMessageManager,
 } from './utils/stream.utils';
 
 // === Pages/Components ===
