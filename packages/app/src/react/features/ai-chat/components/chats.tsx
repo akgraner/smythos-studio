@@ -76,11 +76,11 @@ export const Chats: FC<MessagesProps> = (props) => {
                 scrollToBottom={smartScrollToBottom}
               />
 
-              {retry && (
+              {/* {retry && (
                 <button onClick={retryLastMessage} className="pt-1.5">
                   Retry
                 </button>
-              )}
+              )} */}
             </div>
           );
         })}
