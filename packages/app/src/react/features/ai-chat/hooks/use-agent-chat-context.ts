@@ -17,10 +17,7 @@ import {
 } from '@react/features/ai-chat/hooks';
 import { useChat } from '@react/features/ai-chat/hooks/use-chat';
 import { useAgent } from '@react/shared/hooks/agent';
-import {
-  FileWithMetadata,
-  IChatMessage as SharedIChatMessage,
-} from '@react/shared/types/chat.types';
+import { FileWithMetadata, IChatMessage } from '../types/chat.types';
 import { Observability } from '@shared/observability';
 import { EVENTS } from '@shared/posthog/constants/events';
 
@@ -58,7 +55,7 @@ export interface IUseAgentChatContextReturn {
     isGenerating: boolean;
     isInputProcessing: boolean;
     isRetrying: boolean;
-    messagesHistory: SharedIChatMessage[];
+    messagesHistory: IChatMessage[];
     inputPlaceholder: string;
     inputDisabled: boolean;
     // Chat actions
@@ -78,7 +75,7 @@ export interface IUseAgentChatContextReturn {
     chatCreating: boolean;
   };
   /** Shared messages history for UI components */
-  sharedMessagesHistory: SharedIChatMessage[];
+  sharedMessagesHistory: IChatMessage[];
   /** Function to handle file drop in chat area */
   handleFileDrop: (files: File[]) => Promise<void>;
 }
@@ -190,18 +187,8 @@ export const useAgentChatContext = (
   const queryInputPlaceholder = agent ? `Message ${agent.name}...` : 'Message ...';
   const isMaxFilesUploaded = files.length >= 10; // FILE_LIMITS.MAX_ATTACHED_FILES
 
-  // Convert internal message format to shared format
-  const sharedMessagesHistory: SharedIChatMessage[] = messagesHistory.map((msg) => ({
-    me: msg.me,
-    message: msg.message,
-    type: msg.type as 'user' | 'system' | 'thinking',
-    avatar: msg.avatar,
-    isReplying: msg.isReplying,
-    isError: msg.isError,
-    files: msg.files as unknown as FileWithMetadata[] | undefined,
-    hideMessage: msg.hideMessage,
-    thinkingMessage: msg.thinkingMessage,
-  }));
+  // No conversion needed - using same types now! ✅
+  const sharedMessagesHistory: IChatMessage[] = messagesHistory;
 
   // ============================================================================
   // CHAT ACTIONS
