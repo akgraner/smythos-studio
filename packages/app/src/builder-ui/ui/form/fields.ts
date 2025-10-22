@@ -354,20 +354,6 @@ function applyTextareaStyles(textarea: HTMLTextAreaElement, isCodeEditor: boolea
       font-size: 14px;
       outline: none;
     `;
-  } else {
-    // Full styling for regular textarea
-    textarea.style.cssText = `
-      width: 100%;
-      min-height: 300px;
-      padding: 16px;
-      border: 1px solid #d1d5db;
-      border-radius: 6px;
-      font-size: 14px;
-      font-family: inherit;
-      resize: vertical;
-      outline: none;
-      transition: border-color 0.15s ease-in-out;
-    `;
   }
 }
 
@@ -453,9 +439,14 @@ async function handleExpandTextarea(
   const { twModalDialog, setCodeEditor } = await getModalImports(!!code);
   const hasCodeEditor = !!code;
 
-  // Get current component for template variables
-  const currentComponent = (window as any).Component?.curComponentSettings || null;
-  
+  // Get component UID for template variables - try multiple approaches
+
+  // First, try to get it from the original textarea's data attribute (if it was stored)
+  const compUid = originalTextarea.getAttribute('data-component-uid');
+
+  // Create a mock component object with the UID for handleTemplateVars
+  const currentComponent = compUid ? { _uid: compUid } : null;
+
   // Create modal content container
   const modalContainer = document.createElement('div');
   modalContainer.classList.add('h-full', 'flex', 'flex-col', 'form-group');
@@ -464,19 +455,10 @@ async function handleExpandTextarea(
   const modalTextarea = document.createElement('textarea') as TextAreaWithEditor;
   modalTextarea.value = originalTextarea.value;
   modalTextarea.classList.add('form-control', 'flex-1', 'resize-none');
+  modalTextarea.id = 'expanded-textarea';
 
   // Apply styles based on editor type
   applyTextareaStyles(modalTextarea, hasCodeEditor);
-
-  // Add focus handlers for regular textarea (not needed for code editor)
-  if (!hasCodeEditor) {
-    modalTextarea.addEventListener('focus', () => {
-      modalTextarea.style.borderColor = '#3b82f6';
-    });
-    modalTextarea.addEventListener('blur', () => {
-      modalTextarea.style.borderColor = '#d1d5db';
-    });
-  }
 
   // Create template variable buttons container
   const templateVarsContainer = document.createElement('div');
@@ -506,6 +488,10 @@ async function handleExpandTextarea(
           if (modalTextareaInDialog) {
             syncTextareaValues(modalTextareaInDialog, originalTextarea, hasCodeEditor);
           }
+
+          // Clean up any template variable wrappers within the modal
+          const templateVarWrappers = dialogElm.querySelectorAll('.template-var-buttons');
+          templateVarWrappers.forEach((wrapper) => wrapper.remove());
         },
       },
     ],
@@ -547,10 +533,17 @@ async function handleExpandTextarea(
       // Set up template variable functionality if the textarea has template vars attribute
       const hasTemplateVars = modalTextareaInDialog.getAttribute('data-template-vars') === 'true';
       const hasAgentVars = modalTextareaInDialog.getAttribute('data-agent-vars') === 'true';
-      
+
       if (hasTemplateVars || hasAgentVars) {
-        // Just use the existing handleTemplateVars function directly on the modal container
-        handleTemplateVars(dialogElm, currentComponent);
+        // Clean up any existing template variable wrappers in the modal first
+        const existingWrappers = dialogElm.querySelectorAll('.template-var-buttons');
+        existingWrappers.forEach((wrapper) => wrapper.remove());
+
+        // Find the form group within the modal and set up template vars on that specific container
+        const modalFormGroup = modalTextareaInDialog.closest('.form-group') as HTMLElement;
+        if (modalFormGroup) {
+          handleTemplateVars(modalFormGroup, currentComponent);
+        }
       }
     },
   });
@@ -598,6 +591,14 @@ export const createTextArea = (entry: {
     Object.entries(attributes).forEach(([key, value]) => {
       textarea.setAttribute(key, value);
     });
+  }
+
+  // Store component UID in textarea data attribute for template variables
+  const currentComponent = (window as any).Component?.curComponentSettings || null;
+  const compUid =
+    currentComponent?._uid || document.querySelector('.component.active')?.getAttribute('id') || '';
+  if (compUid) {
+    textarea.setAttribute('data-component-uid', compUid);
   }
 
   // If expandable is true, wrap textarea with container and add expand button

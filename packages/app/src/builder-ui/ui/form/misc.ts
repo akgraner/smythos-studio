@@ -150,8 +150,11 @@ const TEMPLATE_VAR_BTNS_WRAPPER_CLASS = 'template-var-buttons';
 export function generateTemplateVarBtns(
   variables: Map<string, { var: string; type?: string }>,
   compUid = '',
+  parentContainer?: HTMLElement,
 ): HTMLElement | null {
-  let wrapper = document.querySelector(`.${TEMPLATE_VAR_BTNS_WRAPPER_CLASS}`) as HTMLDivElement;
+  // Look for existing wrapper within the specific parent container, not globally
+  const searchScope = parentContainer || document;
+  let wrapper = searchScope.querySelector(`.${TEMPLATE_VAR_BTNS_WRAPPER_CLASS}.tvb-${compUid}`) as HTMLDivElement;
 
   if (!wrapper) {
     wrapper = document.createElement('div');
@@ -321,11 +324,11 @@ export function handleTemplateVars(targetElm, component = null) {
         }
         // #endregion
 
-        const buttonsContainer = generateTemplateVarBtns(variables, compUid) as HTMLDivElement;
+        const focusedElmParent = clickedElm.closest('.form-group') as HTMLElement;
+        const buttonsContainer = generateTemplateVarBtns(variables, compUid, focusedElmParent) as HTMLDivElement;
 
         if (!buttonsContainer) return;
 
-        const focusedElmParent = clickedElm.closest('.form-group');
         focusedElmParent.appendChild(buttonsContainer);
       } else if (
         clickedElm.getAttribute('data-agent-vars') === 'true' &&
@@ -345,11 +348,11 @@ export function handleTemplateVars(targetElm, component = null) {
           { var: string; type: string }
         >;
 
-        const buttonsContainer = generateTemplateVarBtns(variables, compUid) as HTMLDivElement;
+        const focusedElmParent = clickedElm.closest('.form-group') as HTMLElement;
+        const buttonsContainer = generateTemplateVarBtns(variables, compUid, focusedElmParent) as HTMLDivElement;
 
         if (!buttonsContainer) return;
 
-        const focusedElmParent = clickedElm.closest('.form-group');
         focusedElmParent.appendChild(buttonsContainer);
       } else {
         // * Remove template variable buttons
