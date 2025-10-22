@@ -101,7 +101,6 @@ export const MessageTurnGroup: FC<IMessageTurnGroupProps> = (props) => {
               avatar={avatar}
               onRetryClick={canRetry ? onRetryClick : undefined}
               scrollToBottom={scrollToBottom}
-              showCopyButton={false} // Disable individual copy buttons
             />
           );
         })}
@@ -109,7 +108,7 @@ export const MessageTurnGroup: FC<IMessageTurnGroupProps> = (props) => {
 
       {/* Single copy button for the entire group */}
       {hasSystemMessages && isComplete && (
-        <div className="ps-2.5 -mt-2.5 mb-2.5">
+        <div className="ps-2.5 pb-2.5">
           <Tooltip content={copied ? 'Copied!' : 'Copy all'} placement="bottom">
             <button
               onClick={handleCopyGroup}
