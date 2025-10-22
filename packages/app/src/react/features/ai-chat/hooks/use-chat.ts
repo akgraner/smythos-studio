@@ -20,20 +20,13 @@ import { useChatStream } from './use-chat-stream';
  * Hook configuration interface
  */
 interface IUseChatConfig {
-  /** Agent ID */
   agentId: string;
-  /** Chat/Conversation ID */
-  chatId: string;
-  /** Avatar URL for AI messages */
+  chatId: string; // Chat/Conversation ID
   avatar?: string;
-  /** Custom chat API client */
-  client?: ChatAPIClient;
-  /** Custom headers for requests */
-  headers?: Record<string, string>;
-  /** Called when chat completes successfully */
-  onChatComplete?: (message: string) => void;
-  /** Called when error occurs */
-  onError?: (error: Error) => void;
+  client?: ChatAPIClient; // Custom chat API client
+  headers?: Record<string, string>; // Custom headers for requests
+  onChatComplete?: (message: string) => void; // Called when chat completes successfully
+  onError?: (error: Error) => void; // Called when error occurs
 }
 
 /**
