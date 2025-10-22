@@ -3,9 +3,9 @@
  * Provides clean interface for streaming chat responses with lifecycle management
  */
 
+import { IChatError, IStreamCallbacks, IStreamConfig } from '@react/features/ai-chat';
+import { ChatAPIClient } from '@react/features/ai-chat/clients/chat-api.client';
 import { useCallback, useRef, useState } from 'react';
-import { ChatAPIClient } from '../clients/chat-api.client';
-import { IChatError, IChatStreamCallbacks, IChatStreamConfig } from '../types/chat.types';
 
 /**
  * Hook configuration interface
@@ -28,7 +28,7 @@ interface IUseChatStreamReturn {
   /** Current error if any */
   error: IChatError | null;
   /** Start a new chat stream */
-  startStream: (config: IChatStreamConfig, callbacks: IChatStreamCallbacks) => Promise<void>;
+  startStream: (config: IStreamConfig, callbacks: IStreamCallbacks) => Promise<void>; // eslint-disable-line no-unused-vars
   /** Abort the current stream */
   abortStream: () => void;
   /** Clear error state */
@@ -84,7 +84,7 @@ export const useChatStream = (config: IUseChatStreamConfig = {}): IUseChatStream
    * Automatically manages abort controller and lifecycle callbacks
    */
   const startStream = useCallback(
-    async (streamConfig: IChatStreamConfig, callbacks: IChatStreamCallbacks): Promise<void> => {
+    async (streamConfig: IStreamConfig, callbacks: IStreamCallbacks): Promise<void> => {
       // Abort any existing stream
       if (abortControllerRef.current) {
         abortControllerRef.current.abort();
@@ -107,7 +107,7 @@ export const useChatStream = (config: IUseChatStreamConfig = {}): IUseChatStream
 
       try {
         // Wrap callbacks to manage lifecycle
-        const wrappedCallbacks: IChatStreamCallbacks = {
+        const wrappedCallbacks: IStreamCallbacks = {
           ...callbacks,
           onError: (streamError: IChatError) => {
             setError(streamError);

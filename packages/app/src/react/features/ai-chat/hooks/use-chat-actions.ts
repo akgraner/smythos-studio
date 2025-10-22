@@ -1,8 +1,8 @@
 import { useCallback, useRef, useState } from 'react';
 
+import { IChatMessage, IMessageFile } from '@react/features/ai-chat';
 import { CHAT_ERROR_MESSAGE } from '@react/features/ai-chat/constants';
 import { chatUtils } from '@react/features/ai-chat/utils';
-import { FileWithMetadata, IChatMessage } from '../types/chat.types';
 
 interface UseChatActionsProps {
   agentId: string;
@@ -16,7 +16,7 @@ interface UseChatActionsReturn {
   isGenerating: boolean;
   isInputProcessing: boolean;
   isRetrying: boolean;
-  sendMessage: (message: string, attachedFiles?: FileWithMetadata[]) => Promise<void>; // eslint-disable-line no-unused-vars
+  sendMessage: (message: string, attachedFiles?: IMessageFile[]) => Promise<void>; // eslint-disable-line no-unused-vars
   retryLastMessage: () => void;
   stopGenerating: () => void;
   clearMessages: () => void;
@@ -25,7 +25,7 @@ interface UseChatActionsReturn {
 // Interface to store last user message with files
 interface LastUserMessage {
   message: string;
-  attachedFiles?: FileWithMetadata[];
+  attachedFiles?: IMessageFile[];
 }
 
 export const useChatActions = ({
@@ -58,7 +58,7 @@ export const useChatActions = ({
   }, []);
 
   const sendMessage = useCallback(
-    async (message: string, attachedFiles?: FileWithMetadata[]) => {
+    async (message: string, attachedFiles?: IMessageFile[]) => {
       if (!message.trim() && (!attachedFiles || attachedFiles.length === 0)) return;
 
       // Store the complete message with files for retry functionality

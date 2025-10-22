@@ -1,17 +1,19 @@
+/* eslint-disable no-unused-vars, @typescript-eslint/no-unused-vars */
+
 /**
  * Professional React hook for complete chat state management
  * Combines streaming, message history, file uploads, and error handling
  */
 
-import { useCallback, useRef, useState } from 'react';
-import { ChatAPIClient } from '../clients/chat-api.client';
 import {
   IChatMessage,
   IFileAttachment,
   IMessageFile,
   IUseChatReturn,
   TThinkingType,
-} from '../types/chat.types';
+} from '@react/features/ai-chat';
+import { useCallback, useRef, useState } from 'react';
+import { ChatAPIClient } from '../clients/chat-api.client';
 import { useChatStream } from './use-chat-stream';
 
 /**
@@ -305,7 +307,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
               currentAIMessageRef.current += content;
               updateAIMessage(currentAIMessageRef.current);
             },
-            onThinking: (thinkingMsg: string, _type: TThinkingType) => {
+            onThinking: (thinkingMsg: string, type: TThinkingType) => {
               // Mark that we're in thinking state
               isThinkingRef.current = true;
               hasThinkingOccurredRef.current = true;

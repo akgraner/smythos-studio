@@ -9,6 +9,7 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { IChatMessage, IMessageFile } from '@react/features/ai-chat';
 import {
   useAgentSettings,
   useCreateChatMutation,
@@ -17,7 +18,6 @@ import {
 } from '@react/features/ai-chat/hooks';
 import { useChat } from '@react/features/ai-chat/hooks/use-chat';
 import { useAgent } from '@react/shared/hooks/agent';
-import { FileWithMetadata, IChatMessage } from '../types/chat.types';
 import { Observability } from '@shared/observability';
 import { EVENTS } from '@shared/posthog/constants/events';
 
@@ -41,7 +41,7 @@ export interface IUseAgentChatContextReturn {
   /** Chat context value ready to be passed to ChatProvider */
   chatContextValue: {
     // File handling
-    files: FileWithMetadata[];
+    files: IMessageFile[];
     uploadingFiles: Set<string>;
     isUploadInProgress: boolean;
     isMaxFilesUploaded: boolean;
