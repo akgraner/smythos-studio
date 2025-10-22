@@ -5,8 +5,8 @@
 
 // === Type Definitions ===
 export type {
-  IChatActions,
   IChatAPIConfig,
+  IChatActions,
   IChatError,
   IChatFileAttachment,
   IChatMessage,
@@ -23,7 +23,7 @@ export type {
 } from './types/chat.types';
 
 // === API Client ===
-export { chatAPI, ChatAPIClient, createChatClient } from './clients/chat-api.client';
+export { ChatAPIClient, chatAPI, createChatClient } from './clients/chat-api.client';
 
 // === React Hooks ===
 export {
@@ -36,13 +36,13 @@ export { useChatStream } from './hooks/use-chat-stream';
 
 // === Utilities ===
 export {
+  ThinkingMessageManager,
   createThinkingManager,
   extractFunctionName,
   formatFunctionName,
   formatStatusMessage,
   processStreamChunk,
   splitJSONStream,
-  ThinkingMessageManager,
 } from './utils/stream.utils';
 
 // === Pages/Components ===
