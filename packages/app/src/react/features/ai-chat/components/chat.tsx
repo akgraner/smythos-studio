@@ -24,28 +24,27 @@ interface IChatProps extends IChatMessage {
 export const Chat: FC<IChatProps> = (props) => {
   const { type, files, avatar, message, onRetryClick, thinkingMessage, scrollToBottom } = props;
 
-  // Loading state (replying/retrying)
-  if (type === 'loading') return <ReplyLoader />;
-
-  // Thinking message
-  if (type === 'thinking') return <ThinkingMessage message={message} avatar={avatar} />;
-
-  // User message
-  if (type === 'user') return <UserMessage message={message} files={files} />;
-
-  // Error message
-  if (type === 'error')
-    return <SystemMessage isError message={message} onRetryClick={onRetryClick} />;
-
-  // System message (default)
-  return (
-    <SystemMessage
-      avatar={avatar}
-      message={message}
-      typingAnimation
-      thinkingMessage={thinkingMessage}
-      onTypingComplete={() => scrollToBottom?.()}
-      onTypingProgress={() => scrollToBottom?.()}
-    />
-  );
+  switch (type) {
+    case 'loading':
+      return <ReplyLoader />;
+    case 'thinking':
+      return <ThinkingMessage message={message} avatar={avatar} />;
+    case 'user':
+      return <UserMessage message={message} files={files} />;
+    case 'system':
+      return (
+        <SystemMessage
+          avatar={avatar}
+          message={message}
+          typingAnimation
+          thinkingMessage={thinkingMessage}
+          onTypingComplete={() => scrollToBottom?.()}
+          onTypingProgress={() => scrollToBottom?.()}
+        />
+      );
+    case 'error':
+      return <SystemMessage isError message={message} onRetryClick={onRetryClick} />;
+    default:
+      return <SystemMessage isError message="Something went wrong!" onRetryClick={onRetryClick} />;
+  }
 };
