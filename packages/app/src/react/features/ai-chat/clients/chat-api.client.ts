@@ -260,11 +260,15 @@ export class ChatAPIClient {
     const { onContent, onThinking, onToolCall, onDebug, onError } = callbacks;
     const processed = processStreamChunk(chunk);
 
+    // Extract conversation turn ID from chunk
+    const conversationTurnId = chunk.conversationTurnId;
+
     // Handle errors
     if (processed.hasError) {
       const error: IChatError = {
         message: processed.error || 'Unknown error occurred',
         type: 'stream',
+        conversationTurnId, // Include turn ID in error
       };
       onError(error);
       return;
@@ -275,7 +279,7 @@ export class ChatAPIClient {
       const formattedStatus = formatStatusMessage(processed.statusMessage || '');
       this.thinkingManager.start(
         'status',
-        (msg, type) => onThinking(msg, type),
+        (msg, type) => onThinking(msg, type, conversationTurnId), // Pass turn ID
         undefined,
         formattedStatus,
       );
@@ -289,12 +293,16 @@ export class ChatAPIClient {
 
       // Notify tool call callback
       if (onToolCall && chunk.function_call?.arguments) {
-        onToolCall(functionName, chunk.function_call.arguments);
+        onToolCall(functionName, chunk.function_call.arguments, conversationTurnId); // Pass turn ID
       }
 
       // Start function thinking
       if (onThinking) {
-        this.thinkingManager.start('function', (msg, type) => onThinking(msg, type), formattedName);
+        this.thinkingManager.start(
+          'function',
+          (msg, type) => onThinking(msg, type, conversationTurnId), // Pass turn ID
+          formattedName,
+        );
       }
     }
 
@@ -306,7 +314,11 @@ export class ChatAPIClient {
       const functionName = extractFunctionName(chunk.debug || '');
       if (functionName && onThinking) {
         const formattedName = formatFunctionName(functionName);
-        this.thinkingManager.start('function', (msg, type) => onThinking(msg, type), formattedName);
+        this.thinkingManager.start(
+          'function',
+          (msg, type) => onThinking(msg, type, conversationTurnId), // Pass turn ID
+          formattedName,
+        );
       }
     }
 
@@ -315,8 +327,8 @@ export class ChatAPIClient {
       // Stop thinking when content arrives
       this.thinkingManager.stop();
 
-      // Deliver content
-      onContent(processed.content);
+      // Deliver content with turn ID
+      onContent(processed.content, conversationTurnId);
     }
   }
 
