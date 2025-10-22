@@ -8,7 +8,7 @@ import {
   uploadFile,
   validateSingleFile,
 } from '@react/features/ai-chat/utils/file';
-import { FileWithMetadata } from '@react/shared/types/chat.types';
+import { FileWithMetadata } from '../types/chat.types';
 
 interface FileUploadError {
   show: boolean;
