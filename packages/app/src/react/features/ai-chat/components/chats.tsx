@@ -1,10 +1,10 @@
 /* eslint-disable no-unused-vars */
 import { IChatMessage } from '@react/features/ai-chat';
-import { Chat } from '@react/features/ai-chat/components';
+import { Chat, MessageTurnGroup } from '@react/features/ai-chat/components';
 import { useChatContext } from '@react/features/ai-chat/contexts';
 import { useDragAndDrop } from '@react/features/ai-chat/hooks';
 import { AgentDetails } from '@src/react/shared/types/agent-data.types';
-import { FC, MutableRefObject, RefObject, useEffect, useRef } from 'react';
+import { FC, MutableRefObject, RefObject, useEffect, useMemo, useRef } from 'react';
 
 /**
  * Chats component properties
@@ -60,6 +60,51 @@ export const Chats: FC<IChatsProps> = (props) => {
 
   const avatar = agent?.aiAgentSettings?.avatar;
 
+  /**
+   * Group messages by conversationTurnId
+   * Messages with same turnId are grouped together
+   * Messages without turnId are treated as individual groups
+   */
+  const groupedMessages = useMemo(() => {
+    const groups: Array<{
+      turnId: string | null;
+      messages: IChatMessage[];
+      isUserMessage: boolean;
+    }> = [];
+
+    messages.forEach((message) => {
+      const turnId = message.conversationTurnId || null;
+      const isUser = message.type === 'user';
+
+      // User messages are always individual (not grouped)
+      if (isUser) {
+        groups.push({
+          turnId,
+          messages: [message],
+          isUserMessage: true,
+        });
+        return;
+      }
+
+      // For AI messages, check if we can add to existing group
+      const lastGroup = groups[groups.length - 1];
+
+      // If last group has same turnId and is not a user message, add to it
+      if (lastGroup && !lastGroup.isUserMessage && lastGroup.turnId === turnId && turnId !== null) {
+        lastGroup.messages.push(message);
+      } else {
+        // Otherwise create new group
+        groups.push({
+          turnId,
+          messages: [message],
+          isUserMessage: false,
+        });
+      }
+    });
+
+    return groups;
+  }, [messages]);
+
   return (
     <div
       data-chat-container
@@ -72,20 +117,49 @@ export const Chats: FC<IChatsProps> = (props) => {
         onScroll={handleScroll}
         className="w-full h-full max-w-4xl flex-1 pb-4 space-y-2.5 px-2.5"
       >
-        {messages.map((message, index) => {
-          const isLastMessage = index === messages.length - 1;
-          const canRetry = message.type === 'error' && isLastMessage;
+        {groupedMessages.map((group, groupIndex) => {
+          const isLastGroup = groupIndex === groupedMessages.length - 1;
+          const lastMessageInGroup = group.messages[group.messages.length - 1];
+          const canRetry = lastMessageInGroup.type === 'error' && isLastGroup;
           const onRetryClick = canRetry ? retryLastMessage : undefined;
 
-          return (
+          // User messages render individually (no grouping)
+          if (group.isUserMessage) {
+            const message = group.messages[0];
+            return (
+              <Chat
+                key={message.id || groupIndex}
+                {...message}
+                avatar={avatar}
+                onRetryClick={onRetryClick}
+                scrollToBottom={smartScrollToBottom}
+              />
+            );
+          }
+
+          // AI messages with turnId render as a group
+          if (group.turnId && group.messages.length > 0) {
+            return (
+              <MessageTurnGroup
+                key={group.turnId}
+                messages={group.messages}
+                avatar={avatar}
+                onRetryClick={onRetryClick}
+                scrollToBottom={smartScrollToBottom}
+              />
+            );
+          }
+
+          // Fallback: Messages without turnId render individually
+          return group.messages.map((message, messageIndex) => (
             <Chat
-              key={index}
+              key={message.id || `${groupIndex}-${messageIndex}`}
               {...message}
               avatar={avatar}
-              onRetryClick={onRetryClick}
+              onRetryClick={messageIndex === group.messages.length - 1 ? onRetryClick : undefined}
               scrollToBottom={smartScrollToBottom}
             />
-          );
+          ));
         })}
       </div>
     </div>
