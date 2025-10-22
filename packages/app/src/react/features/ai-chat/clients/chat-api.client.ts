@@ -4,13 +4,13 @@
  */
 
 import {
-  IChatAPIConfig,
+  IAPIConfig,
   IChatError,
-  IChatFileAttachment,
-  IChatStreamCallbacks,
-  IChatStreamChunk,
-  IChatStreamConfig,
-  TChatErrorType,
+  IFileAttachment,
+  IStreamCallbacks,
+  IStreamChunk,
+  IStreamConfig,
+  TErrorType,
 } from '../types/chat.types';
 import {
   createThinkingManager,
@@ -24,7 +24,7 @@ import {
 /**
  * Default configuration for the Chat API Client
  */
-const DEFAULT_CONFIG: IChatAPIConfig = {
+const DEFAULT_CONFIG: IAPIConfig = {
   baseUrl: '/api/page/chat',
   defaultHeaders: {
     'Content-Type': 'application/json',
@@ -41,7 +41,7 @@ const DEFAULT_CONFIG: IChatAPIConfig = {
  * Handles all communication with the chat service including streaming responses
  */
 export class ChatAPIClient {
-  private config: IChatAPIConfig;
+  private config: IAPIConfig;
   private thinkingManager = createThinkingManager();
 
   /**
@@ -57,7 +57,7 @@ export class ChatAPIClient {
    * });
    * ```
    */
-  constructor(config: Partial<IChatAPIConfig> = {}) {
+  constructor(config: Partial<IAPIConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
   }
 
@@ -86,25 +86,23 @@ export class ChatAPIClient {
    * );
    * ```
    */
-  async streamChat(
-    streamConfig: IChatStreamConfig,
-    callbacks: IChatStreamCallbacks,
-  ): Promise<void> {
+  async streamChat(streamConfig: IStreamConfig, callbacks: IStreamCallbacks): Promise<void> {
     const { agentId, chatId, message, attachments, signal, headers = {} } = streamConfig;
     const { onContent, onThinking, onToolCall, onDebug, onError, onStart, onComplete } = callbacks;
 
     // Validate required parameters
-    if (!agentId || !chatId || !message) {
+    // Message can be empty if attachments are provided
+    if (!agentId || !chatId || (!message && (!attachments || attachments.length === 0))) {
       const error: IChatError = {
         message: 'Missing required parameters: agentId, chatId, or message',
-        type: 'system_error',
+        type: 'system',
       };
       onError(error);
       return Promise.reject(error);
     }
 
     // State management for stream processing
-    let accumulatedData = '';
+    const accumulatedData = '';
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
     try {
@@ -140,7 +138,7 @@ export class ChatAPIClient {
         const errorData = await this.parseErrorResponse(response);
         const error: IChatError = {
           message: errorData.message || `HTTP ${response.status}: Failed to get response`,
-          type: 'network_error',
+          type: 'network',
         };
         onError(error);
         return Promise.reject(error);
@@ -151,7 +149,7 @@ export class ChatAPIClient {
       if (!reader) {
         const error: IChatError = {
           message: 'Failed to get response reader - response body is null',
-          type: 'stream_error',
+          type: 'stream',
         };
         onError(error);
         return Promise.reject(error);
@@ -205,7 +203,7 @@ export class ChatAPIClient {
     signal: AbortSignal,
     accumulatedData: string,
     callbacks: Pick<
-      IChatStreamCallbacks,
+      IStreamCallbacks,
       'onContent' | 'onThinking' | 'onToolCall' | 'onDebug' | 'onError'
     >,
   ): Promise<void> {
@@ -254,9 +252,9 @@ export class ChatAPIClient {
    * @param callbacks - Event callbacks
    */
   private async processChunk(
-    chunk: IChatStreamChunk,
+    chunk: IStreamChunk,
     callbacks: Pick<
-      IChatStreamCallbacks,
+      IStreamCallbacks,
       'onContent' | 'onThinking' | 'onToolCall' | 'onDebug' | 'onError'
     >,
   ): Promise<void> {
@@ -267,7 +265,7 @@ export class ChatAPIClient {
     if (processed.hasError) {
       const error: IChatError = {
         message: processed.error || 'Unknown error occurred',
-        type: (processed.errorType as TChatErrorType) || 'stream_error',
+        type: (processed.errorType as TErrorType) || 'stream',
       };
       onError(error);
       return;
@@ -276,7 +274,12 @@ export class ChatAPIClient {
     // Handle status messages (highest priority)
     if (processed.hasStatusMessage && onThinking) {
       const formattedStatus = formatStatusMessage(processed.statusMessage || '');
-      this.thinkingManager.start('status', onThinking, undefined, formattedStatus);
+      this.thinkingManager.start(
+        'status',
+        (msg, type) => onThinking(msg, type),
+        undefined,
+        formattedStatus,
+      );
       return;
     }
 
@@ -292,7 +295,7 @@ export class ChatAPIClient {
 
       // Start function thinking
       if (onThinking) {
-        this.thinkingManager.start('function', onThinking, formattedName);
+        this.thinkingManager.start('function', (msg, type) => onThinking(msg, type), formattedName);
       }
     }
 
@@ -304,7 +307,7 @@ export class ChatAPIClient {
       const functionName = extractFunctionName(chunk.debug || '');
       if (functionName && onThinking) {
         const formattedName = formatFunctionName(functionName);
-        this.thinkingManager.start('function', onThinking, formattedName);
+        this.thinkingManager.start('function', (msg, type) => onThinking(msg, type), formattedName);
       }
     }
 
@@ -330,7 +333,7 @@ export class ChatAPIClient {
     if (error instanceof DOMException && error.name === 'AbortError') {
       return {
         message: signal.aborted ? 'Request was cancelled' : 'Stream was aborted',
-        type: 'abort_error',
+        type: 'abort',
         isAborted: true,
         originalError: error,
       };
@@ -340,7 +343,7 @@ export class ChatAPIClient {
     if (error instanceof TypeError && error.message.includes('fetch')) {
       return {
         message: `Network request failed: ${error.message}`,
-        type: 'network_error',
+        type: 'network',
         originalError: error,
       };
     }
@@ -349,7 +352,7 @@ export class ChatAPIClient {
     if (error instanceof Error) {
       return {
         message: error.message || 'An unexpected error occurred',
-        type: 'system_error',
+        type: 'system',
         originalError: error,
       };
     }
@@ -357,7 +360,7 @@ export class ChatAPIClient {
     // Unknown error type
     return {
       message: 'An unexpected error occurred. Please try again.',
-      type: 'system_error',
+      type: 'system',
       originalError: error,
     };
   }
@@ -395,7 +398,7 @@ export class ChatAPIClient {
    * // Use attachment.url in chat message
    * ```
    */
-  async uploadFile(file: File, agentId: string): Promise<IChatFileAttachment> {
+  async uploadFile(file: File, agentId: string): Promise<IFileAttachment> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('agentId', agentId);
@@ -435,7 +438,7 @@ export class ChatAPIClient {
    * client.updateConfig({ timeout: 60000 });
    * ```
    */
-  updateConfig(config: Partial<IChatAPIConfig>): void {
+  updateConfig(config: Partial<IAPIConfig>): void {
     this.config = { ...this.config, ...config };
   }
 
@@ -444,7 +447,7 @@ export class ChatAPIClient {
    *
    * @returns Current configuration
    */
-  getConfig(): IChatAPIConfig {
+  getConfig(): IAPIConfig {
     return { ...this.config };
   }
 }
@@ -467,6 +470,6 @@ export const chatAPI = new ChatAPIClient();
  * });
  * ```
  */
-export const createChatClient = (config?: Partial<IChatAPIConfig>) => {
+export const createChatClient = (config?: Partial<IAPIConfig>) => {
   return new ChatAPIClient(config);
 };
