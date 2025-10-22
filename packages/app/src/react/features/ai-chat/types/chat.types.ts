@@ -46,6 +46,37 @@ export interface IChatMessage {
   type: TMessageType;
 
   // ============================================================================
+  // CONVERSATION TRACKING
+  // ============================================================================
+
+  /**
+   * Conversation Turn ID
+   * Groups all messages (thinking, function calls, responses) related to
+   * a single user query. All AI responses for one user message share the same turnId.
+   *
+   * @example
+   * ```
+   * User: "What's the weather?" → turnId: "turn_001"
+   * AI: "Thinking..." → turnId: "turn_001" (same)
+   * AI: "Using skill: weather" → turnId: "turn_001" (same)
+   * AI: "It's sunny!" → turnId: "turn_001" (same)
+   *
+   * User: "Thanks!" → turnId: "turn_002" (new)
+   * AI: "You're welcome!" → turnId: "turn_002" (same)
+   * ```
+   */
+  conversationTurnId?: string;
+
+  /**
+   * Message ID (future)
+   * Unique identifier from backend for this specific message
+   * Will be available after SDK integration
+   *
+   * @example "msg_abc123-def456-ghi789"
+   */
+  messageId?: string;
+
+  // ============================================================================
   // USER MESSAGE PROPERTIES
   // ============================================================================
 
@@ -115,6 +146,24 @@ export type FileWithMetadata = IMessageFile;
  * Only includes actually used properties
  */
 export interface IStreamChunk {
+  /**
+   * Conversation Turn ID
+   * Groups all AI responses (thinking, function calls, content) for a single user message
+   * All responses in one conversation turn share the same turnId
+   *
+   * @example "turn_1735123456789_abc123xyz"
+   */
+  conversationTurnId?: string;
+
+  /**
+   * Message ID (future)
+   * Unique identifier from backend for this specific message
+   * Will be available after SDK integration
+   *
+   * @example "msg_abc123-def456-ghi789"
+   */
+  messageId?: string;
+
   /** Content chunk for streaming responses */
   content?: string;
 
@@ -196,19 +245,23 @@ export interface IFileAttachment {
  */
 /* eslint-disable no-unused-vars */
 export interface IStreamCallbacks {
-  /** Content chunk received */
-  onContent: (content: string) => void;
+  /** Content chunk received - now includes optional conversationTurnId */
+  onContent: (content: string, conversationTurnId?: string) => void;
 
-  /** Thinking/status update */
-  onThinking?: (message: string, type: TThinkingType) => void;
+  /** Thinking/status update - now includes optional conversationTurnId */
+  onThinking?: (message: string, type: TThinkingType, conversationTurnId?: string) => void;
 
-  /** Tool/function call detected */
-  onToolCall?: (toolName: string, args: Record<string, unknown>) => void;
+  /** Tool/function call detected - now includes optional conversationTurnId */
+  onToolCall?: (
+    toolName: string,
+    args: Record<string, unknown>,
+    conversationTurnId?: string,
+  ) => void;
 
   /** Debug information received */
   onDebug?: (debug: IStreamChunk) => void;
 
-  /** Error occurred */
+  /** Error occurred - error object now includes conversationTurnId */
   onError: (error: IChatError) => void;
 
   /** Stream started */
@@ -237,6 +290,9 @@ export interface IChatError {
 
   /** Error type */
   type: TErrorType;
+
+  /** Conversation turn ID for grouping */
+  conversationTurnId?: string;
 
   /** Original error object */
   originalError?: Error | unknown;
