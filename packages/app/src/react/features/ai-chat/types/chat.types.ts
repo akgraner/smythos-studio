@@ -1,235 +1,317 @@
-/* eslint-disable no-unused-vars */
 /**
- * Comprehensive TypeScript type definitions for the Chat System
- * Provides type safety for chat messages, streaming, API responses, and state management
+ * Professional Chat Type System
+ *
+ * Clean, minimal, and reusable type definitions for the chat system.
+ * Follows DRY principles - no redundant properties.
+ *
+ * @module chat.types
  */
 
-/**
- * File attachment with metadata
- */
-export interface IChatFileAttachment {
-  /** Public URL of the uploaded file */
-  url: string;
-  /** Original filename */
-  name?: string;
-  /** MIME type of the file */
-  type?: string;
-  /** File size in bytes */
-  size?: number;
-}
+// ============================================================================
+// CORE MESSAGE TYPES
+// ============================================================================
 
 /**
- * Chat message types
- * Compatible with shared type definition
+ * Message type discriminator
+ * Complete state representation through type alone
+ *
+ * - 'user': Message from user
+ * - 'system': Response from AI/system
+ * - 'thinking': AI is processing/thinking
+ * - 'loading': AI is generating response (replying/retrying)
+ * - 'error': Error occurred during processing
  */
-export type TChatMessageType = 'user' | 'system' | 'thinking';
+export type TMessageType = 'user' | 'system' | 'thinking' | 'loading' | 'error';
 
 /**
- * Error types for chat responses
- */
-export type TChatErrorType = 'stream_error' | 'system_error' | 'network_error' | 'abort_error';
-
-/**
- * Thinking/status message types for UX feedback
- */
-export type TThinkingType = 'general' | 'function' | 'status';
-
-/**
- * Chat message structure
- * Compatible with shared IChatMessage type
+ * Core chat message interface
+ *
+ * Design principles:
+ * - Type-based discrimination - `type` is single source of truth
+ * - No redundant boolean flags (isReplying, isRetrying, isError)
+ * - Minimal required fields
+ * - Optional fields for specific use cases
  */
 export interface IChatMessage {
-  /** Unique message identifier */
+  /** Unique identifier */
   id?: string | number;
+
   /** Message content */
   message: string;
-  /** Message type */
-  type: TChatMessageType;
-  /** Whether this message is from the current user (required for compatibility) */
-  me: boolean;
-  /** Avatar URL for system messages */
+
+  /**
+   * Message type - single source of truth for state
+   * Replaces: isReplying, isRetrying, isError, me booleans
+   */
+  type: TMessageType;
+
+  // ============================================================================
+  // USER MESSAGE PROPERTIES
+  // ============================================================================
+
+  /** Attached files (user messages only) */
+  files?: IMessageFile[];
+
+  // ============================================================================
+  // SYSTEM MESSAGE PROPERTIES
+  // ============================================================================
+
+  /** Avatar URL for system/AI messages */
   avatar?: string;
-  /** Attached files */
-  files?: Array<{
-    file: File;
-    metadata: { publicUrl?: string; fileType?: string; isUploading?: boolean };
-    id?: string;
-  }>;
-  /** Whether the AI is currently replying */
-  isReplying?: boolean;
-  /** Error indicator */
-  isError?: boolean;
-  /** Error type classification */
-  errorType?: TChatErrorType;
-  /** Hide message bubble (e.g., for file-only messages) */
-  hideMessage?: boolean;
-  /** Thinking/processing message to display */
+
+  /** Inline thinking/status message during generation */
   thinkingMessage?: string;
-  /** Timestamp */
-  timestamp?: number;
-  /** Whether this is the first message */
-  isFirstMessage?: boolean;
-  /** Whether this is the last message */
-  isLast?: boolean;
-  /** Whether this message is being retried */
-  isRetrying?: boolean;
-  /** Function to call when retry is clicked */
+
+  // ============================================================================
+  // INTERACTIVE PROPERTIES
+  // ============================================================================
+
+  /** Retry callback for error messages */
   onRetryClick?: () => void;
+
+  /** Message timestamp (optional, for future use) */
+  timestamp?: number;
 }
 
 /**
- * Stream chunk response format from ChatService
+ * File attachment structure
+ * Simplified from previous complex nested structure
  */
-export interface IChatStreamChunk {
-  /** Message role (system/user/assistant) */
-  role?: string;
+export interface IMessageFile {
+  /** The actual File object */
+  file: File;
+
+  /** File metadata */
+  metadata: {
+    /** Public URL after upload */
+    publicUrl?: string;
+    /** MIME type */
+    fileType?: string;
+    /** Unique key for tracking */
+    key?: string;
+    /** Upload in progress indicator */
+    isUploading?: boolean;
+    /** Preview URL for images */
+    previewUrl?: string;
+  };
+
+  /** Required ID for React keys and tracking */
+  id: string;
+}
+
+/**
+ * Type alias for backward compatibility
+ * Same as IMessageFile - fully compatible
+ * @deprecated Use IMessageFile instead for new code
+ */
+export type FileWithMetadata = IMessageFile;
+
+// ============================================================================
+// STREAMING TYPES
+// ============================================================================
+
+/**
+ * Stream chunk from backend
+ * Only includes actually used properties
+ */
+export interface IStreamChunk {
   /** Content chunk for streaming responses */
   content?: string;
-  /** Debug information */
-  debug?: string;
-  /** Tool/function title */
-  title?: string;
-  /** Status message for function execution */
+
+  /** Status/thinking message */
   status_message?: string;
-  /** Function name */
+
+  /** Function/tool name */
   function?: string;
-  /** Function call information */
+
+  /** Function call details */
   function_call?: {
     name?: string;
     arguments?: Record<string, unknown>;
   };
-  /** Hash ID for debug tracking */
+
+  /** Debug information */
+  debug?: string;
+
+  /** Debug tracking hash */
   hashId?: string;
-  /** Debug session active indicator */
+
+  /** Debug session indicator */
   debugOn?: boolean;
-  /** Call parameters for debugging */
-  callParams?: string | Record<string, unknown>;
-  /** Additional parameters */
-  parameters?: unknown[];
+
   /** Error message */
   error?: string;
+
   /** Error indicator */
   isError?: boolean;
-  /** Error type */
-  errorType?: TChatErrorType;
 }
 
 /**
- * Chat streaming configuration
+ * Thinking message type discriminator
  */
-export interface IChatStreamConfig {
-  /** Agent ID */
+export type TThinkingType = 'general' | 'function' | 'status';
+
+/**
+ * Stream configuration for API calls
+ */
+export interface IStreamConfig {
+  /** Target agent ID */
   agentId: string;
-  /** Conversation/Chat ID */
+
+  /** Conversation ID */
   chatId: string;
-  /** User message */
+
+  /** User message content */
   message: string;
+
   /** File attachments */
-  attachments?: IChatFileAttachment[];
+  attachments?: IFileAttachment[];
+
   /** Abort signal for cancellation */
   signal: AbortSignal;
+
   /** Custom headers */
   headers?: Record<string, string>;
 }
 
 /**
- * Callbacks for chat streaming events
+ * File attachment for API
  */
-export interface IChatStreamCallbacks {
-  /** Called when content chunk arrives */
-  onContent: (content: string) => void;
-  /** Called when thinking/status updates occur */
-  onThinking?: (message: string, type: TThinkingType) => void;
-  /** Called when function/tool is being used */
-  onToolCall?: (toolName: string, args: Record<string, unknown>) => void;
-  /** Called when debug information arrives */
-  onDebug?: (debug: IChatStreamChunk) => void;
-  /** Called when an error occurs */
-  onError: (error: IChatError) => void;
-  /** Called when streaming starts */
-  onStart?: () => void;
-  /** Called when streaming completes */
-  onComplete: () => void;
+export interface IFileAttachment {
+  /** Public URL */
+  url: string;
+
+  /** Filename */
+  name?: string;
+
+  /** MIME type */
+  type?: string;
+
+  /** File size */
+  size?: number;
 }
 
 /**
- * Chat error with detailed information
+ * Stream event callbacks
+ */
+/* eslint-disable no-unused-vars */
+export interface IStreamCallbacks {
+  /** Content chunk received */
+  onContent: (content: string) => void;
+
+  /** Thinking/status update */
+  onThinking?: (message: string, type: TThinkingType) => void;
+
+  /** Tool/function call detected */
+  onToolCall?: (toolName: string, args: Record<string, unknown>) => void;
+
+  /** Debug information received */
+  onDebug?: (debug: IStreamChunk) => void;
+
+  /** Error occurred */
+  onError: (error: IChatError) => void;
+
+  /** Stream started */
+  onStart?: () => void;
+
+  /** Stream completed */
+  onComplete: () => void;
+}
+/* eslint-enable no-unused-vars */
+
+// ============================================================================
+// ERROR TYPES
+// ============================================================================
+
+/**
+ * Error type classification
+ */
+export type TErrorType = 'stream' | 'network' | 'abort' | 'system';
+
+/**
+ * Chat error structure
  */
 export interface IChatError {
   /** Error message */
   message: string;
-  /** Error type classification */
-  type: TChatErrorType;
+
+  /** Error type */
+  type: TErrorType;
+
   /** Original error object */
   originalError?: Error | unknown;
-  /** Whether this is a user-initiated abort */
+
+  /** User-initiated abort flag */
   isAborted?: boolean;
 }
 
+// ============================================================================
+// HOOK INTERFACES
+// ============================================================================
+
 /**
- * Chat state interface
+ * Chat hook configuration
  */
-export interface IChatState {
-  /** All messages in the conversation */
-  messages: IChatMessage[];
-  /** Whether AI is currently generating a response */
-  isGenerating: boolean;
-  /** Whether input is being processed (uploading files, etc.) */
-  isProcessing: boolean;
-  /** Current error if any */
-  error: IChatError | null;
-  /** Whether retry is in progress */
-  isRetrying: boolean;
+/* eslint-disable no-unused-vars */
+export interface IUseChatConfig {
+  /** Agent ID */
+  agentId: string;
+
+  /** Chat/Conversation ID */
+  chatId: string;
+
+  /** Avatar URL for AI messages */
+  avatar?: string;
+
+  /** Custom API client */
+  client?: unknown; // Avoid circular dependency
+
+  /** Custom headers */
+  headers?: Record<string, string>;
+
+  /** Chat completion callback */
+  onChatComplete?: (message: string) => void;
+
+  /** Error callback */
+  onError?: (error: Error) => void;
 }
 
 /**
- * Chat actions interface
+ * Chat hook return type
  */
-export interface IChatActions {
-  /** Send a new message */
-  sendMessage: (message: string, files?: File[]) => Promise<void>;
-  /** Retry the last message */
+export interface IUseChatReturn {
+  // State
+  messages: IChatMessage[];
+  isGenerating: boolean;
+  isProcessing: boolean;
+  error: IChatError | null;
+
+  // Actions
+  sendMessage: (message: string, files?: File[] | IMessageFile[]) => Promise<void>;
   retryLastMessage: () => Promise<void>;
-  /** Stop current generation */
   stopGenerating: () => void;
-  /** Clear all messages */
   clearMessages: () => void;
-  /** Clear error state */
   clearError: () => void;
 }
+/* eslint-enable no-unused-vars */
 
-/**
- * Hook return type combining state and actions
- */
-export interface IUseChatReturn extends IChatState, IChatActions {
-  /** Last user message for retry functionality */
-  lastUserMessage: string | null;
-}
-
-/**
- * Thinking message manager state
- */
-export interface IThinkingManagerState {
-  /** Current thinking type */
-  type: TThinkingType | null;
-  /** Current message being displayed */
-  message: string;
-  /** Function name (for function type) */
-  functionName?: string;
-  /** Status message (for status type) */
-  statusMessage?: string;
-}
+// ============================================================================
+// API CLIENT TYPES
+// ============================================================================
 
 /**
  * API client configuration
  */
-export interface IChatAPIConfig {
-  /** Base URL for the chat API */
+export interface IAPIConfig {
+  /** Base API URL */
   baseUrl?: string;
+
   /** Default headers */
   defaultHeaders?: Record<string, string>;
-  /** Request timeout in milliseconds */
+
+  /** Request timeout */
   timeout?: number;
+
   /** Retry configuration */
   retry?: {
     attempts: number;
@@ -237,16 +319,70 @@ export interface IChatAPIConfig {
   };
 }
 
+// ============================================================================
+// UTILITY TYPES
+// ============================================================================
+
 /**
- * File upload metadata
+ * Extract user messages
  */
-export interface IFileUploadMetadata {
-  /** Public URL after upload */
-  publicUrl: string;
-  /** File type */
-  fileType: string;
-  /** Upload status */
-  isUploading: boolean;
-  /** Upload error if any */
-  error?: string;
-}
+export type TUserMessage = IChatMessage & { type: 'user' };
+
+/**
+ * Extract system messages
+ */
+export type TSystemMessage = IChatMessage & { type: 'system' };
+
+/**
+ * Extract thinking messages
+ */
+export type TThinkingMessage = IChatMessage & { type: 'thinking' };
+
+/**
+ * Extract loading messages
+ */
+export type TLoadingMessage = IChatMessage & { type: 'loading' };
+
+/**
+ * Extract error messages
+ */
+export type TErrorMessage = IChatMessage & { type: 'error' };
+
+// ============================================================================
+// TYPE GUARDS
+// ============================================================================
+
+/**
+ * Check if message is from user
+ */
+export const isUserMessage = (message: IChatMessage): message is TUserMessage => {
+  return message.type === 'user';
+};
+
+/**
+ * Check if message is from system
+ */
+export const isSystemMessage = (message: IChatMessage): message is TSystemMessage => {
+  return message.type === 'system';
+};
+
+/**
+ * Check if message is thinking indicator
+ */
+export const isThinkingMessage = (message: IChatMessage): message is TThinkingMessage => {
+  return message.type === 'thinking';
+};
+
+/**
+ * Check if message is loading (replying/retrying)
+ */
+export const isLoadingMessage = (message: IChatMessage): message is TLoadingMessage => {
+  return message.type === 'loading';
+};
+
+/**
+ * Check if message is error
+ */
+export const isErrorMessage = (message: IChatMessage): message is TErrorMessage => {
+  return message.type === 'error';
+};
