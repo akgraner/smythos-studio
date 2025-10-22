@@ -84,6 +84,9 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   const isThinkingRef = useRef<boolean>(false);
   const hasThinkingOccurredRef = useRef<boolean>(false);
 
+  // Track current conversation turn ID for grouping messages
+  const currentTurnIdRef = useRef<string | null>(null);
+
   // Stream management
   const { isStreaming, error, startStream, abortStream, clearError } = useChatStream({
     client,
@@ -182,6 +185,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   const addAIMessage = useCallback(() => {
     const aiMessage: IChatMessage = {
       id: Date.now() + 1,
+      conversationTurnId: currentTurnIdRef.current || undefined, // Include turn ID from current turn
       message: '',
       type: 'loading', // Type determines AI vs user - no me property needed!
       avatar,
@@ -278,7 +282,29 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
             headers,
           },
           {
-            onContent: (content: string) => {
+            onStart: () => {
+              // Reset turn ID for new conversation turn
+              currentTurnIdRef.current = null;
+            },
+            onContent: (content: string, conversationTurnId?: string) => {
+              // Capture turn ID from first chunk
+              if (conversationTurnId && !currentTurnIdRef.current) {
+                currentTurnIdRef.current = conversationTurnId;
+
+                // Update the current AI message with turn ID
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const lastIndex = updated.length - 1;
+                  if (lastIndex >= 0 && updated[lastIndex].type === 'loading') {
+                    updated[lastIndex] = {
+                      ...updated[lastIndex],
+                      conversationTurnId,
+                    };
+                  }
+                  return updated;
+                });
+              }
+
               // If content comes after thinking, we need to:
               // 1. Clear thinking message from current message
               // 2. Create new message for new content
@@ -300,7 +326,25 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
               currentAIMessageRef.current += content;
               updateAIMessage(currentAIMessageRef.current);
             },
-            onThinking: (thinkingMsg: string, type: TThinkingType) => {
+            onThinking: (thinkingMsg: string, type: TThinkingType, conversationTurnId?: string) => {
+              // Capture turn ID from thinking messages
+              if (conversationTurnId && !currentTurnIdRef.current) {
+                currentTurnIdRef.current = conversationTurnId;
+
+                // Update current message with turn ID
+                setMessages((prev) => {
+                  const updated = [...prev];
+                  const lastIndex = updated.length - 1;
+                  if (lastIndex >= 0) {
+                    updated[lastIndex] = {
+                      ...updated[lastIndex],
+                      conversationTurnId,
+                    };
+                  }
+                  return updated;
+                });
+              }
+
               // Mark that we're in thinking state
               isThinkingRef.current = true;
               hasThinkingOccurredRef.current = true;
@@ -308,7 +352,15 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
               // Update thinking message
               updateThinkingMessage(thinkingMsg);
             },
-            onToolCall: (toolName: string, args: Record<string, unknown>) => {
+            onToolCall: (
+              toolName: string,
+              args: Record<string, unknown>,
+              conversationTurnId?: string,
+            ) => {
+              // Capture turn ID if not set
+              if (conversationTurnId && !currentTurnIdRef.current) {
+                currentTurnIdRef.current = conversationTurnId;
+              }
               // Log tool calls (can be extended for UI display)
               // console.log('Tool call:', toolName, args);
             },
@@ -324,12 +376,18 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
 
               updateAIMessage(errorMessage, true);
 
+              // Reset turn ID on error
+              currentTurnIdRef.current = null;
+
               if (onError) onError(new Error(errorMessage));
             },
             onComplete: () => {
               // Finalize message
               const finalMessage = currentAIMessageRef.current;
               updateAIMessage(finalMessage);
+
+              // Reset turn ID on complete
+              currentTurnIdRef.current = null;
 
               if (onChatComplete) {
                 onChatComplete(finalMessage);
