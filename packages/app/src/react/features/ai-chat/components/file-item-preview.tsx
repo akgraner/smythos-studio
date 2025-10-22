@@ -1,4 +1,4 @@
-import { FileWithMetadata } from '@react/shared/types/chat.types';
+import { FileWithMetadata } from '../types/chat.types';
 import classNames from 'classnames';
 import { FC, useEffect, useMemo, useState } from 'react';
 import {
