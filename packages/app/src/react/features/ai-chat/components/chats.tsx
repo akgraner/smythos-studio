@@ -66,22 +66,15 @@ export const Chats: FC<MessagesProps> = (props) => {
           const retry = isRetrying && isLast;
 
           return (
-            <div key={i}>
-              <Chat
-                {...message}
-                avatar={avatar}
-                isRetrying={retry}
-                isError={message.isError}
-                onRetryClick={onRetryClick}
-                scrollToBottom={smartScrollToBottom}
-              />
-
-              {/* {retry && (
-                <button onClick={retryLastMessage} className="pt-1.5">
-                  Retry
-                </button>
-              )} */}
-            </div>
+            <Chat
+              key={i}
+              {...message}
+              avatar={avatar}
+              isRetrying={retry}
+              isError={message.isError}
+              onRetryClick={onRetryClick}
+              scrollToBottom={smartScrollToBottom}
+            />
           );
         })}
       </div>
