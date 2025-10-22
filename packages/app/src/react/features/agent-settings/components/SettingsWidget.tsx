@@ -1,6 +1,5 @@
 import { useWidgetsContext } from '@react/features/agent-settings/components/OverviewWidgetsContainer';
 import WidgetCard from '@react/features/agent-settings/components/WidgetCard';
-import { Button } from '@react/shared/components/ui/newDesign/button';
 import { TextArea as CustomTextarea } from '@react/shared/components/ui/newDesign/textarea';
 import { SkeletonLoader } from '@src/react/shared/components/ui/skeleton-loader';
 import { Modal, Tooltip } from 'flowbite-react';
@@ -134,9 +133,13 @@ const SettingsWidget = () => {
           <Modal
             show={isModalOpen}
             onClose={handleModalClose}
-            size="xl"
+            size="7xl"
             theme={{
+              root: {
+                base: 'fixed inset-0 z-50 h-screen overflow-y-auto overflow-x-hidden bg-gray-900 bg-opacity-50 dark:bg-opacity-80 md:inset-0',
+              },
               header: {
+                base: 'flex items-start justify-between rounded-t border-b p-5 pb-0 dark:border-gray-600',
                 close: {
                   base: 'text-[#1E1E1E] hover:text-gray-700 h-8 w-8 p-1.5 hover:bg-gray-200 rounded-lg',
                 },
@@ -156,20 +159,10 @@ const SettingsWidget = () => {
                 onChange={formik.handleChange}
                 onBlur={formik.handleBlur}
                 fullWidth
-                className="min-h-[300px]"
+                autoGrow={false}
+                style={{ minHeight: '500px' }}
               />
             </Modal.Body>
-            <Modal.Footer className="pt-0">
-              <div className="w-full flex justify-end">
-                <Button
-                  handleClick={handleModalClose}
-                  type="button"
-                  className="px-8 rounded-lg ml-auto"
-                >
-                  Done
-                </Button>
-              </div>
-            </Modal.Footer>
           </Modal>
         </div>
       </div>
