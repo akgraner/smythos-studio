@@ -1,9 +1,4 @@
 /* eslint-disable no-unused-vars, @typescript-eslint/no-unused-vars */
-// import { Tooltip } from 'flowbite-react';
-// import { FC, useRef, useState } from 'react';
-// import { FaCheck, FaRegCopy } from 'react-icons/fa6';
-// import ReactMarkdown from 'react-markdown';
-// import remarkGfm from 'remark-gfm';
 
 import '../styles/index.css';
 
@@ -13,12 +8,12 @@ import {
   ReplyLoader,
   ThinkingMessage,
 } from '@react/features/ai-chat/components';
+import { IChatMessage, IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import { Tooltip } from 'flowbite-react';
 import { FC, useCallback, useRef, useState } from 'react';
 import { FaCheck, FaRegCopy } from 'react-icons/fa6';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { FileWithMetadata, IChatMessage } from '../types/chat.types';
 
 const DEFAULT_AVATAR_URL =
   'https://gravatar.com/avatar/ccd5b19e810febbfd3d4321e27b15f77?s=400&d=mp&r=x';
@@ -90,7 +85,7 @@ export const ChatBubble: FC<IChatMessage> = ({
  */
 interface IUserMessageBubble {
   message: string;
-  files?: FileWithMetadata[];
+  files?: IMessageFile[];
 }
 
 /**

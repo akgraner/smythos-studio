@@ -1,13 +1,13 @@
+import { IMessageFile } from '@react/features/ai-chat';
 import { FileItemPreview } from '@react/features/ai-chat/components';
 import { FC } from 'react';
-import { FileWithMetadata } from '../types/chat.types';
 
 /**
  * User Message Component Properties
  */
 interface IUserMessage {
   message: string;
-  files?: FileWithMetadata[];
+  files?: IMessageFile[];
 }
 
 /**

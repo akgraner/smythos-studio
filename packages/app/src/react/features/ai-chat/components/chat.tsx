@@ -4,13 +4,13 @@
  */
 import { FC } from 'react';
 
+import { IChatMessage } from '@react/features/ai-chat';
 import {
   ReplyLoader,
   SystemMessage,
   ThinkingMessage,
   UserMessage,
 } from '@react/features/ai-chat/components';
-import { IChatMessage } from '../types/chat.types';
 
 import '../styles/index.css';
 

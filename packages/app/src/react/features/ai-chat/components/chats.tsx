@@ -3,12 +3,12 @@
  * Displays chat messages with auto-scroll, drag-and-drop, and retry functionality
  */
 /* eslint-disable no-unused-vars */
+import { IChatMessage } from '@react/features/ai-chat';
 import { Chat } from '@react/features/ai-chat/components';
 import { useChatContext } from '@react/features/ai-chat/contexts';
 import { useDragAndDrop } from '@react/features/ai-chat/hooks';
 import { AgentDetails } from '@src/react/shared/types/agent-data.types';
 import { FC, MutableRefObject, RefObject, useEffect, useRef } from 'react';
-import { IChatMessage } from '../types/chat.types';
 
 /**
  * Chats component properties
