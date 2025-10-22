@@ -292,32 +292,21 @@ function createExpandButton(): HTMLButtonElement {
   expandButton.type = 'button';
   expandButton.classList.add('expand-textarea-btn');
   expandButton.setAttribute('aria-label', 'Expand textarea');
-
-  // Apply inline styles - opacity transition handled by CSS
-  expandButton.style.cssText = `
-    position: absolute;
-    bottom: 8px;
-    right: 8px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    opacity: 0.5;
-    transition: opacity 0.2s;
-    padding: 4px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10;
-  `;
+  expandButton.classList.add(
+    'absolute',
+    'bottom-2',
+    'right-2',
+    'text-gray-500',
+    'hover:text-gray-700',
+    'opacity-50',
+    'hover:opacity-100',
+    'transition-opacity',
+    'cursor-pointer',
+  );
 
   // Add expand icon SVG
   expandButton.innerHTML = `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <polyline points="15 3 21 3 21 9"></polyline>
-      <polyline points="9 21 3 21 3 15"></polyline>
-      <line x1="21" y1="3" x2="14" y2="10"></line>
-      <line x1="3" y1="21" x2="10" y2="14"></line>
-    </svg>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 24 24" class="fa-md" height="1em" width="1em" xmlns="http://www.w3.org/2000/svg"><path d="M5 12H3v9h9v-2H5zm7-7h7v7h2V3h-9z"></path></svg>
   `;
 
   // Add hover effect using passive event listeners for better performance
@@ -478,23 +467,7 @@ async function handleExpandTextarea(
       maxWidth: '1200px',
       maxHeight: '800px',
     },
-    actions: [
-      {
-        label: 'Done',
-        cssClass: 'bg-blue-500 hover:bg-blue-600 text-white border-blue-500 hover:border-blue-600',
-        callback: (dialogElm: HTMLElement) => {
-          const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
-
-          if (modalTextareaInDialog) {
-            syncTextareaValues(modalTextareaInDialog, originalTextarea, hasCodeEditor);
-          }
-
-          // Clean up any template variable wrappers within the modal
-          const templateVarWrappers = dialogElm.querySelectorAll('.template-var-buttons');
-          templateVarWrappers.forEach((wrapper) => wrapper.remove());
-        },
-      },
-    ],
+    actions: [],
     onLoad: async (dialogElm: HTMLElement) => {
       const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
 
@@ -545,6 +518,17 @@ async function handleExpandTextarea(
           handleTemplateVars(modalFormGroup, currentComponent);
         }
       }
+    },
+    onCloseClick(dialogElm: HTMLElement) {
+      const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
+
+      if (modalTextareaInDialog) {
+        syncTextareaValues(modalTextareaInDialog, originalTextarea, hasCodeEditor);
+      }
+
+      // Clean up any template variable wrappers within the modal
+      const templateVarWrappers = dialogElm.querySelectorAll('.template-var-buttons');
+      templateVarWrappers.forEach((wrapper) => wrapper.remove());
     },
   });
 }
