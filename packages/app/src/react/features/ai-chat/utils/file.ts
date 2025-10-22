@@ -1,4 +1,4 @@
-import { FileWithMetadata } from '@react/shared/types/chat.types';
+import { FileWithMetadata } from '../types/chat.types';
 
 /**
  * Constants for file upload limitations
