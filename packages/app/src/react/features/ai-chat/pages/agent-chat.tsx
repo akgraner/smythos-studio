@@ -22,7 +22,7 @@ import { useAgentChatContext, useScrollToBottom } from '@react/features/ai-chat/
  * 4. Handles scroll behavior
  * 5. Renders chat UI components
  */
-const AgentChat = () => {
+const AgentChatPage = () => {
   const params = useParams<{ agentId: string }>();
   const agentId = params?.agentId;
 
@@ -102,4 +102,4 @@ const AgentChat = () => {
   );
 };
 
-export default AgentChat;
+export default AgentChatPage;
