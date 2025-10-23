@@ -180,12 +180,6 @@ export default function createFormField(entry, displayType = 'block', entryIndex
           formElement = textareaResult as HTMLTextAreaElement;
         }
       }
-      
-      // Add vault functionality for textarea if it has vault attributes
-      if (entry.attributes?.['data-vault']) {
-        // The vault button is already added by createTextArea when expandable is true
-        // and the textarea has data-vault attribute and vault condition is met
-      }
 
       if (entry?.code) {
         formElement.addEventListener('created', async () => {
