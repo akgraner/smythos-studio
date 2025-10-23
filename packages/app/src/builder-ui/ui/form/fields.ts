@@ -798,12 +798,9 @@ async function handleExpandTextarea(
     // This is used to hide the "Add Key" option in the vault dropdown
     modalTextarea.setAttribute('data-vault-from-modal', 'true');
 
-    // Create vault button for modal (always create, show/hide dynamically)
+    // Create vault button for modal
     const modalVaultButton = createVaultButton();
     textareaWrapper.appendChild(modalVaultButton);
-
-    // Initially hide the vault button
-    modalVaultButton.style.display = 'none';
   }
 
   // Add other action buttons from the original textarea
@@ -924,10 +921,19 @@ async function handleExpandTextarea(
           // Remove any existing click handlers and add the vault handler
           vaultButton.replaceWith(vaultButton.cloneNode(true));
           const newVaultButton = dialogElm.querySelector('.vault-action-btn') as HTMLButtonElement;
-          // Create custom vault handler that targets the modal textarea
+          // Create custom vault handler that targets the modal textarea with toggle functionality
           newVaultButton.addEventListener('click', async (event) => {
             event.preventDefault();
             event.stopPropagation();
+
+            // Check if dropdown is already open
+            const existingDropdown = document.getElementById('vault-keys-dropdown-menu');
+
+            // If dropdown exists, close it (toggle off)
+            if (existingDropdown) {
+              existingDropdown.remove();
+              return;
+            }
 
             // Debug: Check the form group and target field
             const formGroup = newVaultButton.closest('.form-group');
@@ -1011,7 +1017,8 @@ async function handleExpandTextarea(
             }, 1000);
           });
 
-          // Show/hide vault button based on condition (following main textarea pattern)
+          // Show/hide vault button based on condition (e.g., content type)
+          // Only show the vault button when the appropriate conditions are met
           const shouldShowVault = shouldShowVaultButton(vaultCondition, contentType);
           if (shouldShowVault) {
             newVaultButton.style.display = 'inline-block';
@@ -1077,6 +1084,12 @@ async function handleExpandTextarea(
     },
     onCloseClick(dialogElm: HTMLElement) {
       const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
+
+      const existingDropdown = document.getElementById('vault-keys-dropdown-menu');
+      if (existingDropdown) {
+        // Dropdown is open, close it (toggle off)
+        existingDropdown.remove();
+      }
 
       if (modalTextareaInDialog) {
         syncTextareaValues(modalTextareaInDialog, originalTextarea, hasCodeEditor);

@@ -189,13 +189,19 @@ export async function handleVaultBtn(event: MouseEvent): Promise<void> {
   const vaultBtn = event.target as HTMLButtonElement;
   const formGroup = vaultBtn.closest('.form-group') as HTMLElement;
 
+  // Check if dropdown already exists (toggle functionality)
+  const existingDropdown = document.getElementById('vault-keys-dropdown-menu');
+  if (existingDropdown) {
+    // Dropdown is open, close it (toggle off)
+    existingDropdown.remove();
+    return;
+  }
+
   vaultBtn.disabled = true;
   handleVaultBtn['loading'] = true;
 
-  let dropdown = document.getElementById('vault-keys-dropdown-menu');
-  if (dropdown) dropdown.remove();
-
-  dropdown = document.createElement('div');
+  // Create new dropdown
+  const dropdown = document.createElement('div');
   dropdown.id = 'vault-keys-dropdown-menu';
 
   const contentElm = document.createElement('div');
