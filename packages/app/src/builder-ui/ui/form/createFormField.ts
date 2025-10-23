@@ -144,20 +144,27 @@ export default function createFormField(entry, displayType = 'block', entryIndex
           contentType = currentComponent?.data?.contentType || '';
         }
 
-        // Create dynamic vault condition for content type
-        const vaultCondition = {
-          property: 'contentType',
-          value: 'application/json',
-          getValue: () => {
-            try {
-              const select = document.querySelector('#contentType') as HTMLSelectElement;
-              return select?.value || '';
-            } catch {
-              const currentComponent = (window as any).Component?.curComponentSettings;
-              return currentComponent?.data?.contentType || '';
+        // Only create vault condition for the 'body' field in APICall component
+        // The contentType is bound to the body field, while other fields are independent
+        let vaultCondition = undefined;
+        const isBodyField = entry.name === 'body' || entry.id === 'body';
+        
+        if (isBodyField) {
+          vaultCondition = {
+            property: 'contentType',
+            value: 'application/json',
+            getValue: () => {
+              try {
+                const select = document.querySelector('#contentType') as HTMLSelectElement;
+                return select?.value || '';
+              } catch {
+                const currentComponent = (window as any).Component?.curComponentSettings;
+                return currentComponent?.data?.contentType || '';
+              }
             }
-          }
-        };
+          };
+        }
+        // For other fields with data-vault attribute, vault button will show by default
 
         const textareaResult = createTextArea({
           ...entry,

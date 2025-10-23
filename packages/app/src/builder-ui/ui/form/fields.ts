@@ -1017,9 +1017,16 @@ async function handleExpandTextarea(
             }, 1000);
           });
 
-          // Show/hide vault button based on condition (e.g., content type)
-          // Only show the vault button when the appropriate conditions are met
-          const shouldShowVault = shouldShowVaultButton(vaultCondition, contentType);
+          // Show/hide vault button based on condition
+          // If there's a vaultCondition, check it; otherwise show the button by default
+          // since the field explicitly has data-vault attribute
+          let shouldShowVault = true;
+          
+          // Only apply condition check if a vaultCondition was explicitly provided
+          if (vaultCondition) {
+            shouldShowVault = shouldShowVaultButton(vaultCondition, contentType);
+          }
+          
           if (shouldShowVault) {
             newVaultButton.style.display = 'inline-block';
           } else {
