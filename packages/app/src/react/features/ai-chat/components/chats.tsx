@@ -1,8 +1,8 @@
 /* eslint-disable no-unused-vars */
-import { IChatMessage } from '@react/features/ai-chat';
 import { Chat, MessageTurnGroup } from '@react/features/ai-chat/components';
 import { useChatContext } from '@react/features/ai-chat/contexts';
 import { useDragAndDrop } from '@react/features/ai-chat/hooks';
+import { IChatMessage } from '@react/features/ai-chat/types/chat.types';
 import { AgentDetails } from '@src/react/shared/types/agent-data.types';
 import { FC, MutableRefObject, RefObject, useEffect, useMemo, useRef } from 'react';
 

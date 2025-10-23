@@ -1,5 +1,5 @@
-import { IMessageFile } from '@react/features/ai-chat';
 import { FileItemPreview } from '@react/features/ai-chat/components';
+import { IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import { FC } from 'react';
 
 /**

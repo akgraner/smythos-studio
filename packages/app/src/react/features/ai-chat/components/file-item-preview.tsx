@@ -1,4 +1,4 @@
-import { IMessageFile } from '@react/features/ai-chat';
+import { IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import classNames from 'classnames';
 import { FC, useEffect, useMemo, useState } from 'react';
 import {
