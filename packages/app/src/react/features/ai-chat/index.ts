@@ -28,7 +28,3 @@ export {
   splitJSONStream,
   ThinkingMessageManager,
 } from './utils/stream.utils';
-
-// === Pages/Components ===
-export { default as AgentChat } from './pages/agent-chat';
-export { default as AIChat } from './pages/ai-chat';
