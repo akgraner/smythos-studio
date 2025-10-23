@@ -1,11 +1,3 @@
-/**
- * Custom hook for Agent Chat Context
- * Separates the chat context logic from the component for better architecture
- *
- * This hook encapsulates all chat-related state and actions, providing a clean
- * interface for the ChatProvider.
- */
-
 import { useCallback, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -25,12 +17,9 @@ import { EVENTS } from '@shared/posthog/constants/events';
  * Configuration options for useAgentChatContext hook
  */
 export interface IUseAgentChatContextConfig {
-  /** Agent ID for the chat session */
-  agentId: string;
-  /** Callback when chat is ready */
-  onChatReady?: () => void;
-  /** Callback when chat session is cleared */
-  onChatCleared?: () => void;
+  agentId: string; // Agent ID for the chat session
+  onChatReady?: () => void; // Callback when chat is ready
+  onChatCleared?: () => void; // Callback when chat session is cleared
 }
 
 /**
@@ -38,9 +27,7 @@ export interface IUseAgentChatContextConfig {
  */
 /* eslint-disable no-unused-vars */
 export interface IUseAgentChatContextReturn {
-  /** Chat context value ready to be passed to ChatProvider */
   chatContextValue: {
-    // File handling
     files: IMessageFile[];
     uploadingFiles: Set<string>;
     isUploadInProgress: boolean;
@@ -64,19 +51,10 @@ export interface IUseAgentChatContextReturn {
     stopGenerating: () => void;
     clearChatSession: () => Promise<void>;
   };
-  /** Agent data */
   agent: ReturnType<typeof useAgent>['data'];
-  /** Agent settings */
   agentSettings: ReturnType<typeof useAgentSettings>['data'];
-  /** Loading states */
-  isLoading: {
-    agent: boolean;
-    settings: boolean;
-    chatCreating: boolean;
-  };
-  /** Shared messages history for UI components */
+  isLoading: { agent: boolean; settings: boolean; chatCreating: boolean };
   sharedMessagesHistory: IChatMessage[];
-  /** Function to handle file drop in chat area */
   handleFileDrop: (files: File[]) => Promise<void>;
 }
 
@@ -174,9 +152,7 @@ export const useAgentChatContext = (
         isFirstMessageSentRef.current = true;
       }
     },
-    onError: (err) => {
-      console.error('Chat error:', err); // eslint-disable-line no-console
-    },
+    onError: (err) => console.error('Chat error:', err), // eslint-disable-line no-console
   });
 
   // ============================================================================
