@@ -1126,36 +1126,6 @@ async function handleExpandTextarea(
  * @param entry.vaultCondition.getValue - Optional function to get current value dynamically
  * @returns Object containing the textarea element and optional container wrapper
  *
- * @example
- * // Basic usage with content type (backward compatible)
- * createTextArea({
- *   expandable: true,
- *   attributes: { 'data-vault': 'apiCall,All' },
- *   contentType: 'application/json'
- * });
- *
- * @example
- * // Dynamic vault condition based on any property
- * createTextArea({
- *   expandable: true,
- *   attributes: { 'data-vault': 'apiCall,All' },
- *   vaultCondition: {
- *     property: 'mode',
- *     value: 'json',
- *     getValue: () => document.querySelector('#modeSelect')?.value || ''
- *   }
- * });
- *
- * @example
- * // Vault condition based on component data
- * createTextArea({
- *   expandable: true,
- *   attributes: { 'data-vault': 'apiCall,All' },
- *   vaultCondition: {
- *     property: 'dataType',
- *     value: 'json'
- *   }
- * });
  */
 export const createTextArea = (entry: {
   label?: string;
