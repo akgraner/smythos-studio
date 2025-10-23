@@ -72,10 +72,9 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   // Refs for retry functionality
-  const lastUserMessageRef = useRef<{
-    message: string;
-    files?: File[] | Array<{ file: File; metadata: { publicUrl?: string; fileType?: string } }>;
-  } | null>(null);
+  type IFileWithMetadata = { file: File; metadata: { publicUrl?: string; fileType?: string } };
+  type IFiles = File[] | IFileWithMetadata[];
+  const lastUserMessageRef = useRef<{ message: string; files?: IFiles } | null>(null);
 
   // Current AI message being constructed
   const currentAIMessageRef = useRef<string>('');
@@ -95,9 +94,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
       isThinkingRef.current = false;
       hasThinkingOccurredRef.current = false;
     },
-    onStreamEnd: () => {
-      setIsProcessing(false);
-    },
+    onStreamEnd: () => setIsProcessing(false),
   });
 
   /**
@@ -105,16 +102,11 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
    * Skips upload if files already have publicUrl
    */
   const uploadFiles = useCallback(
-    async (
-      files: File[] | Array<{ file: File; metadata: { publicUrl?: string; fileType?: string } }>,
-    ): Promise<IFileAttachment[]> => {
+    async (files: IFiles): Promise<IFileAttachment[]> => {
       const clientInstance = client || new ChatAPIClient();
 
       // Check if files are already uploaded (have metadata with publicUrl)
-      const filesWithMetadata = files as Array<{
-        file: File;
-        metadata: { publicUrl?: string; fileType?: string };
-      }>;
+      const filesWithMetadata = files as IFileWithMetadata[];
 
       if (filesWithMetadata[0] && 'metadata' in filesWithMetadata[0]) {
         // Files are already uploaded, just extract the attachment info
@@ -146,38 +138,32 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   /**
    * Adds a user message to the chat
    */
-  const addUserMessage = useCallback(
-    (
-      message: string,
-      files?: File[] | Array<{ file: File; metadata: { publicUrl?: string; fileType?: string } }>,
-    ) => {
-      const userMessage: IChatMessage = {
-        id: Date.now(),
-        message,
-        type: 'user', // Type determines user vs system - no me property needed!
-        timestamp: Date.now(),
-        files: files?.map((file, index) => {
-          if ('metadata' in file && 'id' in file) {
-            return file as IMessageFile;
-          }
-          if ('metadata' in file) {
-            return {
-              ...(file as { file: File; metadata: { publicUrl?: string; fileType?: string } }),
-              id: `${Date.now()}-${index}`,
-            };
-          }
+  const addUserMessage = useCallback((message: string, files?: IFiles) => {
+    const userMessage: IChatMessage = {
+      id: Date.now(),
+      message,
+      type: 'user', // Type determines user vs system - no me property needed!
+      timestamp: Date.now(),
+      files: files?.map((file, index) => {
+        if ('metadata' in file && 'id' in file) {
+          return file as IMessageFile;
+        }
+        if ('metadata' in file) {
           return {
-            file: file as File,
-            metadata: { fileType: (file as File).type, isUploading: false },
+            ...(file as { file: File; metadata: { publicUrl?: string; fileType?: string } }),
             id: `${Date.now()}-${index}`,
           };
-        }),
-      };
+        }
+        return {
+          file: file as File,
+          metadata: { fileType: (file as File).type, isUploading: false },
+          id: `${Date.now()}-${index}`,
+        };
+      }),
+    };
 
-      setMessages((prev) => [...prev, userMessage]);
-    },
-    [],
-  );
+    setMessages((prev) => [...prev, userMessage]);
+  }, []);
 
   /**
    * Adds an AI message to the chat (initially empty, for streaming)
@@ -243,14 +229,9 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
    * Accepts either raw File[] or FileWithMetadata[] (already uploaded)
    */
   const sendMessage = useCallback(
-    async (
-      message: string,
-      files?: File[] | Array<{ file: File; metadata: { publicUrl?: string; fileType?: string } }>,
-    ): Promise<void> => {
+    async (message: string, files?: IFiles): Promise<void> => {
       // Validate input
-      if (!message.trim() && (!files || files.length === 0)) {
-        return;
-      }
+      if (!message.trim() && (!files || files.length === 0)) return;
 
       // Store for retry
       lastUserMessageRef.current = { message, files };
@@ -283,63 +264,42 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
           },
           {
             onStart: () => {
-              // Reset turn ID for new conversation turn
-              currentTurnIdRef.current = null;
+              currentTurnIdRef.current = null; // Reset turn ID for new conversation turn
             },
             onContent: (content: string, conversationTurnId?: string) => {
-              // Capture turn ID from first chunk
               if (conversationTurnId && !currentTurnIdRef.current) {
-                currentTurnIdRef.current = conversationTurnId;
+                currentTurnIdRef.current = conversationTurnId; // Capture turn ID from first chunk
 
-                // Update the current AI message with turn ID
                 setMessages((prev) => {
                   const updated = [...prev];
                   const lastIndex = updated.length - 1;
                   if (lastIndex >= 0 && updated[lastIndex].type === 'loading') {
-                    updated[lastIndex] = {
-                      ...updated[lastIndex],
-                      conversationTurnId,
-                    };
+                    updated[lastIndex] = { ...updated[lastIndex], conversationTurnId };
                   }
                   return updated;
                 });
               }
 
-              // If content comes after thinking, we need to:
-              // 1. Clear thinking message from current message
-              // 2. Create new message for new content
+              // If content comes after thinking, clear thinking message from current message and create new message for new content
               if (hasThinkingOccurredRef.current && isThinkingRef.current) {
-                // Clear thinking message from current message
-                updateThinkingMessage('');
-
-                // Mark that we've handled the thinking transition
-                isThinkingRef.current = false;
-
-                // Reset accumulator for new message
-                currentAIMessageRef.current = '';
-
-                // Add new AI message for content after thinking
-                addAIMessage();
+                updateThinkingMessage(''); // Clear thinking message from current message
+                isThinkingRef.current = false; // Mark that we've handled the thinking transition
+                currentAIMessageRef.current = ''; // Reset accumulator for new message
+                addAIMessage(); // Add new AI message for content after thinking
               }
 
-              // Accumulate content
-              currentAIMessageRef.current += content;
-              updateAIMessage(currentAIMessageRef.current);
+              currentAIMessageRef.current += content; // Accumulate content
+              updateAIMessage(currentAIMessageRef.current); // Update current message with accumulated content
             },
             onThinking: (thinkingMsg: string, type: TThinkingType, conversationTurnId?: string) => {
-              // Capture turn ID from thinking messages
               if (conversationTurnId && !currentTurnIdRef.current) {
-                currentTurnIdRef.current = conversationTurnId;
+                currentTurnIdRef.current = conversationTurnId; // Capture turn ID from thinking messages
 
-                // Update current message with turn ID
                 setMessages((prev) => {
                   const updated = [...prev];
                   const lastIndex = updated.length - 1;
                   if (lastIndex >= 0) {
-                    updated[lastIndex] = {
-                      ...updated[lastIndex],
-                      conversationTurnId,
-                    };
+                    updated[lastIndex] = { ...updated[lastIndex], conversationTurnId };
                   }
                   return updated;
                 });
@@ -389,9 +349,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
               // Reset turn ID on complete
               currentTurnIdRef.current = null;
 
-              if (onChatComplete) {
-                onChatComplete(finalMessage);
-              }
+              if (onChatComplete) onChatComplete(finalMessage);
             },
           },
         );
@@ -401,9 +359,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
 
         updateAIMessage(errorMessage, true);
 
-        if (onError) {
-          onError(sendError instanceof Error ? sendError : new Error(errorMessage));
-        }
+        if (onError) onError(sendError instanceof Error ? sendError : new Error(errorMessage));
       } finally {
         setIsProcessing(false);
       }
@@ -428,9 +384,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
    * Retries the last sent message
    */
   const retryLastMessage = useCallback(async (): Promise<void> => {
-    if (!lastUserMessageRef.current) {
-      return;
-    }
+    if (!lastUserMessageRef.current) return;
 
     const { message, files } = lastUserMessageRef.current;
 
