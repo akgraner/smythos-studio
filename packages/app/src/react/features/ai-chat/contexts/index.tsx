@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { IChatMessage, IMessageFile } from '@react/features/ai-chat';
+import { IChatMessage, IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import { ChangeEvent, createContext, FC, PropsWithChildren, useContext } from 'react';
 
 interface ChatContextType {
