@@ -133,6 +133,7 @@ export class APICall extends Component {
       },
       headers: {
         type: 'textarea',
+        expandable: true,
         label: 'Headers',
         readonly: true,
         help: 'Add keys the service needs, like Authorization or Content-Type.<br /><a href="${SMYTHOS_DOCS_URL}/agent-studio/components/advanced/api-call/?utm_source=studio&utm_medium=tooltip&utm_campaign=api-call&utm_content=url#step-2-add-headers-and-body" target="_blank" class="text-blue-600 hover:text-blue-800">See header usage</a>',
@@ -341,6 +342,7 @@ export class APICall extends Component {
       },
       proxy: {
         type: 'textarea',
+        expandable: true,
         label: 'Proxy URLs',
         section: 'Advanced',
         help: 'Send calls through a proxy if your network or vendor asks for it.',

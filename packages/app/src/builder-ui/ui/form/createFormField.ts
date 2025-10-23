@@ -133,7 +133,44 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     case 'textarea':
     case 'TEXTAREA':
       {
-        const textareaResult = createTextArea(entry);
+        // Get current content type from component data or sidebar (for backward compatibility)
+        let contentType = '';
+        try {
+          const contentTypeSelect = document.querySelector('#contentType') as HTMLSelectElement;
+          contentType = contentTypeSelect?.value || '';
+        } catch (e) {
+          // If no content type select found, try to get from component data
+          const currentComponent = (window as any).Component?.curComponentSettings;
+          contentType = currentComponent?.data?.contentType || '';
+        }
+
+        // Only create vault condition for the 'body' field in APICall component
+        // The contentType is bound to the body field, while other fields are independent
+        let vaultCondition = undefined;
+        const isBodyField = entry.name === 'body' || entry.id === 'body';
+        
+        if (isBodyField) {
+          vaultCondition = {
+            property: 'contentType',
+            value: 'application/json',
+            getValue: () => {
+              try {
+                const select = document.querySelector('#contentType') as HTMLSelectElement;
+                return select?.value || '';
+              } catch {
+                const currentComponent = (window as any).Component?.curComponentSettings;
+                return currentComponent?.data?.contentType || '';
+              }
+            }
+          };
+        }
+        // For other fields with data-vault attribute, vault button will show by default
+
+        const textareaResult = createTextArea({
+          ...entry,
+          contentType: contentType,
+          vaultCondition: vaultCondition
+        });
         
         // Handle both return types: direct textarea or object with textarea and container
         if (typeof textareaResult === 'object' && 'container' in textareaResult) {
