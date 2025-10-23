@@ -133,7 +133,37 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     case 'textarea':
     case 'TEXTAREA':
       {
-        const textareaResult = createTextArea(entry);
+        // Get current content type from component data or sidebar (for backward compatibility)
+        let contentType = '';
+        try {
+          const contentTypeSelect = document.querySelector('#contentType') as HTMLSelectElement;
+          contentType = contentTypeSelect?.value || '';
+        } catch (e) {
+          // If no content type select found, try to get from component data
+          const currentComponent = (window as any).Component?.curComponentSettings;
+          contentType = currentComponent?.data?.contentType || '';
+        }
+
+        // Create dynamic vault condition for content type
+        const vaultCondition = {
+          property: 'contentType',
+          value: 'application/json',
+          getValue: () => {
+            try {
+              const select = document.querySelector('#contentType') as HTMLSelectElement;
+              return select?.value || '';
+            } catch {
+              const currentComponent = (window as any).Component?.curComponentSettings;
+              return currentComponent?.data?.contentType || '';
+            }
+          }
+        };
+
+        const textareaResult = createTextArea({
+          ...entry,
+          contentType: contentType,
+          vaultCondition: vaultCondition
+        });
         
         // Handle both return types: direct textarea or object with textarea and container
         if (typeof textareaResult === 'object' && 'container' in textareaResult) {
@@ -142,6 +172,12 @@ export default function createFormField(entry, displayType = 'block', entryIndex
         } else {
           formElement = textareaResult as HTMLTextAreaElement;
         }
+      }
+      
+      // Add vault functionality for textarea if it has vault attributes
+      if (entry.attributes?.['data-vault']) {
+        // The vault button is already added by createTextArea when expandable is true
+        // and the textarea has data-vault attribute and vault condition is met
       }
 
       if (entry?.code) {

@@ -364,7 +364,6 @@ const _innerLink = (targetField: HTMLInputElement, message: string = '', keyName
     } catch {
       console.log('Error adding vault key');
     } finally {
-      if (saveBtn) saveBtn.disabled = false;
       spinner.remove();
       actionBtn.disabled = false;
     }
@@ -394,9 +393,14 @@ export const renderVaultKeyBtnItems = ({
   const keyNames = keyBtns.map((item) => item.textContent);
   const keyNameToAdd = keyNamesInTheTargetField.find((name) => !keyNames.includes(name));
 
-  // show the link to add a new key only if the scope is not global
+  // Check if vault is opened from expanded textarea modal
+  const isFromModal = targetField.getAttribute('data-vault-from-modal') === 'true';
+
+  // Show the link to add a new key only if:
+  // 1. The scope is not global
+  // 2. The vault is NOT opened from an expanded textarea modal
   const scope = targetField.getAttribute('data-vault') || 'All';
-  if (scope !== 'global') {
+  if (scope !== 'global' && !isFromModal) {
     const msgElm = _innerLink(targetField, !!keyBtns?.length ? '' : 'No Keys found ', keyNameToAdd);
 
     dropdownContent.appendChild(msgElm);

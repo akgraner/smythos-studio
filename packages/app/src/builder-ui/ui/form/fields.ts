@@ -3,9 +3,53 @@ import { Tooltip } from 'flowbite-react';
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { delay } from '../../utils';
+import { handleKvFieldEditBtn, handleVaultBtn } from '../../utils/component.utils';
 import { handleTemplateVars } from './misc';
 
 declare var Metro;
+
+/**
+ * Helper function to check if vault button should be shown based on dynamic conditions
+ * @param vaultCondition - The condition configuration
+ * @param contentType - Fallback content type for backward compatibility
+ * @returns boolean indicating whether vault button should be shown
+ */
+function shouldShowVaultButton(
+  vaultCondition?: { property: string; value: string; getValue?: () => string },
+  contentType?: string,
+): boolean {
+  // If no vault condition is provided, use legacy contentType logic
+  if (!vaultCondition) {
+    return contentType === 'application/json';
+  }
+
+  try {
+    // Try to get the value using the custom getValue function first
+    if (vaultCondition.getValue) {
+      const currentValue = vaultCondition.getValue();
+      return currentValue === vaultCondition.value;
+    }
+
+    // Fallback: try to get value from DOM element
+    const element = document.querySelector(`#${vaultCondition.property}`) as
+      | HTMLSelectElement
+      | HTMLInputElement;
+    if (element) {
+      return element.value === vaultCondition.value;
+    }
+
+    // Fallback: try to get value from component data
+    const currentComponent = (window as any).Component?.curComponentSettings;
+    if (currentComponent?.data?.[vaultCondition.property]) {
+      return currentComponent.data[vaultCondition.property] === vaultCondition.value;
+    }
+
+    return false;
+  } catch (error) {
+    console.warn('Error checking vault condition:', error);
+    return false;
+  }
+}
 
 /**
  * Global registry for datalist options.
@@ -330,6 +374,106 @@ function createExpandButton(): HTMLButtonElement {
 }
 
 /**
+ * Handles key/value modal for the modal textarea
+ * @param {HTMLTextAreaElement} modalTextarea - The modal textarea to update
+ * @param {HTMLButtonElement} originalButton - The original button to extract parameters from
+ */
+async function handleKeyValueModalForModal(
+  modalTextarea: HTMLTextAreaElement,
+  originalButton: HTMLButtonElement,
+): Promise<void> {
+  try {
+    // Extract field name from the original textarea
+    const originalTextarea = originalButton
+      .closest('.form-group')
+      ?.querySelector('textarea') as HTMLTextAreaElement;
+    const fieldName = originalTextarea?.id || 'body';
+
+    // Extract options from the original button's onclick handler
+    const originalHandler = (originalButton as any).onclick;
+    let options = { title: 'Body', showVault: true, vaultScope: 'apiCall' }; // Default options
+
+    // Try to extract options from the bound function
+    if (originalHandler && originalHandler.length > 1) {
+      // This is a bound function, try to extract the bound arguments
+      const handlerString = originalHandler.toString();
+      if (handlerString.includes('showVault')) {
+        // Extract options from the handler string or use defaults
+        options = { title: 'Body', showVault: true, vaultScope: 'apiCall' };
+      }
+    }
+
+    // Call the key/value modal handler directly
+    await handleKvFieldEditBtn(fieldName, options);
+
+    // The handler should have updated the element with the fieldName ID
+    // But we need to copy that value to our modal textarea
+    const updatedField = document.getElementById(fieldName) as HTMLTextAreaElement;
+    if (updatedField && updatedField.value !== modalTextarea.value) {
+      modalTextarea.value = updatedField.value;
+
+      // Dispatch events to trigger any listeners
+      const changeEvent = new Event('change', { bubbles: true });
+      modalTextarea.dispatchEvent(changeEvent);
+
+      const inputEvent = new Event('input', { bubbles: true });
+      modalTextarea.dispatchEvent(inputEvent);
+    }
+  } catch (error) {
+    console.error('Error handling key/value modal for modal textarea:', error);
+  }
+}
+
+/**
+ * Creates a vault key button element with proper styling and accessibility
+ * Positioned at the top right of the textarea
+ */
+function createVaultButton(): HTMLButtonElement {
+  const vaultButton = document.createElement('button');
+  vaultButton.type = 'button';
+  vaultButton.classList.add('vault-action-btn', 'field-action-btn');
+  vaultButton.setAttribute('aria-label', 'Vault keys');
+  vaultButton.setAttribute('data-smyth-dropdown-toggle', 'vault-keys-dropdown-menu');
+  vaultButton.classList.add(
+    'absolute',
+    'top-2',
+    'right-2', // Position at top right
+    'text-gray-500',
+    'hover:text-gray-700',
+    'opacity-50',
+    'hover:opacity-100',
+    'transition-opacity',
+    'cursor-pointer',
+    'z-10', // Ensure it's above other elements
+  );
+
+  // Add vault key icon
+  vaultButton.innerHTML = `<i class="mif-key fa-md"></i>`;
+
+  // Add hover effect using passive event listeners for better performance
+  vaultButton.addEventListener(
+    'pointerenter',
+    () => {
+      vaultButton.style.opacity = '1';
+    },
+    { passive: true },
+  );
+
+  vaultButton.addEventListener(
+    'pointerleave',
+    () => {
+      vaultButton.style.opacity = '0.5';
+    },
+    { passive: true },
+  );
+
+  // Don't add click handler here - it will be added in the onLoad callback
+  // This prevents duplicate event handlers
+
+  return vaultButton;
+}
+
+/**
  * Get the current code configuration for a textarea based on its attributes and data
  * This ensures the expandable textarea uses the current content type configuration
  */
@@ -372,7 +516,7 @@ function getCurrentCodeConfig(
  */
 function getCodeConfigFromAttributes(
   element?: HTMLTextAreaElement,
-  attributes?: Record<string, string>
+  attributes?: Record<string, string>,
 ): { mode?: string; theme?: string; disableWorker?: boolean } | undefined {
   const source = element || attributes;
   if (!source) return undefined;
@@ -403,10 +547,10 @@ function getCodeConfigFromAttributes(
  * Get code configuration based on content type (APICall components)
  */
 function getCodeConfigFromContentType(
-  textarea: HTMLTextAreaElement
+  textarea: HTMLTextAreaElement,
 ): { mode?: string; theme?: string; disableWorker?: boolean } | undefined {
   const contentType = textarea.getAttribute('data-content-type');
-  
+
   if (!contentType) return undefined;
 
   const contentTypeModes: Record<string, string> = {
@@ -446,7 +590,7 @@ function applyTextareaConfiguration(
   config: {
     attributes?: Record<string, string>;
     code?: { mode?: string; theme?: string; disableWorker?: boolean };
-  }
+  },
 ): void {
   const { attributes, code } = config;
 
@@ -474,7 +618,6 @@ function applyTextareaConfiguration(
     textarea.setAttribute('data-component-uid', compUid);
   }
 }
-
 
 /**
  * Apply styles to a textarea element based on whether it's a code editor or regular textarea
@@ -568,7 +711,7 @@ function initializeRegularTextarea(textarea: HTMLTextAreaElement): void {
 function copyTextareaAttributes(
   sourceTextarea: HTMLTextAreaElement,
   targetTextarea: HTMLTextAreaElement,
-  additionalAttributes?: Record<string, string>
+  additionalAttributes?: Record<string, string>,
 ): void {
   // Define all relevant attributes that should be copied
   const relevantAttributes = [
@@ -603,6 +746,8 @@ async function handleExpandTextarea(
   label: string | undefined,
   code: { mode?: string; theme?: string; disableWorker?: boolean } | undefined,
   attributes: Record<string, string> | undefined,
+  contentType?: string,
+  vaultCondition?: { property: string; value: string; getValue?: () => string },
 ): Promise<void> {
   // Dynamically determine code configuration from textarea attributes
   // This ensures the expandable textarea uses the current content type configuration
@@ -625,6 +770,14 @@ async function handleExpandTextarea(
   const modalContainer = document.createElement('div');
   modalContainer.classList.add('h-full', 'flex', 'flex-col', 'form-group');
 
+  // Create textarea wrapper for positioning buttons - this needs to be a form-group for vault button to work
+  const textareaWrapper = document.createElement('div');
+  textareaWrapper.classList.add('relative', 'form-group');
+  textareaWrapper.style.position = 'relative';
+  textareaWrapper.style.flex = '1';
+  textareaWrapper.style.display = 'flex';
+  textareaWrapper.style.flexDirection = 'column';
+
   // Create modal textarea
   const modalTextarea = document.createElement('textarea') as TextAreaWithEditor;
   modalTextarea.value = originalTextarea.value;
@@ -634,12 +787,72 @@ async function handleExpandTextarea(
   // Apply styles based on editor type
   applyTextareaStyles(modalTextarea, hasCodeEditor);
 
+  // Add vault button to modal textarea if original textarea has vault attributes
+  const hasVaultAttribute = originalTextarea.getAttribute('data-vault');
+
+  if (hasVaultAttribute) {
+    // Copy vault attribute to modal textarea
+    modalTextarea.setAttribute('data-vault', hasVaultAttribute);
+
+    // Mark this textarea as coming from expanded/modal view
+    // This is used to hide the "Add Key" option in the vault dropdown
+    modalTextarea.setAttribute('data-vault-from-modal', 'true');
+
+    // Create vault button for modal (always create, show/hide dynamically)
+    const modalVaultButton = createVaultButton();
+    textareaWrapper.appendChild(modalVaultButton);
+
+    // Initially hide the vault button
+    modalVaultButton.style.display = 'none';
+  }
+
+  // Add other action buttons from the original textarea
+  const originalFormGroup = originalTextarea.closest('.form-group');
+  if (originalFormGroup) {
+    // Find all action buttons in the original form group
+    const actionButtons = originalFormGroup.querySelectorAll(
+      '.smyth-field-actions button, .button-group button',
+    );
+
+    actionButtons.forEach((button, index) => {
+      // Skip vault button as we handle it separately
+      if (button.classList.contains('vault-action-btn')) return;
+
+      // Clone the button for the modal
+      const modalActionButton = button.cloneNode(true) as HTMLButtonElement;
+
+      // Add data attribute for later identification
+      modalActionButton.setAttribute('data-action-index', index.toString());
+
+      // Adjust positioning for modal context - stack buttons vertically
+      modalActionButton.style.position = 'absolute';
+      modalActionButton.style.top = `${2 + index * 32}px`; // Stack buttons with 32px spacing
+      modalActionButton.style.right = '2px';
+      modalActionButton.style.zIndex = '10';
+
+      // Re-attach event listeners by finding the original button's click handler
+      const originalClickHandler = (button as any).onclick;
+      if (originalClickHandler) {
+        modalActionButton.onclick = originalClickHandler;
+      }
+
+      // Also try to find and re-attach other event listeners
+      const originalEvents = (button as any)._events || {};
+      Object.keys(originalEvents).forEach((eventType) => {
+        modalActionButton.addEventListener(eventType, originalEvents[eventType]);
+      });
+
+      textareaWrapper.appendChild(modalActionButton);
+    });
+  }
+
   // Create template variable buttons container
   const templateVarsContainer = document.createElement('div');
   templateVarsContainer.classList.add('template-var-buttons', 'mt-2');
   templateVarsContainer.style.display = 'none';
 
-  modalContainer.appendChild(modalTextarea);
+  textareaWrapper.appendChild(modalTextarea);
+  modalContainer.appendChild(textareaWrapper);
   modalContainer.appendChild(templateVarsContainer);
 
   // Open modal dialog (content must be HTML string, not element)
@@ -699,6 +912,168 @@ async function handleExpandTextarea(
           handleTemplateVars(modalFormGroup, currentComponent);
         }
       }
+
+      // Set up vault functionality if the textarea has vault attributes
+      const hasVaultAttribute = modalTextareaInDialog.getAttribute('data-vault');
+
+      if (hasVaultAttribute) {
+        // The vault button should already be in the modal from the HTML content
+        // We need to re-attach the click handler since the button was recreated from HTML
+        const vaultButton = dialogElm.querySelector('.vault-action-btn') as HTMLButtonElement;
+        if (vaultButton) {
+          // Remove any existing click handlers and add the vault handler
+          vaultButton.replaceWith(vaultButton.cloneNode(true));
+          const newVaultButton = dialogElm.querySelector('.vault-action-btn') as HTMLButtonElement;
+          // Create custom vault handler that targets the modal textarea
+          newVaultButton.addEventListener('click', async (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+
+            // Debug: Check the form group and target field
+            const formGroup = newVaultButton.closest('.form-group');
+            const targetField = formGroup?.querySelector('[data-vault]');
+
+            // The vault handler should work as-is since it looks for [data-vault] within the form group
+            // and our modal textarea has the data-vault attribute and is within a form group
+            await handleVaultBtn(event as MouseEvent);
+
+            // Add debugging to monitor vault key clicks
+            setTimeout(() => {
+              const vaultDropdown = document.getElementById('vault-keys-dropdown-menu');
+              if (vaultDropdown) {
+                const keyButtons = vaultDropdown.querySelectorAll('a[data-value]');
+
+                keyButtons.forEach((keyBtn, index) => {
+                  const originalOnclick = (keyBtn as any).onclick;
+                  if (originalOnclick) {
+                    (keyBtn as any).onclick = (event) => {
+                      event.preventDefault();
+
+                      // Handle code editor differently
+                      if ((targetField as any)._editor) {
+                        const editor = (targetField as any)._editor;
+                        const keyVar = `{{KEY(${keyBtn.textContent})}}`;
+
+                        // Use the same approach as main textarea for code editors
+                        editor.session.replace(editor.selection.getRange(), keyVar);
+                        editor.moveCursorToPosition(editor.getCursorPosition());
+                        editor.focus();
+
+                        // Dispatch input event
+                        const inputEvent = new Event('input', { bubbles: true });
+                        targetField.dispatchEvent(inputEvent);
+                      } else {
+                        // For regular textareas, use the original handler
+                        originalOnclick(event);
+                      }
+
+                      // Close the vault dropdown after selection
+                      const vaultDropdown = document.getElementById('vault-keys-dropdown-menu');
+                      if (vaultDropdown) {
+                        vaultDropdown.remove();
+                      }
+
+                      // Focus the textarea to ensure the value is visible
+                      if (targetField) {
+                        (targetField as HTMLTextAreaElement).focus();
+                        (targetField as HTMLTextAreaElement).scrollTop = (
+                          targetField as HTMLTextAreaElement
+                        ).scrollHeight;
+
+                        // Force a re-render by dispatching events
+                        const inputEvent = new Event('input', { bubbles: true });
+                        targetField.dispatchEvent(inputEvent);
+
+                        const changeEvent = new Event('change', { bubbles: true });
+                        targetField.dispatchEvent(changeEvent);
+                      }
+                    };
+                  }
+                });
+              }
+            }, 500);
+
+            // After vault handler runs, check if the target field was updated
+            setTimeout(() => {
+              const updatedTargetField = formGroup?.querySelector(
+                '[data-vault]',
+              ) as HTMLTextAreaElement;
+
+              // Focus the textarea to ensure it's visible and updated
+              if (updatedTargetField) {
+                updatedTargetField.focus();
+                updatedTargetField.scrollTop = updatedTargetField.scrollHeight;
+
+                // Dispatch input event to trigger any listeners
+                const inputEvent = new Event('input', { bubbles: true });
+                updatedTargetField.dispatchEvent(inputEvent);
+              }
+            }, 1000);
+          });
+
+          // Show/hide vault button based on condition (following main textarea pattern)
+          const shouldShowVault = shouldShowVaultButton(vaultCondition, contentType);
+          if (shouldShowVault) {
+            newVaultButton.style.display = 'inline-block';
+          } else {
+            newVaultButton.style.display = 'none';
+          }
+        }
+      }
+
+      // Re-attach other action buttons
+      const originalFormGroup = originalTextarea.closest('.form-group');
+      if (originalFormGroup) {
+        const actionButtons = originalFormGroup.querySelectorAll(
+          '.smyth-field-actions button, .button-group button',
+        ) as NodeListOf<HTMLButtonElement>;
+
+        actionButtons.forEach((originalButton, index) => {
+          // Skip vault button as we handle it separately
+          if (originalButton.classList.contains('vault-action-btn')) return;
+
+          const modalActionButton = dialogElm.querySelector(
+            `button[data-action-index="${index}"]`,
+          ) as HTMLButtonElement;
+          if (modalActionButton) {
+            // Create custom click handler that targets the modal textarea
+            const originalClickHandler = (originalButton as any).onclick;
+            if (originalClickHandler) {
+              modalActionButton.onclick = async (event) => {
+                // Check if this is a key/value modal button by looking for specific patterns
+                const buttonId = originalButton.id;
+                const buttonIcon = originalButton.querySelector('i')?.className;
+
+                // If it's a key/value modal button (pen-to-square icon), handle it specially
+                if (buttonIcon?.includes('pen-to-square') || buttonId?.includes('EditBtn')) {
+                  await handleKeyValueModalForModal(modalTextareaInDialog, originalButton);
+                } else {
+                  // For other buttons, try the original approach but with better timing
+                  const originalId = originalTextarea.id;
+                  const originalName = originalTextarea.name;
+
+                  // Set modal textarea to have the same ID and name as original
+                  modalTextareaInDialog.id = originalId;
+                  modalTextareaInDialog.name = originalName;
+
+                  // Call the original handler
+                  await originalClickHandler.call(originalButton, event);
+
+                  // Restore original textarea attributes
+                  originalTextarea.id = originalId;
+                  originalTextarea.name = originalName;
+                }
+              };
+            }
+
+            // Re-attach other event listeners
+            const originalEvents = (originalButton as any)._events || {};
+            Object.keys(originalEvents).forEach((eventType) => {
+              modalActionButton.addEventListener(eventType, originalEvents[eventType]);
+            });
+          }
+        });
+      }
     },
     onCloseClick(dialogElm: HTMLElement) {
       const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
@@ -715,7 +1090,7 @@ async function handleExpandTextarea(
 }
 
 /**
- * Creates a textarea element with optional expand functionality
+ * Creates a textarea element with optional expand functionality and dynamic vault button
  * @param entry - Configuration object for the textarea
  * @param entry.value - Initial value for the textarea
  * @param entry.fieldCls - Additional CSS classes for the textarea
@@ -724,7 +1099,43 @@ async function handleExpandTextarea(
  * @param entry.label - Label for the modal title
  * @param entry.attributes - Additional attributes for the textarea
  * @param entry.code - Code editor configuration (mode, theme, disableWorker)
+ * @param entry.contentType - Content type for backward compatibility
+ * @param entry.vaultCondition - Dynamic condition for showing vault button
+ * @param entry.vaultCondition.property - Property name to check (e.g., 'contentType', 'mode', 'type')
+ * @param entry.vaultCondition.value - Value that should trigger vault button display
+ * @param entry.vaultCondition.getValue - Optional function to get current value dynamically
  * @returns Object containing the textarea element and optional container wrapper
+ *
+ * @example
+ * // Basic usage with content type (backward compatible)
+ * createTextArea({
+ *   expandable: true,
+ *   attributes: { 'data-vault': 'apiCall,All' },
+ *   contentType: 'application/json'
+ * });
+ *
+ * @example
+ * // Dynamic vault condition based on any property
+ * createTextArea({
+ *   expandable: true,
+ *   attributes: { 'data-vault': 'apiCall,All' },
+ *   vaultCondition: {
+ *     property: 'mode',
+ *     value: 'json',
+ *     getValue: () => document.querySelector('#modeSelect')?.value || ''
+ *   }
+ * });
+ *
+ * @example
+ * // Vault condition based on component data
+ * createTextArea({
+ *   expandable: true,
+ *   attributes: { 'data-vault': 'apiCall,All' },
+ *   vaultCondition: {
+ *     property: 'dataType',
+ *     value: 'json'
+ *   }
+ * });
  */
 export const createTextArea = (entry: {
   label?: string;
@@ -738,9 +1149,24 @@ export const createTextArea = (entry: {
     theme?: string;
     disableWorker?: boolean;
   };
+  contentType?: string;
+  vaultCondition?: {
+    property: string;
+    value: string;
+    getValue?: () => string;
+  };
 }): HTMLTextAreaElement | { textarea: HTMLTextAreaElement; container: HTMLDivElement } => {
-  console.log('entry', entry);
-  const { value = '', fieldCls = '', autoSize = true, expandable, label, attributes, code } = entry;
+  const {
+    value = '',
+    fieldCls = '',
+    autoSize = true,
+    expandable,
+    label,
+    attributes,
+    code,
+    contentType,
+    vaultCondition,
+  } = entry;
   const textarea = document.createElement('textarea');
   textarea.setAttribute('data-role', 'textarea');
   textarea.innerHTML = value;
@@ -772,7 +1198,14 @@ export const createTextArea = (entry: {
       try {
         // Get current code configuration dynamically from textarea attributes
         const currentCodeConfig = getCurrentCodeConfig(textarea, code, attributes);
-        await handleExpandTextarea(textarea, label, currentCodeConfig, attributes);
+        await handleExpandTextarea(
+          textarea,
+          label,
+          currentCodeConfig,
+          attributes,
+          contentType,
+          vaultCondition,
+        );
       } catch (error) {
         console.error('Error opening textarea modal:', error);
       }
