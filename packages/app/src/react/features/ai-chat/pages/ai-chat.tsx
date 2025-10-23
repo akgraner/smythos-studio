@@ -202,7 +202,4 @@ const AIChat = () => {
   );
 };
 
-import AgentChat from './agent-chat';
-export default AgentChat;
-
-// export default AIChat;
+export default AIChat;
