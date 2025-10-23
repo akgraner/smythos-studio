@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-vars */
 import { ChangeEvent, useCallback, useEffect, useState } from 'react';
 
-import { IMessageFile } from '@react/features/ai-chat';
+import { IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import {
   createFileMetadata,
   deleteFile,

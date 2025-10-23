@@ -3,8 +3,12 @@
  * Provides clean interface for streaming chat responses with lifecycle management
  */
 
-import { IChatError, IStreamCallbacks, IStreamConfig } from '@react/features/ai-chat';
 import { ChatAPIClient } from '@react/features/ai-chat/clients/chat-api.client';
+import {
+  IChatError,
+  IStreamCallbacks,
+  IStreamConfig,
+} from '@react/features/ai-chat/types/chat.types';
 import { useCallback, useRef, useState } from 'react';
 
 /**

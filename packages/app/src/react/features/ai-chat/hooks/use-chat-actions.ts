@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 
-import { IChatMessage, IMessageFile } from '@react/features/ai-chat';
 import { CHAT_ERROR_MESSAGE } from '@react/features/ai-chat/constants';
+import { IChatMessage, IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import { chatUtils } from '@react/features/ai-chat/utils';
 
 interface UseChatActionsProps {

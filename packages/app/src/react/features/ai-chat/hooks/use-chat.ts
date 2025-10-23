@@ -11,7 +11,7 @@ import {
   IMessageFile,
   IUseChatReturn,
   TThinkingType,
-} from '@react/features/ai-chat';
+} from '@react/features/ai-chat/types/chat.types';
 import { useCallback, useRef, useState } from 'react';
 import { ChatAPIClient } from '../clients/chat-api.client';
 import { useChatStream } from './use-chat-stream';
