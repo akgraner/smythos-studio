@@ -42,9 +42,9 @@
 
   <link rel="stylesheet" href="/css/smyth-tailwind.css" />
 
+  <%- include('tracking/posthog-init'); -%>
 
-
-  <%- include('tracking/posthog-tracking'); -%> <% if (env !== 'DEV' && typeof includeTracking !==
+  <% if (env !== 'DEV' && typeof includeTracking !==
     'undefined' && includeTracking) { %> <%- include('tracking/head-tracking'); -%> <% } %>
 </head>
 
@@ -58,16 +58,16 @@
   <div class="overlay-secondary hidden"></div>
   <div id="modal-root"></div>
 
+  <% if (page !== 'dev-vite-react.ejs') { %>
   <script>
     window.__LLM_MODELS__ = JSON.parse(
       `<% if (typeof LLMModels !== 'undefined') { %><%- JSON.stringify(LLMModels) %><% } %>`,
     );
   </script>
+  <% } %>
 
   <script src="/metroui/js/metro.js"></script>
   <script src="https://cdn.jsdelivr.net/gh/mdbassit/Coloris@latest/dist/coloris.min.js"></script>
-  <script async
-    src="//smythos.com/wp-content/themes/generatepress_child/js/iframeResizer.contentWindow.min.js"></script>
     <!-- Should be placed in builder partial so it does not load on other pages -->
   <% if (env === 'DEV') { %>
   <script src="/assets/index.dev.js"></script>

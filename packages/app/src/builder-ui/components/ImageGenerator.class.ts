@@ -175,6 +175,7 @@ export class ImageGenerator extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         validate: `required minlength=2 maxlength=2000`,
         validateMessage: `The length of the prompt must be between 2 and 2000 characters.`,
@@ -271,6 +272,7 @@ function getRunwareSettings(savedData: Record<string, string>) {
     strength: ImageSettingsConfig.strength({ section: 'Advanced' }),
     negativePrompt: {
       type: 'textarea',
+      expandable: true,
       label: 'Negative Prompt',
       validate: `maxlength=2000`,
       validateMessage: 'The length of the negative prompt must be less than 2000 characters.',

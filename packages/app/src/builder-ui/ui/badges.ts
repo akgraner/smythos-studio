@@ -42,7 +42,8 @@ export type ModelStatus =
   | 'smythos'
   | 'stable'
   | 'personal'
-  | 'enterprise';
+  | 'enterprise'
+  | 'custom';
 
 type BadgeConfig = {
   readonly label: string;
@@ -120,6 +121,11 @@ const statusBadgeConfigs: Record<ModelStatus, BadgeConfig> = {
     label: 'Enterprise',
     icon: '',
     classes: 'bg-[#F1C5FF] text-[#772590] border-0',
+  },
+  custom: {
+    label: 'Custom',
+    icon: '',
+    classes: 'bg-[#BFECE8] text-[#0F5257] border-0',
   },
 } as const;
 

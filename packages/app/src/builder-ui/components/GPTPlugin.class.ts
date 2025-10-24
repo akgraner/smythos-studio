@@ -66,6 +66,7 @@ export class GPTPlugin extends Component {
       },
       descForModel: {
         type: 'textarea',
+        expandable: true,
         label: 'Description for Model',
         value: this.descForModel,
         validate: `maxlength=5000`,

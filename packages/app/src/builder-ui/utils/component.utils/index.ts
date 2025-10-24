@@ -132,6 +132,18 @@ export async function handleKvFieldEditBtnForParams(options?: {
       const newUrl = urlObj.href.replace(/%7B/g, '{').replace(/%7D/g, '}');
 
       urlField.value = this.data.url = newUrl;
+
+      // Dispatch events to trigger auto-save
+      const changeEvent = new Event('change');
+      urlField.dispatchEvent(changeEvent);
+
+      const inputEvent = new Event('input', { bubbles: true });
+      urlField.dispatchEvent(inputEvent);
+
+      // Trigger workspace save to propagate changes (similar to APIEndpoint component)
+      setTimeout(() => {
+        this.workspace.saveAgent();
+      }, 100);
     } catch {
       console.warn('Invalid URL', url);
       errorToast('Please enter a valid URL before setting the query parameters');
@@ -177,13 +189,19 @@ export async function handleVaultBtn(event: MouseEvent): Promise<void> {
   const vaultBtn = event.target as HTMLButtonElement;
   const formGroup = vaultBtn.closest('.form-group') as HTMLElement;
 
+  // Check if dropdown already exists (toggle functionality)
+  const existingDropdown = document.getElementById('vault-keys-dropdown-menu');
+  if (existingDropdown) {
+    // Dropdown is open, close it (toggle off)
+    existingDropdown.remove();
+    return;
+  }
+
   vaultBtn.disabled = true;
   handleVaultBtn['loading'] = true;
 
-  let dropdown = document.getElementById('vault-keys-dropdown-menu');
-  if (dropdown) dropdown.remove();
-
-  dropdown = document.createElement('div');
+  // Create new dropdown
+  const dropdown = document.createElement('div');
   dropdown.id = 'vault-keys-dropdown-menu';
 
   const contentElm = document.createElement('div');

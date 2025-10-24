@@ -1,34 +1,26 @@
 // src/webappv2/pages/vault/create-oauth-connection-modal.tsx
 import {
-  Dialog,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@src/react/shared/components/ui/dialog';
-import { Input } from '@src/react/shared/components/ui/input';
-import { Label } from '@src/react/shared/components/ui/label';
 import { Button as CustomButton } from '@src/react/shared/components/ui/newDesign/button'; // Your custom button
-import { TextArea } from '@src/react/shared/components/ui/newDesign/textarea';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@src/react/shared/components/ui/select';
 import { OAuthServicesRegistry } from '@src/shared/helpers/oauth/oauth-services.helper';
 import {
-  OAUTH_SERVICES,
-  deriveCallbackUrl,
-  mapInternalToServiceName,
-  mapServiceNameToInternal,
+    deriveCallbackUrl,
+    mapInternalToServiceName,
+    mapServiceNameToInternal,
 } from '@src/shared/helpers/oauth/oauth.utils';
 import React, { useEffect, useMemo, useState } from 'react';
 import type {
-  CreateOAuthConnectionModalProps,
-  OAuthConnectionFormData,
+    CreateOAuthConnectionModalProps,
+    OAuthConnectionFormData,
 } from '../types/oauth-connection';
+import { hasVaultKeys, resolveVaultKeys } from '../utils/vault-key-resolver';
+import { OAuthFormFields } from './oauth-form-fields';
+import { OAuthFormSkeleton } from './oauth-form-skeleton';
 
 export function CreateOAuthConnectionModal({
   isOpen,
@@ -39,36 +31,81 @@ export function CreateOAuthConnectionModal({
 }: CreateOAuthConnectionModalProps) {
   const [formData, setFormData] = useState<Partial<OAuthConnectionFormData>>({});
   const [selectedService, setSelectedService] = useState<string>('None');
+  const [isResolvingVaultKeys, setIsResolvingVaultKeys] = useState<boolean>(false);
 
   // Determine if it's an edit operation
   const isEditMode = !!editConnection;
 
   // Initialize form data when opening in edit mode or when editConnection changes
   useEffect(() => {
-    if (isOpen && isEditMode && editConnection?.oauth_info) {
-      // Map OAuthConnection back to form data structure
-      const serviceName = mapInternalToServiceName(editConnection.oauth_info.service);
-      setFormData({
-        name: editConnection.name,
-        platform: editConnection.oauth_info.platform,
-        oauthService: serviceName,
-        scope: editConnection.oauth_info.scope,
-        authorizationURL: editConnection.oauth_info.authorizationURL,
-        tokenURL: editConnection.oauth_info.tokenURL,
-        clientID: editConnection.oauth_info.clientID,
-        clientSecret: editConnection.oauth_info.clientSecret,
-        requestTokenURL: editConnection.oauth_info.requestTokenURL,
-        accessTokenURL: editConnection.oauth_info.accessTokenURL,
-        userAuthorizationURL: editConnection.oauth_info.userAuthorizationURL,
-        consumerKey: editConnection.oauth_info.consumerKey,
-        consumerSecret: editConnection.oauth_info.consumerSecret,
-      });
-      setSelectedService(serviceName);
-    } else if (isOpen && !isEditMode) {
-      // Reset form for creating new connection
-      setFormData({ name: '', platform: '', oauthService: 'None' });
-      setSelectedService('None');
-    }
+    /**
+     * Loads and resolves the connection data for editing
+     * If vault keys are present, resolves them before populating the form
+     */
+    const loadConnectionData = async () => {
+      if (isOpen && isEditMode && editConnection?.oauth_info) {
+        setIsResolvingVaultKeys(true);
+        
+        try {
+          const oauthInfo = editConnection.oauth_info;
+          
+          // Check if the connection has any vault keys that need to be resolved
+          let resolvedOAuthInfo = oauthInfo;
+          if (hasVaultKeys(oauthInfo)) {
+            // Resolve vault keys to get actual values
+            resolvedOAuthInfo = await resolveVaultKeys(oauthInfo);
+          }
+          
+          // Map OAuthConnection back to form data structure with resolved values
+          const serviceName = mapInternalToServiceName(resolvedOAuthInfo.service);
+          setFormData({
+            name: editConnection.name,
+            platform: resolvedOAuthInfo.platform,
+            oauthService: serviceName,
+            scope: resolvedOAuthInfo.scope,
+            authorizationURL: resolvedOAuthInfo.authorizationURL,
+            tokenURL: resolvedOAuthInfo.tokenURL,
+            clientID: resolvedOAuthInfo.clientID,
+            clientSecret: resolvedOAuthInfo.clientSecret,
+            requestTokenURL: resolvedOAuthInfo.requestTokenURL,
+            accessTokenURL: resolvedOAuthInfo.accessTokenURL,
+            userAuthorizationURL: resolvedOAuthInfo.userAuthorizationURL,
+            consumerKey: resolvedOAuthInfo.consumerKey,
+            consumerSecret: resolvedOAuthInfo.consumerSecret,
+          });
+          setSelectedService(serviceName);
+        } catch (error) {
+          console.error('Error loading connection data:', error);
+          // Fall back to showing the placeholders if resolution fails
+          const serviceName = mapInternalToServiceName(editConnection.oauth_info.service);
+          setFormData({
+            name: editConnection.name,
+            platform: editConnection.oauth_info.platform,
+            oauthService: serviceName,
+            scope: editConnection.oauth_info.scope,
+            authorizationURL: editConnection.oauth_info.authorizationURL,
+            tokenURL: editConnection.oauth_info.tokenURL,
+            clientID: editConnection.oauth_info.clientID,
+            clientSecret: editConnection.oauth_info.clientSecret,
+            requestTokenURL: editConnection.oauth_info.requestTokenURL,
+            accessTokenURL: editConnection.oauth_info.accessTokenURL,
+            userAuthorizationURL: editConnection.oauth_info.userAuthorizationURL,
+            consumerKey: editConnection.oauth_info.consumerKey,
+            consumerSecret: editConnection.oauth_info.consumerSecret,
+          });
+          setSelectedService(serviceName);
+        } finally {
+          setIsResolvingVaultKeys(false);
+        }
+      } else if (isOpen && !isEditMode) {
+        // Reset form for creating new connection
+        setFormData({ name: '', platform: '', oauthService: 'None' });
+        setSelectedService('None');
+        setIsResolvingVaultKeys(false);
+      }
+    };
+
+    loadConnectionData();
   }, [isOpen, isEditMode, editConnection]);
 
   // Handle input changes
@@ -188,254 +225,27 @@ export function CreateOAuthConnectionModal({
           <DialogTitle>{isEditMode ? 'Edit OAuth Connection' : 'Add OAuth Connection'}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4 py-4">
-            {/* Name Field */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name">
-                Name <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="name"
-                  name="name"
-                  value={formData.name || ''}
-                  onChange={handleChange}
-                  placeholder="e.g., My Google Connection"
-                  required
-                  disabled={isProcessing}
-                  fullWidth
-                />
-              </div>
+          {/* Show skeleton loader while resolving vault keys */}
+          {isResolvingVaultKeys ? (
+            <OAuthFormSkeleton serviceType={editConnection?.type} />
+          ) : (
+            <div className="grid gap-4 py-4">
+              <OAuthFormFields
+                formData={formData}
+                selectedService={selectedService}
+                isProcessing={isProcessing}
+                isResolvingVaultKeys={isResolvingVaultKeys}
+                showOAuth2Fields={showOAuth2Fields}
+                showOAuth1Fields={showOAuth1Fields}
+                showClientCredentialsFields={showClientCredentialsFields}
+                showScopeField={showScopeField}
+                oauth2CallbackURL={oauth2CallbackURL}
+                oauth1CallbackURL={oauth1CallbackURL}
+                handleChange={handleChange}
+                handleSelectChange={handleSelectChange}
+              />
             </div>
-
-            {/* Platform Field */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="platform">
-                Platform <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3">
-                <Input
-                  id="platform"
-                  name="platform"
-                  value={formData.platform || ''}
-                  onChange={handleChange}
-                  placeholder="e.g., Google Mail, HubSpot CRM"
-                  required
-                  disabled={isProcessing}
-                  fullWidth
-                />
-              </div>
-            </div>
-
-            {/* OAuth Service Selector */}
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="oauthService">
-                Auth Service <span className="text-red-500">*</span>
-              </Label>
-              <div className="col-span-3">
-                <Select
-                  name="oauthService"
-                  value={selectedService}
-                  onValueChange={handleSelectChange}
-                  required
-                  disabled={isProcessing}
-                >
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue placeholder="Select a service" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {OAUTH_SERVICES.map((service) => (
-                      <SelectItem key={service} value={service}>
-                        {service}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            {/* Conditional Fields based on selectedService */}
-            {selectedService !== 'None' && (
-              <>
-                {/* OAuth 2.0 Fields */}
-                {(showOAuth2Fields || showClientCredentialsFields) && (
-                  <>
-                    {showOAuth2Fields && ( // Auth URL only for standard OAuth2
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="authorizationURL">Auth URL</Label>
-                        <div className="col-span-3">
-                          <Input
-                            id="authorizationURL"
-                            name="authorizationURL"
-                            value={formData.authorizationURL || ''}
-                            onChange={handleChange}
-                            placeholder="Authorization Endpoint URL"
-                            disabled={isProcessing}
-                            fullWidth
-                          />
-                        </div>
-                      </div>
-                    )}
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="tokenURL">Token URL</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="tokenURL"
-                          name="tokenURL"
-                          value={formData.tokenURL || ''}
-                          onChange={handleChange}
-                          placeholder="Token Endpoint URL"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="clientID">Client ID</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="clientID"
-                          name="clientID"
-                          value={formData.clientID || ''}
-                          onChange={handleChange}
-                          placeholder="OAuth Client ID"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="clientSecret">Client Secret</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="clientSecret"
-                          name="clientSecret"
-                          type="password"
-                          value={formData.clientSecret || ''}
-                          onChange={handleChange}
-                          placeholder="OAuth Client Secret"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    {showOAuth2Fields &&
-                      oauth2CallbackURL && ( // Callback URL Display (OAuth2)
-                        <div className="grid grid-cols-4 items-center gap-4">
-                          <Label>Callback URL</Label>
-                          <div className="col-span-3 text-sm text-gray-500 break-all">
-                            {oauth2CallbackURL}
-                          </div>
-                        </div>
-                      )}
-                  </>
-                )}
-
-                {/* OAuth 1.0a Fields */}
-                {showOAuth1Fields && (
-                  <>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="requestTokenURL">Request Token URL</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="requestTokenURL"
-                          name="requestTokenURL"
-                          value={formData.requestTokenURL || ''}
-                          onChange={handleChange}
-                          placeholder="Request Token URL"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="accessTokenURL">Access Token URL</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="accessTokenURL"
-                          name="accessTokenURL"
-                          value={formData.accessTokenURL || ''}
-                          onChange={handleChange}
-                          placeholder="Access Token URL"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="userAuthorizationURL">User Auth URL</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="userAuthorizationURL"
-                          name="userAuthorizationURL"
-                          value={formData.userAuthorizationURL || ''}
-                          onChange={handleChange}
-                          placeholder="User Authorization URL"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="consumerKey">Consumer Key</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="consumerKey"
-                          name="consumerKey"
-                          value={formData.consumerKey || ''}
-                          onChange={handleChange}
-                          placeholder="OAuth Consumer Key"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                      <Label htmlFor="consumerSecret">Consumer Secret</Label>
-                      <div className="col-span-3">
-                        <Input
-                          id="consumerSecret"
-                          name="consumerSecret"
-                          type="password"
-                          value={formData.consumerSecret || ''}
-                          onChange={handleChange}
-                          placeholder="OAuth Consumer Secret"
-                          disabled={isProcessing}
-                          fullWidth
-                        />
-                      </div>
-                    </div>
-                    {oauth1CallbackURL && ( // Callback URL Display (OAuth1)
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label>Callback URL</Label>
-                        <div className="col-span-3 text-sm text-gray-500 break-all">
-                          {oauth1CallbackURL}
-                        </div>
-                      </div>
-                    )}
-                  </>
-                )}
-
-                {/* Scope Field (Common for most OAuth2 flows) */}
-                {showScopeField && (
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="scope">Scopes</Label>
-                    <div className="col-span-3">
-                      <TextArea
-                        id="scope"
-                        name="scope"
-                        value={formData.scope || ''}
-                        onChange={handleChange}
-                        placeholder="Enter scopes separated by space"
-                        disabled={isProcessing}
-                        fullWidth={true}
-                      />
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
-          </div>
+          )}
           <DialogFooter>
             {/* <DialogClose asChild>
               <CustomButton
@@ -449,9 +259,13 @@ export function CreateOAuthConnectionModal({
             <CustomButton
               variant="primary"
               type="submit"
-              loading={isProcessing}
+              loading={isProcessing || isResolvingVaultKeys}
               disabled={
-                isProcessing || selectedService === 'None' || !formData.name || !formData.platform
+                isProcessing ||
+                isResolvingVaultKeys ||
+                selectedService === 'None' ||
+                !formData.name ||
+                !formData.platform
               }
               label={isEditMode ? 'Save Changes' : 'Add Connection'}
             />

@@ -12,6 +12,7 @@ export const V4_ALL_PLANS = [
   'enterprise t2',
   'enterprise t3',
   'enterprise t4',
+  'business unlimited',
   'scaleup',
   'builder',
   'startup',
@@ -98,6 +99,13 @@ export const WEAVER_REQUIRE_CREDITS = 'Weaver requires credits';
 export const AGENTS_WITH_NEXT_STEPS_SHOWN = 'agentsWithNextStepsShown';
 
 export const VAULT_SCOPE_AGENT_LLM = 'AgentLLM';
+export const VAULT_SCOPE_OAUTH_CONNECTIONS = 'OAuthConnections';
+export const HIDDEN_VAULT_SCOPE = '_hidden';
+export const MANAGED_VAULT_SCOPES = [
+  VAULT_SCOPE_AGENT_LLM,
+  VAULT_SCOPE_OAUTH_CONNECTIONS,
+  HIDDEN_VAULT_SCOPE,
+];
 
 type EmbodimentDescription = {
   title: string;

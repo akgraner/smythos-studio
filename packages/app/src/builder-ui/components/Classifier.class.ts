@@ -71,6 +71,7 @@ export class Classifier extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         validate: `required maxlength=30000`,
         validateMessage: `The prompt should be a non empty text of less than 30,000 characters`,

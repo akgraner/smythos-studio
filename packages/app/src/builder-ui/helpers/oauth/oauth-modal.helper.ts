@@ -299,3 +299,76 @@ export function buildOAuthSettingsForSave(
 export function generateOAuthConnectionId(): string {
   return (Date.now() + Math.random()).toString(36).replace('.', '').toUpperCase();
 }
+
+/**
+ * Generate loading skeleton HTML for OAuth modal while resolving vault keys
+ */
+export function generateOAuthModalLoadingSkeleton(): string {
+  return `
+    <div class="grid gap-4 py-4">
+      <!-- Name Field Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Name <span class="text-red-500">*</span></label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Platform Field Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Platform <span class="text-red-500">*</span></label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Service Selector Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Auth Service <span class="text-red-500">*</span></label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Auth URL Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Auth URL</label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Token URL Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Token URL</label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Client ID Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Client ID</label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Client Secret Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Client Secret</label>
+        <div class="col-span-3">
+          <div class="h-9 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+      
+      <!-- Scope Skeleton -->
+      <div class="grid grid-cols-4 items-center gap-4 form-group">
+        <label class="text-sm font-medium">Scopes</label>
+        <div class="col-span-3">
+          <div class="h-20 w-full bg-gray-200 animate-pulse rounded"></div>
+        </div>
+      </div>
+    </div>
+  `;
+}

@@ -57,6 +57,7 @@ export class Note extends Component {
       },
       content: {
         type: 'textarea',
+        expandable: true,
         label: 'Content',
         value: this.data.content || '',
         help: 'The text of your note; use it to explain decisions, label sections, or add context on the canvas.',

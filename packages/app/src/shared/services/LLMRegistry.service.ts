@@ -7,6 +7,7 @@ import { LLMModel } from '../types';
 export class LLMRegistry {
   private static readonly MODELS_ORDER_BY_TAG = [
     'enterprise',
+    'custom',
     'personal',
     'smythos',
     'default', // Added default tag for models with no special tags
@@ -158,7 +159,7 @@ export class LLMRegistry {
    * Sorts an array of LLM models based on their tags and provider.
    * Models are grouped first by tag priority, then by provider order within each tag group.
    * Provider order: OpenAI, Anthropic, GoogleAI, Perplexity, TogetherAI, Others
-   * Tag order: Enterprise, Personal, SmythOS, Default, then Legacy/Deprecated/Removed at the end
+   * Tag order: Enterprise, Custom, Personal, SmythOS, Default, then Legacy/Deprecated/Removed at the end
    *
    * @param models - Array of LLMModel objects to sort
    * @returns New sorted array of models grouped by tags and sorted by provider (does not mutate the original array)

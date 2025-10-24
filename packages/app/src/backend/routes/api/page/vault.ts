@@ -1,3 +1,4 @@
+import { VAULT_SCOPE_OAUTH_CONNECTIONS } from '@src/shared/constants/general';
 import express from 'express';
 import config from '../../../config';
 import {
@@ -19,7 +20,6 @@ import { isCustomLLMAllowed } from '../../../utils/customLLM';
 import { customLLMHelper } from '../../router.helpers/customLLM.helper';
 import { userCustomLLMHelper } from '../../router.helpers/userCustomLLM.helper';
 import { getVaultKeys, setVaultKey } from '../../router.utils';
-
 const router = express.Router();
 
 const vault = new Vault();
@@ -317,6 +317,80 @@ function sanitizeOAuthConnections(connections: any): any {
   return sanitized;
 }
 
+function isVaultKey(key: string): string | null {
+  // pattern is {{KEY(keyName)}}
+  const pattern = /{{KEY\((.*?)\)}}/;
+  const match = key.match(pattern);
+  return match ? match[1] : null;
+}
+
+async function deleteVaultKeys(entry: any, team: string, req: any) {
+  const vaultKeys = [];
+
+  const entriesToCheck = [entry];
+  // crawl the entry using BFS so that we can go deep if objects are nested
+  while (entriesToCheck.length > 0) {
+    const currentEntry = entriesToCheck.shift();
+    // check if the current entry is
+    // string: then check if it is vault key
+    // object: add it to the entriesToCheck
+    if (typeof currentEntry === 'string') {
+      const keyNameNullable = isVaultKey(currentEntry);
+      if (keyNameNullable) {
+        vaultKeys.push(keyNameNullable);
+      }
+    } else if (typeof currentEntry === 'object') {
+      entriesToCheck.push(...Object.values(currentEntry));
+    }
+  }
+
+  console.log('WE SHOULD DELETE', vaultKeys);
+  await Promise.all(
+    vaultKeys.map(async (key) => {
+      const result = await vault.delete(key, team, req);
+      console.log('DELETED KEY. Result: ', key, result);
+    }),
+  );
+}
+
+async function storeSensitiveKeysInVault(entry: { [key: string]: any }, entryId: string, req: any) {
+  let clonedEntry = JSON.parse(JSON.stringify(entry));
+  const senstiveFields = ['clientID', 'clientSecret', 'consumerKey', 'consumerSecret'];
+
+  const storeKeyPromises = senstiveFields.map(async (field) => {
+    if (!clonedEntry[field]) return;
+    const keyName = `${entryId}_${field}`;
+    const keyData = {
+      team: req?._team?.id,
+      owner: req?._user?.email,
+      name: keyName,
+      key: clonedEntry[field],
+      scope: [VAULT_SCOPE_OAUTH_CONNECTIONS],
+    };
+    const result = await vault.set({
+      req,
+      data: keyData,
+      keyId: keyName,
+    });
+    console.log('STORED KEY. Result: ', result);
+    if (!result?.success) {
+      console.error(`Failed to store sensitive key ${field} in vault:`, result?.error);
+      throw new Error(`Failed to store sensitive key ${field} in vault: ${result?.error}`);
+    }
+
+    clonedEntry[field] = `{{KEY(${keyName})}}`;
+    return result;
+  });
+
+  try {
+    await Promise.all(storeKeyPromises);
+  } catch (error) {
+    console.error('Failed to store sensitive keys in vault:', error);
+    throw new Error('Failed to store sensitive keys in vault');
+  }
+  return clonedEntry;
+}
+
 router.get('/oauth-connections', includeTeamDetails, async (req, res) => {
   try {
     const settings = await getTeamSettingsObj(req, OAUTH_SETTING_KEY);
@@ -328,30 +402,15 @@ router.get('/oauth-connections', includeTeamDetails, async (req, res) => {
     }
 
     // Parse any stringified entries before sanitization
-    const parsedSettings = {};
-    if (settings && typeof settings === 'object') {
-      for (const [key, value] of Object.entries(settings)) {
-        if (typeof value === 'string') {
-          try {
-            parsedSettings[key] = JSON.parse(value);
-          } catch (e) {
-            // If parsing fails, keep as is
-            parsedSettings[key] = value;
-          }
-        } else {
-          parsedSettings[key] = value;
-          // Log warning if tokens are exposed (for security monitoring)
-          if (value && typeof value === 'object') {
-            const hasExposedTokens =
-              (value.auth_data?.primary && value.auth_data.primary !== '[REDACTED]') ||
-              (value.primary && value.primary !== '[REDACTED]');
-            if (hasExposedTokens) {
-              //console.warn(`[OAuth Security] Connection ${key} has unsanitized tokens - will be sanitized before sending to frontend`);
-            }
-          }
-        }
+    const parsedSettings = Object.entries(settings || {}).reduce((acc, [key, value]) => {
+      acc[key] = value;
+      if (typeof value === 'string') {
+        try {
+          acc[key] = JSON.parse(value);
+        } catch {}
       }
-    }
+      return acc;
+    }, {});
 
     // Sanitize the settings before sending to frontend
     const sanitizedSettings = sanitizeOAuthConnections(parsedSettings);
@@ -423,8 +482,11 @@ router.put('/oauth-connections', includeTeamDetails, async (req, res) => {
       };
     }
 
+    // await deleteVaultKeys(existingEntry, req?._team?.id, req);
     // 5. Merge and normalize the settings using helper (now both are guaranteed to be objects)
-    const mergedAuthSettings = mergeAuthSettings(existingEntry, parsedNewSettings);
+    let preparedNewSettings = mergeAuthSettings(existingEntry, parsedNewSettings);
+    preparedNewSettings = await storeSensitiveKeysInVault(preparedNewSettings, entryId, req);
+
     // 6. Parse preservedAuthData if it's somehow still a string (defensive coding)
     preservedAuthData = safeJsonParse(
       preservedAuthData,
@@ -436,7 +498,7 @@ router.put('/oauth-connections', includeTeamDetails, async (req, res) => {
     const existingOAuthInfo =
       existingEntry.auth_settings?.oauth_info || existingEntry.oauth_info || {};
     const newOAuthInfo =
-      mergedAuthSettings.oauth_info || mergedAuthSettings.auth_settings?.oauth_info || {};
+      preparedNewSettings.oauth_info || preparedNewSettings.auth_settings?.oauth_info || {};
     const authCriticalFields = [
       'clientID',
       'clientSecret',
@@ -465,7 +527,7 @@ router.put('/oauth-connections', includeTeamDetails, async (req, res) => {
             : oldValueFromRoot;
       // Get values from both possible locations for new data
       const newValueFromOAuthInfo = newOAuthInfo[field];
-      const newValueFromSettings = mergedAuthSettings[field]; // New data might be at root of mergedAuthSettings
+      const newValueFromSettings = preparedNewSettings[field]; // New data might be at root of mergedAuthSettings
       const newValue =
         newValueFromOAuthInfo !== undefined ? newValueFromOAuthInfo : newValueFromSettings;
       // Normalize values: treat undefined, null, empty string, and whitespace as equivalent
@@ -487,7 +549,7 @@ router.put('/oauth-connections', includeTeamDetails, async (req, res) => {
     // Clear tokens if auth-critical fields changed, otherwise preserve them
     const finalDataToSave = {
       auth_data: hasAuthCriticalChanges ? {} : preservedAuthData,
-      auth_settings: mergedAuthSettings,
+      auth_settings: preparedNewSettings,
     };
 
     // 9. Save the updated entry back using saveTeamSettingsObj
@@ -534,6 +596,25 @@ router.delete('/oauth-connections/:connectionId', includeTeamDetails, async (req
   }
 
   try {
+    const existingSettingsMap = await getTeamSettingsObj(req, OAUTH_SETTING_KEY);
+    if (existingSettingsMap === null) {
+      return res
+        .status(500)
+        .json({ success: false, error: 'Failed to retrieve existing OAuth settings.' });
+    }
+
+    let existingEntry = safeJsonParse(
+      existingSettingsMap[connectionId],
+      {},
+      `OAuth DELETE existingEntry ${connectionId}`,
+    );
+
+    if (!existingEntry) {
+      return res.status(404).json({ success: false, error: 'OAuth connection not found.' });
+    }
+
+    await deleteVaultKeys(existingEntry, req?._team?.id, req);
+
     const result = await deleteTeamSettingsObj(req, OAUTH_SETTING_KEY, connectionId);
 
     if (!result.success) {
@@ -769,11 +850,14 @@ router.delete('/custom-llm/:provider/:id', customLLMRouteMiddlewares, async (req
  */
 const handleUserCustomLLMSave = async (req, res) => {
   const teamId = req?._team?.id;
+  const userEmail = req?._user?.email;
   const id = req.params?.id; // This will be undefined for POST requests
 
   try {
     const saveUserCustomLLM = await userCustomLLMHelper.saveUserCustomLLM(req, {
       id,
+      teamId,
+      userEmail,
       ...req.body,
     });
 
@@ -832,29 +916,6 @@ router.get('/user-custom-llm/:id', includeTeamDetails, async (req, res) => {
   } catch (error) {
     console.error('Error getting user custom LLM model:', error?.message);
     res.status(500).json({ success: false, error: 'Error getting user custom LLM model.' });
-  }
-});
-
-/**
- * Get a user custom LLM model with credentials by name
- * GET /user-custom-llm/with-credentials/:name
- */
-router.get('/user-custom-llm/with-credentials/:name', includeTeamDetails, async (req, res) => {
-  try {
-    const modelName = req.params.name;
-    const modelInfo = await userCustomLLMHelper.getUserCustomLLMByName(req, modelName);
-
-    if (!modelInfo || Object.keys(modelInfo).length === 0) {
-      return res.status(404).json({ success: false, error: 'User custom LLM model not found.' });
-    }
-
-    // Return the full model configuration including credentials (baseURL, etc.)
-    res.status(200).json({ success: true, data: modelInfo });
-  } catch (error) {
-    console.error('Error getting user custom LLM model with credentials:', error?.message);
-    res
-      .status(500)
-      .json({ success: false, error: 'Error getting user custom LLM model with credentials.' });
   }
 });
 

@@ -1078,7 +1078,8 @@ code.language-plan.done::before {
 
 /* Textarea styles */
 .dlg-form .textarea textarea,
-.right-sidebar .form-group textarea {
+.right-sidebar .form-group textarea,
+.smyth-dialog #expanded-textarea {
   width: 100%;
   background-color: white;
   border: 1px solid !important;
@@ -1097,6 +1098,10 @@ code.language-plan.done::before {
   resize: none !important;
 }
 
+.smyth-dialog #expanded-textarea{
+  max-height: none !important;
+}
+
 /* Dynamic overflow classes for component sidebar textareas */
 .right-sidebar .form-group textarea.overflow-y-auto {
   overflow-y: auto !important;
@@ -1107,7 +1112,8 @@ code.language-plan.done::before {
 }
 
 .dlg-form .textarea textarea:focus,
-.right-sidebar .form-group textarea:focus {
+.right-sidebar .form-group textarea:focus,
+.smyth-dialog #expanded-textarea:focus {
   outline: none;
   box-shadow: none;
   border-bottom-width: 2px !important;
@@ -1118,7 +1124,8 @@ code.language-plan.done::before {
 .dlg-form .input input::placeholder,
 .dlg-form .textarea textarea::placeholder,
 .right-sidebar .form-group input::placeholder,
-.right-sidebar .form-group textarea::placeholder {
+.right-sidebar .form-group textarea::placeholder,
+.smyth-dialog #expanded-textarea::placeholder {
   color: #9ca3af;
   font-size: 0.875rem;
   font-weight: 300 !important;

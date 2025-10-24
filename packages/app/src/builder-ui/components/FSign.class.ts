@@ -24,6 +24,7 @@ export class FSign extends FunctionComponent {
       },
       key: {
         type: 'textarea',
+        expandable: true,
         label: 'Key / Secret',
         attributes: { 'data-template-vars': 'true', 'data-vault': `APICall,ALL_NON_GLOBAL_KEYS` },
         help: 'Provide the signing secret or private key; store in <a href="/vault" target="_blank" class="text-blue-600 hover:text-blue-800">Vault</a>, not in code.',

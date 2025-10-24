@@ -27,7 +27,9 @@ registerDatalistOptions('country-datalist', () =>
     text: country.text, // Show "US - United States" on single line
   })),
 );
-registerDatalistOptions('timezone-datalist', () => ianaTimezones.map((tz) => ({ text: tz, value: tz })));
+registerDatalistOptions('timezone-datalist', () =>
+  ianaTimezones.map((tz) => ({ text: tz, value: tz })),
+);
 
 /*
  * Here field name like model, apiKey, temperature is very important
@@ -243,7 +245,7 @@ export class GenAILLM extends Component {
     const modelSelect = form?.querySelector('#model') as HTMLSelectElement;
     const currentModel = modelSelect?.value || this.data.model;
     const provider = LLMRegistry.getModelProvider(currentModel);
-    
+
     // Automatically switch search options based on provider
     this.autoSwitchSearchOptions(provider, form);
 
@@ -383,7 +385,7 @@ export class GenAILLM extends Component {
             // #region Auto-set search options based on provider
             const form = currentElement.closest('form');
             const provider = LLMRegistry.getModelProvider(currentElement.value);
-            
+
             // Automatically switch search options based on provider
             this.autoSwitchSearchOptions(provider, form);
             // #endregion
@@ -490,6 +492,7 @@ export class GenAILLM extends Component {
       },
       prompt: {
         type: 'textarea',
+        expandable: true,
         label: 'Prompt',
         validate: `required`, // Omit maximum length, as the tokens counted in backend may be different from the frontend.
         validateMessage: `Please provide a prompt. It's required!`,
@@ -515,8 +518,9 @@ export class GenAILLM extends Component {
       },
       maxContextTokens: {
         type: 'div',
-        html: `<strong class="px-2">Context window size: <span class="tokens_num">${allowedContextTokens ? allowedContextTokens.toLocaleString() : 'Unknown'
-          }</span> tokens</strong>`,
+        html: `<strong class="px-2">Context window size: <span class="tokens_num">${
+          allowedContextTokens ? allowedContextTokens.toLocaleString() : 'Unknown'
+        }</span> tokens</strong>`,
         cls: 'mb-0',
         attributes: {
           'data-supported-models':
@@ -531,8 +535,9 @@ export class GenAILLM extends Component {
       },
       webSearchContextSizeInfo: {
         type: 'div',
-        html: `<strong class="px-2">Search Context Size: <span class="tokens_num">${allowedWebSearchContextTokens ? allowedWebSearchContextTokens.toLocaleString() : 'Unknown'
-          }</span> tokens</strong>`,
+        html: `<strong class="px-2">Search Context Size: <span class="tokens_num">${
+          allowedWebSearchContextTokens ? allowedWebSearchContextTokens.toLocaleString() : 'Unknown'
+        }</span> tokens</strong>`,
         attributes: {
           'data-supported-models': [...this.searchModels].join(','),
         },
@@ -643,7 +648,8 @@ export class GenAILLM extends Component {
         validate: `min=${minTopK} max=${maxTopK}`,
         validateMessage: `Allowed range ${minTopK} to ${maxTopK}`,
         attributes: {
-          'data-supported-models': 'GoogleAI,VertexAI,Anthropic,TogetherAI,Perplexity,cohere,Ollama,xAI,Groq',
+          'data-supported-models':
+            'GoogleAI,VertexAI,Anthropic,TogetherAI,Perplexity,cohere,Ollama,xAI,Groq',
           'data-excluded-models': this.anthropicThinkingModels.join(','),
         },
         section: 'Advanced',
@@ -735,7 +741,7 @@ export class GenAILLM extends Component {
           'data-supported-models':
             'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,cohere,Ollama',
         }, // TODO: After implementing stream request with Perplexity, we can say 'all' for the supported models
-        help: 'Apply the agent\'s rules and tone to this call for consistency.',
+        help: "Apply the agent's rules and tone to this call for consistency.",
         section: 'Advanced',
         tooltipClasses: 'w-56 ',
         arrowClasses: '-ml-11',
@@ -1530,8 +1536,6 @@ export class GenAILLM extends Component {
     // Don't update if no options available - field should be hidden by toggleReasoningNestedFields
     if (options.length === 0) return;
 
-    const currentValue = field.value || 'medium';
-
     // Remove all existing options
     if (selectElem.elem?.options) {
       selectElem.removeOptions([...selectElem.elem.options].map((o: HTMLOptionElement) => o.value));
@@ -1542,13 +1546,9 @@ export class GenAILLM extends Component {
       selectElem.addOption(option.value, option.text, false); // Don't auto-select during addition
     });
 
-    // Determine the best default value for the model type
+    // Always reset to the model's default when switching models
     const defaultValue = this.getDefaultReasoningEffortForModel(model, options);
-    const availableValues = options.map((opt) => opt.value);
-
-    // Set the appropriate value: current if valid, otherwise default
-    const valueToSet = availableValues.includes(currentValue) ? currentValue : defaultValue;
-    selectElem.val(valueToSet);
+    selectElem.val(defaultValue);
   }
 
   /**
@@ -1562,13 +1562,18 @@ export class GenAILLM extends Component {
 
     const modelLower = model.toLowerCase();
 
+    // GPT-5-pro only supports 'high' reasoning effort
+    if (modelLower.includes('gpt-5-pro')) {
+      return 'high';
+    }
+
     // Default values for different model types
     if (
       modelLower.includes('gpt') ||
       modelLower.includes('openai') ||
       modelLower.includes('smythos/gpt')
     ) {
-      // For GPT models, prefer 'medium' as a balanced default
+      // For other GPT models, prefer 'medium' as a balanced default
       return options.find((opt) => opt.value === 'medium')?.value || options[0].value;
     } else if (modelLower.includes('qwen')) {
       // For Qwen models, prefer 'default' over 'none'
@@ -1658,18 +1663,18 @@ export class GenAILLM extends Component {
         // Fallback to input value if MetroUI component not available
         return input.value
           ? input.value
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter((tag) => tag)
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter((tag) => tag)
           : [];
       } catch (error) {
         console.warn('Error getting tag input value:', error);
         // Final fallback to input value
         return input.value
           ? input.value
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter((tag) => tag)
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter((tag) => tag)
           : [];
       }
     };
@@ -1887,18 +1892,18 @@ export class GenAILLM extends Component {
         // Fallback to input value if MetroUI component not available
         return input.value
           ? input.value
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter((tag) => tag)
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter((tag) => tag)
           : [];
       } catch (error) {
         console.warn('Error getting tag input value:', error);
         // Final fallback to input value
         return input.value
           ? input.value
-            .split(',')
-            .map((tag) => tag.trim())
-            .filter((tag) => tag)
+              .split(',')
+              .map((tag) => tag.trim())
+              .filter((tag) => tag)
           : [];
       }
     };

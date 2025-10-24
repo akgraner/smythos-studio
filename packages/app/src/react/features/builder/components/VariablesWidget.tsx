@@ -10,6 +10,7 @@ import { Spinner } from '@src/react/shared/components/ui/spinner';
 import { errKeys } from '@src/react/shared/constants';
 import { useAuthCtx } from '@src/react/shared/contexts/auth.context';
 import { errorToast, successToast } from '@src/shared/components/toast';
+import { MANAGED_VAULT_SCOPES } from '@src/shared/constants/general';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Tooltip } from 'flowbite-react';
 import { Component, useEffect, useRef, useState } from 'react';
@@ -92,7 +93,7 @@ const VariablesWidget = ({ agentId, workspace }: { agentId: string; workspace: W
     queryKey: ['vaultKeys'],
     queryFn: async () => {
       const response = await fetch(
-        '/api/page/builder/keys?fields=name,scope&excludeScope=global,AgentLLM',
+        `/api/page/builder/keys?fields=name,scope&excludeScope=global,${MANAGED_VAULT_SCOPES.join(',')}`,
       );
       return response.json();
     },
