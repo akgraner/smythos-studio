@@ -150,7 +150,10 @@ export class Agent extends EventEmitter {
       //         })
       //         .catch(() => {});
       // } else {
-      await this.accquireLock(id);
+      const lockResult = await this.accquireLock(id);
+      if (lockResult && !lockResult.success && lockResult.errorCode === 'LOCKED_AGENT') {
+        return true;
+      }
       // }
 
       return true;
