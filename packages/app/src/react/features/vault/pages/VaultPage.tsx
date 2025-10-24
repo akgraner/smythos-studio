@@ -81,9 +81,7 @@ export default function VaultPage() {
       )}
 
       <UserModels pageAccess={pageAccess} />
-      {!window.location.hostname.includes('smythos.com') && (
-        <UserCustomModels pageAccess={pageAccess} />
-      )}
+      <UserCustomModels pageAccess={pageAccess} />
       <PluginComponents targetId={PluginTarget.VaultPageEnterpriseModels} />
       <OAuthConnections />
 
