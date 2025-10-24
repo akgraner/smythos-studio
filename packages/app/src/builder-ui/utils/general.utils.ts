@@ -385,6 +385,7 @@ export async function renderDropdown(targetElm: HTMLElement, dropdownElm: HTMLEl
 
   overlay.addEventListener('click', () => {
     overlay.remove();
+    dropdownElm.remove();
   });
 
   dropdownElm.addEventListener('click', () => {
