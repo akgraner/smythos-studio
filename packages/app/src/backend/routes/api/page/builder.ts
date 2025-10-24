@@ -1361,15 +1361,16 @@ router.post('/trigger/:id/register', async (req, res) => {
     const { id } = req.params;
     const { payload } = req.body;
 
-    const url = `${config.env.API_SERVER}/trigger/${id}/register`;
+    const url = `${config.env.API_SERVER}/user/trigger/${id}/register`;
 
     const headers = {
       'X-AGENT-ID': req.headers['x-agent-id'],
+      ...(await authHeaders(req)), //add auth headers
     };
 
     console.log('trigger register url', url, headers);
 
-    const result: any = await axios.post(url, { ...payload }, { headers });
+    const result: any = await axios.post(url, { ...payload }, headers);
 
     console.log('>>> trigger register result', result.data);
 

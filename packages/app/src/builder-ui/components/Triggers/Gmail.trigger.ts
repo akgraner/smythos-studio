@@ -70,6 +70,23 @@ export class GmailTrigger extends Trigger {
       ...this.oauth?.configure(),
     };
 
+    // this.properties.defaultOutputs = [
+    //   'Payload',
+    //   'id',
+    //   'headers.subject',
+    //   'body.text',
+    //   'attachments',
+    //   'isUnread',
+    // ];
+    // for (let output of this.properties.defaultOutputs) {
+    //   this.properties.outputProps.push({
+    //     name: output,
+    //     type: 'string',
+    //     color: '#95f562',
+    //     expression: output == 'Payload' ? 'Payload' : `Payload.email.${output}`,
+    //   });
+    // }
+
     this.drawSettings.icon = `/img/triggers/gmail.svg`;
 
     this.drawSettings.color = '#00ff00';

@@ -427,6 +427,10 @@ export class Component extends EventEmitter {
       }, 15);
     });
   }
+
+  checkConnValidity(info: any) {
+    return true;
+  }
   protected async repaint(redrawConnectors = false) {
     if (redrawConnectors) {
       let connections = [...this.domElement.querySelectorAll('.endpoint')]
@@ -857,6 +861,7 @@ export class Component extends EventEmitter {
     const propSettings = this.outputSettings[propName];
 
     switch (propSettings?.type) {
+      case 'text':
       case 'string':
         return outputProps?.[propName] || propSettings?.default || _default;
       case 'number':
@@ -867,7 +872,8 @@ export class Component extends EventEmitter {
   }
   public async addOutput(parent, name, outputProperties: any = {}, options: any = {}) {
     if (this.outputNameExists(name)) {
-      errorToast(`${name} already exists`);
+      errorToast(`Output "${name}" already exists`);
+      console.warn(`Output "${name}" already exists`, this);
       return;
     }
     const jsPlumbInstance = this.workspace.jsPlumbInstance;
@@ -994,6 +1000,7 @@ export class Component extends EventEmitter {
           : '<span class="text-xl">Edit Output</span>';
 
       const orderedValConfig = getOrderedValConfig(valConfig, [
+        'name',
         'description',
         'expression',
         'additionalOptionsLabel',
@@ -1015,7 +1022,7 @@ export class Component extends EventEmitter {
             titleElm.appendChild(buttonElm);
           }
 
-          this.emit('inputEditorReady', dialog);
+          this.emit('outputEditorReady', dialog);
 
           // requires a tiny delay to make sure the input is focused
           delay(50).then(() => focusField(nameElm));
@@ -1184,6 +1191,7 @@ export class Component extends EventEmitter {
 
     switch (propSettings?.type) {
       case 'string':
+      case 'text':
         return inputProps?.[propName] || propSettings?.default || _default;
       case 'number':
         return inputProps?.[propName] || propSettings?.default || _default;
@@ -1194,7 +1202,8 @@ export class Component extends EventEmitter {
 
   public async addInput(parent, name, inputProperties: any = {}) {
     if (this.inputNameExists(name)) {
-      errorToast(`${name} already exists`);
+      errorToast(`Input "${name}" already exists`);
+      console.warn(`Input "${name}" already exists`, this);
       return;
     }
     const jsPlumbInstance: any = this.workspace.jsPlumbInstance;
@@ -2891,6 +2900,7 @@ export class Component extends EventEmitter {
         : '<span class="text-xl">Add Output</span>';
 
     const orderedValConfig = getOrderedValConfig(valConfig, [
+      'name',
       'description',
       'expression',
       'additionalOptionsLabel',
@@ -2912,7 +2922,7 @@ export class Component extends EventEmitter {
           titleElm.appendChild(buttonElm);
         }
 
-        this.emit('inputEditorReady', dialog);
+        this.emit('outputEditorReady', dialog);
 
         // requires a tiny delay to make sure the input is focused
         delay(50).then(() => focusField(nameElm));

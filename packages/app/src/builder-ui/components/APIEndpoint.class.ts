@@ -3,7 +3,7 @@ import { debounce } from 'lodash-es';
 import { EMBODIMENT_DESCRIPTIONS } from '../../shared/constants/general';
 import EventEmitter from '../EventEmitter.class';
 import { openEmbodimentDialog } from '../pages/builder/agent-settings';
-import { confirm } from '../ui/dialogs';
+import { alert, confirm } from '../ui/dialogs';
 import { renderEndpointFormPreviewSidebar } from '../ui/react-injects';
 import { delay } from '../utils';
 import { Component } from './Component.class';
@@ -491,7 +491,8 @@ export class APIEndpoint extends Component {
       if (prop === 'name') {
         const oldName = oldValue;
         const newName = newValue;
-        const newOutputName = `_.${newName}`;
+        //const newOutputName = `_.${newName}`;
+        const newOutputName = newName;
         const inputName = inputDiv.getAttribute('smt-name');
         const outputName = outputDiv.getAttribute('smt-name');
 
@@ -564,7 +565,8 @@ export class APIEndpoint extends Component {
 
     const outputDiv: any = await super.addOutput(
       outputParent,
-      `_.${name}`,
+      //`_.${name}`,
+      name,
       {
         expression: `body.${name}`,
       },
@@ -983,5 +985,22 @@ export class APIEndpoint extends Component {
 
     // Sync default values after redraw
     setTimeout(() => this.syncAllDefaultValues(), 100);
+  }
+
+  checkConnValidity(info: any) {
+    console.log('checkConnValidity', info);
+    const sourceDomComponent = info.source.closest('.component');
+    const targetDomComponent = info.target.closest('.component');
+    if (!sourceDomComponent || !targetDomComponent) return false;
+    if (!sourceDomComponent.classList.contains('agent-card')) {
+      alert(
+        'Unsupported Connection',
+        'Skills can only be connected to the agent card',
+        'OK',
+        'error',
+      );
+      return false;
+    }
+    return true;
   }
 }

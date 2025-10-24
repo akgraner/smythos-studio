@@ -373,7 +373,10 @@ export function handleTemplateVars(targetElm, component = null) {
         !clickedElm?.hasAttribute('readonly')
       ) {
         console.log('clicked elm', clickedElm);
-        const triggersList = clickedElm.getAttribute('data-triggers')?.split(',');
+        let dataTriggers = clickedElm.getAttribute('data-triggers');
+        if (!dataTriggers) return;
+
+        const triggersList = Array.isArray(dataTriggers) ? dataTriggers.split(',') : [dataTriggers];
         const triggersSchema = triggersList.map((triggerId) => {
           const component = document.getElementById(triggerId);
           const control = (component as any)?._control;
@@ -407,7 +410,7 @@ function extractTriggerVariables(schema: any, path = '') {
 
   for (const key in schema) {
     const fullPath = `${path?.trim() ? `${path}.` : ''}${key}`;
-    variables.set(fullPath, { var: `{{${fullPath}}}`, type: 'trigger' });
+    variables.set(fullPath, { var: `${fullPath}`, type: 'trigger' });
     if (typeof schema[key] === 'object') {
       const nestedVariables = extractTriggerVariables(schema[key], fullPath);
       for (const [nestedKey, nestedValue] of nestedVariables) {
