@@ -234,21 +234,24 @@ export function handleTemplateVars(targetElm, component = null) {
           `.template-var-button[data-var="${clickedElm.getAttribute('data-var')}"]`,
         );
 
+        // Prioritize finding json-editor (ACE editor textarea) first, then fall back to regular fields
+        const formGroup = buttonElm.closest('.form-group');
         const focusedField =
-          (buttonElm
-            .closest('.form-group')
-            .querySelector('[data-template-vars=true]') as HTMLTextAreaElement) ||
-          (buttonElm
-            .closest('.form-group')
-            .querySelector('[data-agent-vars=true]') as HTMLTextAreaElement);
+          (formGroup?.querySelector('.json-editor') as HTMLTextAreaElement) ||
+          (formGroup?.querySelector('textarea[data-template-vars=true]') as HTMLTextAreaElement) ||
+          (formGroup?.querySelector('textarea[data-agent-vars=true]') as HTMLTextAreaElement) ||
+          (formGroup?.querySelector('input[data-template-vars=true]') as HTMLTextAreaElement) ||
+          (formGroup?.querySelector('input[data-agent-vars=true]') as HTMLTextAreaElement) ||
+          (formGroup?.querySelector('textarea') as HTMLTextAreaElement);
 
         // changing select element does not remove template-var-buttons and these buttons can add inputs to readonly field
-        if (!focusedField.hasAttribute('readonly')) {
-          // check if it is ace editor
-          if (focusedField?.classList?.contains('json-editor')) {
+        if (focusedField && !focusedField.hasAttribute('readonly')) {
+          // check if it is ace editor by checking for _editor property
+          const editor = (<any>focusedField)?._editor;
+          if (editor) {
             const textToInsert: any = buttonElm.getAttribute('data-var');
-            const editor = (<any>focusedField)?._editor;
 
+            // Insert text at current cursor position in ACE editor
             editor.session.replace(editor?.selection?.getRange(), textToInsert);
 
             // Set the cursor to the new position
@@ -282,13 +285,20 @@ export function handleTemplateVars(targetElm, component = null) {
         // Remove the template variable buttons container
         document.querySelector(`.${TEMPLATE_VAR_BTNS_WRAPPER_CLASS}.tvb-${compUid}`)?.remove();
       } else if (
-        clickedElm.getAttribute('data-template-vars') === 'true' &&
-        !clickedElm?.hasAttribute('readonly')
+        (clickedElm.getAttribute('data-template-vars') === 'true' ||
+          (clickedElm as HTMLElement)?.closest?.('[data-template-vars="true"]')) &&
+        !(clickedElm as HTMLElement)?.closest?.('[readonly]')
       ) {
         // * Display template variable buttons only if the field is not readonly
         const inputVariables = window['__INPUT_TEMPLATE_VARIABLES__']?.[compUid] || new Map();
 
-        const fieldName = clickedElm?.name;
+        // For ACE editors, find the actual textarea element to get the field name
+        let fieldName = clickedElm?.name;
+        if (!fieldName) {
+          const formGroup = (clickedElm as HTMLElement).closest('.form-group');
+          const textarea = formGroup?.querySelector('textarea[data-template-vars=true]') as HTMLTextAreaElement;
+          fieldName = textarea?.name;
+        }
 
         // set the last field with template vars to keep the field variables when add/remove input
         window['__LAST_FIELD_WITH_TEMPLATE_VARS__'] = fieldName;
@@ -331,12 +341,19 @@ export function handleTemplateVars(targetElm, component = null) {
 
         focusedElmParent.appendChild(buttonsContainer);
       } else if (
-        clickedElm.getAttribute('data-agent-vars') === 'true' &&
-        !clickedElm?.hasAttribute('readonly')
+        (clickedElm.getAttribute('data-agent-vars') === 'true' ||
+          (clickedElm as HTMLElement)?.closest?.('[data-agent-vars="true"]')) &&
+        !(clickedElm as HTMLElement)?.closest?.('[readonly]')
       ) {
         // * Display template variable buttons only if the field is not readonly
 
-        const fieldName = clickedElm?.name;
+        // For ACE editors, find the actual textarea element to get the field name
+        let fieldName = clickedElm?.name;
+        if (!fieldName) {
+          const formGroup = (clickedElm as HTMLElement).closest('.form-group');
+          const textarea = formGroup?.querySelector('textarea[data-agent-vars=true]') as HTMLTextAreaElement;
+          fieldName = textarea?.name;
+        }
 
         // set the last field with template vars to keep the field variables when add/remove input
         window['__LAST_FIELD_WITH_TEMPLATE_VARS__'] = fieldName;

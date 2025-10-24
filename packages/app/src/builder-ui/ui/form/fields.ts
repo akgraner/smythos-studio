@@ -688,6 +688,9 @@ async function initializeCodeEditor(
   // Initialize the code editor
   setCodeEditor(textarea, mode, theme, disableWorker);
 
+  // Add json-editor class to match inline textarea behavior
+  textarea.classList.add('json-editor');
+
   // Wait for editor initialization and set value
   await new Promise((resolve) => requestAnimationFrame(resolve));
 
@@ -724,6 +727,11 @@ function copyTextareaAttributes(
     'readonly',
     'disabled',
     'placeholder',
+    // Template variables attributes
+    'data-template-vars',
+    'data-agent-vars',
+    'data-template-excluded-vars',
+    'data-template-excluded-var-types',
   ];
 
   // Copy all relevant attributes from source to target
