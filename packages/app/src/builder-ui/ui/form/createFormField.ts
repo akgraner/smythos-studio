@@ -666,7 +666,14 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     span.classList.add('invalid_feedback');
     // Use textContent instead of innerHTML for validation messages (no HTML needed)
     span.textContent = entry.validateMessage;
-    div.appendChild(span);
+
+    // For expandable textareas, append the error message inside the wrapper
+    // so it's a sibling to the textarea element (which gets the .invalid class)
+    if (textareaWrapper) {
+      textareaWrapper.appendChild(span);
+    } else {
+      div.appendChild(span);
+    }
   }
 
   formElement.dispatchEvent(new Event('created'));
