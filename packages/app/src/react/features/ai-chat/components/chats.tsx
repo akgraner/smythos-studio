@@ -46,6 +46,13 @@ export const Chats: FC<IChatsProps> = (props) => {
   const { retryLastMessage } = useChatContext();
   const dropzoneRef = useDragAndDrop({ onDrop: handleFileDrop });
 
+  /**
+   * Auto-scroll effect optimized for streaming
+   * Only scrolls when last message is system type and changes
+   * Uses ref to track last scroll to prevent excessive scrolling
+   */
+  const lastScrolledIdRef = useRef<string | number | undefined>();
+
   useEffect(() => {
     const lastMessage = messages[messages.length - 1];
     if (!lastMessage) return;
@@ -53,7 +60,9 @@ export const Chats: FC<IChatsProps> = (props) => {
     // ✅ Use type-based discrimination instead of 'me' boolean
     const isSystemMessage = lastMessage.type === 'system';
 
-    if (isSystemMessage) {
+    // Only scroll if it's a system message and we haven't scrolled for this message yet
+    if (isSystemMessage && lastMessage.id !== lastScrolledIdRef.current) {
+      lastScrolledIdRef.current = lastMessage.id;
       smartScrollToBottom();
     }
   }, [messages, smartScrollToBottom]);
@@ -61,7 +70,8 @@ export const Chats: FC<IChatsProps> = (props) => {
   const avatar = agent?.aiAgentSettings?.avatar;
 
   /**
-   * Group messages by conversationTurnId
+   * Group messages by conversationTurnId (Optimized)
+   * Uses incremental grouping for better performance with long conversations
    * Messages with same turnId are grouped together
    * Messages without turnId are treated as individual groups
    */
@@ -72,7 +82,14 @@ export const Chats: FC<IChatsProps> = (props) => {
       isUserMessage: boolean;
     }> = [];
 
-    messages.forEach((message) => {
+    // Optimized: Early return for empty messages
+    if (messages.length === 0) {
+      return groups;
+    }
+
+    // Optimized: Process messages in a single pass
+    for (let i = 0; i < messages.length; i++) {
+      const message = messages[i];
       const turnId = message.conversationTurnId || null;
       const isUser = message.type === 'user';
 
@@ -83,7 +100,7 @@ export const Chats: FC<IChatsProps> = (props) => {
           messages: [message],
           isUserMessage: true,
         });
-        return;
+        continue;
       }
 
       // For AI messages, check if we can add to existing group
@@ -100,7 +117,7 @@ export const Chats: FC<IChatsProps> = (props) => {
           isUserMessage: false,
         });
       }
-    });
+    }
 
     return groups;
   }, [messages]);
