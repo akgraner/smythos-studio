@@ -767,7 +767,17 @@ export class Workspace extends EventEmitter {
     } catch (error) {
       this._saving = false;
       console.error('Error', error);
+      if (error?.errorCode === 'LOCKED_AGENT' || error?.errorCode === 'LOCKED_AGENT_HANDLED') {
+        this.updateAgentSaveStatus('View Only', 'alert');
+        return null;
+      }
+
       if (typeof error?.error === 'string') {
+        if (error.error.includes('409') || error.error.toLowerCase().includes('lock')) {
+          this.updateAgentSaveStatus('View Only', 'alert');
+          return null;
+        }
+
         if (error.error.includes('403')) {
           errorToast('You are not authorized to save or create agent');
         } else {
@@ -858,7 +868,14 @@ export class Workspace extends EventEmitter {
         return true;
       }
     } catch (error) {
-      errorToast(error.message ?? 'Deleting Failed');
+      if (
+        error?.errorCode !== 'LOCKED_AGENT' &&
+        error?.errorCode !== 'LOCKED_AGENT_HANDLED' &&
+        !error?.error?.includes('409') &&
+        !error?.error?.toLowerCase?.()?.includes('lock')
+      ) {
+        errorToast(error.message ?? 'Deleting Failed');
+      }
       return false;
     }
   }
@@ -1799,7 +1816,14 @@ export class Workspace extends EventEmitter {
       hideOverlay();
       this._loading = false;
       console.error('Error', error);
-      errorToast('Loading failed');
+      if (
+        error?.errorCode !== 'LOCKED_AGENT' &&
+        error?.errorCode !== 'LOCKED_AGENT_HANDLED' &&
+        !error?.error?.includes('409') &&
+        !error?.error?.toLowerCase?.()?.includes('lock')
+      ) {
+        errorToast('Loading failed');
+      }
     }
   }
 
