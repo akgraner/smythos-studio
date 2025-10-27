@@ -11,6 +11,7 @@ import {
   IStreamChunk,
   IStreamConfig,
 } from '@react/features/ai-chat/types/chat.types';
+import { performanceMonitor } from '@react/features/ai-chat/utils/performance-monitor';
 import {
   createThinkingManager,
   extractFunctionName,
@@ -105,6 +106,9 @@ export class ChatAPIClient {
     let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
 
     try {
+      // Start performance monitoring
+      performanceMonitor.startStream();
+
       // Notify stream start
       if (onStart) {
         onStart();
@@ -165,6 +169,10 @@ export class ChatAPIClient {
 
       // Stream completed successfully
       this.thinkingManager.stop();
+
+      // End performance monitoring
+      performanceMonitor.endStream();
+
       onComplete();
     } catch (error) {
       // Handle different error types
@@ -172,6 +180,9 @@ export class ChatAPIClient {
 
       // Stop thinking messages on error
       this.thinkingManager.stop();
+
+      // End performance monitoring on error
+      performanceMonitor.endStream();
 
       // Notify error callback
       onError(chatError);
@@ -227,8 +238,18 @@ export class ChatAPIClient {
       const decodedValue = decoder.decode(value, { stream: true });
       accumulatedData += decodedValue;
 
+      // Record chunk arrival for performance monitoring
+      performanceMonitor.recordChunkArrival(decodedValue, 'content');
+
       // Parse JSON chunks
+      const processingStart = performance.now();
       const chunks = splitJSONStream(accumulatedData);
+      const processingTime = performance.now() - processingStart;
+
+      // Record processing time if we parsed chunks
+      if (chunks.length > 0 && performanceMonitor.isEnabled()) {
+        performanceMonitor.recordProcessingTime(0, processingTime);
+      }
 
       if (chunks.length === 0) {
         continue; // Wait for more complete data
