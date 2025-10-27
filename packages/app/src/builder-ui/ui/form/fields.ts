@@ -638,6 +638,11 @@ function applyTextareaStyles(textarea: HTMLTextAreaElement, isCodeEditor: boolea
       font-size: 14px;
       outline: none;
     `;
+  } else {
+    // Regular textarea styling for modal
+    textarea.style.cssText = `
+      overflow-y: auto;
+    `;
   }
 }
 
@@ -950,6 +955,7 @@ async function handleExpandTextarea(
   attributes: Record<string, string> | undefined,
   contentType?: string,
   vaultCondition?: { property: string; value: string; getValue?: () => string },
+  validateMessage?: string,
 ): Promise<void> {
   // Dynamically determine code configuration from textarea attributes
   // This ensures the expandable textarea uses the current content type configuration
@@ -979,12 +985,19 @@ async function handleExpandTextarea(
   textareaWrapper.style.flex = '1';
   textareaWrapper.style.display = 'flex';
   textareaWrapper.style.flexDirection = 'column';
+  textareaWrapper.style.overflow = 'hidden';
 
   // Create modal textarea
   const modalTextarea = document.createElement('textarea') as TextAreaWithEditor;
   modalTextarea.value = originalTextarea.value;
   modalTextarea.classList.add('form-control', 'flex-1', 'resize-none');
   modalTextarea.id = 'expanded-textarea';
+
+  // Copy validation attributes from original textarea for Metro UI validation
+  const validateAttr = originalTextarea.getAttribute('data-validate');
+  if (validateAttr) {
+    modalTextarea.setAttribute('data-validate', validateAttr);
+  }
 
   // Apply styles based on editor type
   applyTextareaStyles(modalTextarea, hasCodeEditor);
@@ -1045,12 +1058,23 @@ async function handleExpandTextarea(
     });
   }
 
+  // Create validation message element if provided
+  let validationMessageElm: HTMLElement | null = null;
+  if (validateMessage) {
+    validationMessageElm = document.createElement('div');
+    validationMessageElm.classList.add('mt-2', 'invalid_feedback');
+    validationMessageElm.textContent = validateMessage;
+  }
+
   // Create template variable buttons container
   const templateVarsContainer = document.createElement('div');
   templateVarsContainer.classList.add('template-var-buttons', 'mt-2');
   templateVarsContainer.style.display = 'none';
 
   textareaWrapper.appendChild(modalTextarea);
+  if (validationMessageElm) {
+    textareaWrapper.appendChild(validationMessageElm);
+  }
   modalContainer.appendChild(textareaWrapper);
   modalContainer.appendChild(templateVarsContainer);
 
@@ -1108,6 +1132,34 @@ async function handleExpandTextarea(
 
       // Re-attach other action buttons
       reattachActionButtons(dialogElm, originalTextarea, modalTextareaInDialog);
+
+      // Simple validation: check maxlength and add .invalid class if exceeded
+      const validateAttr = originalTextarea.getAttribute('data-validate');
+      const maxLengthMatch = validateAttr?.match(/maxlength=(\d+)/);
+
+      if (maxLengthMatch) {
+        const maxLength = parseInt(maxLengthMatch[1], 10);
+        const validateError = dialogElm.querySelector('.invalid_feedback') as HTMLElement;
+
+        /**
+         * Real-time validation on input
+         */
+        const checkValidation = (): void => {
+          const formGroup = modalTextareaInDialog.closest('.form-group') as HTMLElement;
+          if (modalTextareaInDialog?.value?.trim()?.length > maxLength) {
+            formGroup?.classList.add('invalid');
+            if (validateError) validateError.style.display = 'block';
+            modalTextareaInDialog.style.setProperty('border', '1px solid #c50f1f', 'important');
+          } else {
+            formGroup?.classList.remove('invalid');
+            if (validateError) validateError.style.display = 'none';
+            modalTextareaInDialog.style.setProperty('border', '1px solid rgb(209, 213, 219)', 'important');
+          }
+        };
+
+        modalTextareaInDialog.addEventListener('input', checkValidation);
+        checkValidation(); // Check on load
+      }
     },
     onCloseClick(dialogElm: HTMLElement) {
       const modalTextareaInDialog = dialogElm.querySelector('textarea') as TextAreaWithEditor;
@@ -1140,6 +1192,7 @@ async function handleExpandTextarea(
  * @param entry.attributes - Additional attributes for the textarea
  * @param entry.code - Code editor configuration (mode, theme, disableWorker)
  * @param entry.contentType - Content type for backward compatibility
+ * @param entry.validateMessage - Validation error message to display in the modal
  * @param entry.vaultCondition - Dynamic condition for showing vault button
  * @param entry.vaultCondition.property - Property name to check (e.g., 'contentType', 'mode', 'type')
  * @param entry.vaultCondition.value - Value that should trigger vault button display
@@ -1160,6 +1213,7 @@ export const createTextArea = (entry: {
     disableWorker?: boolean;
   };
   contentType?: string;
+  validateMessage?: string;
   vaultCondition?: {
     property: string;
     value: string;
@@ -1175,6 +1229,7 @@ export const createTextArea = (entry: {
     attributes,
     code,
     contentType,
+    validateMessage,
     vaultCondition,
   } = entry;
   const textarea = document.createElement('textarea');
@@ -1215,6 +1270,7 @@ export const createTextArea = (entry: {
           attributes,
           contentType,
           vaultCondition,
+          validateMessage,
         );
       } catch (error) {
         console.error('Error opening textarea modal:', error);
