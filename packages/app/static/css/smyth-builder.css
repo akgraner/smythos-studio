@@ -584,6 +584,9 @@ body.locked #agent-sidebar-root .restore-button {
   padding: 0px;
 }
 
+.collapsed.component .output-container,
+.collapsed.component .input-container,
+.collapsed.component .endpoint,
 .collapsed .component .output-container,
 .collapsed .component .input-container,
 .collapsed .component .endpoint {
@@ -591,10 +594,13 @@ body.locked #agent-sidebar-root .restore-button {
   overflow: hidden;
 }
 
+.collapsed.component .ep-control button,
 .collapsed .component .ep-control button {
   display: none;
 }
 
+.collapsed.component .output-container,
+.collapsed.component .input-container,
 .collapsed .component .output-container,
 .collapsed .component .input-container {
   position: relative;
@@ -602,7 +608,7 @@ body.locked #agent-sidebar-root .restore-button {
   opacity: 0;
 }
 
-.collapsed .component .ep-control.outputs::after {
+.collapsed.component .ep-control.outputs::after .collapsed .component .ep-control.outputs::after {
   content: ' ';
   display: block;
   background: #d8d8d8;
@@ -614,7 +620,7 @@ body.locked #agent-sidebar-root .restore-button {
   top: 4px;
 }
 
-.collapsed .component .ep-control.inputs::before {
+.collapsed.component .ep-control.inputs::before .collapsed .component .ep-control.inputs::before {
   content: ' ';
   display: block;
   background: #d8d8d8;
