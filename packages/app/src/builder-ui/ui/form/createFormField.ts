@@ -484,15 +484,26 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     window['__FIELD_TEMPLATE_VARIABLES__'][entry?.name] = variables;
   }
 
-  // Hide error message when user starts typing if the field is invalid
-  formElement.addEventListener('keyup', (e) => {
-    const _this = e.target as HTMLElement;
-    const formControl = _this.closest('.form-control');
+  // Real-time validation - only clear error when field becomes valid
+  if ((entry.validate?.includes('custom') || entry.smythValidate?.includes('func=')) && formElement.tagName !== 'SELECT') {
+    formElement.addEventListener('input', async (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      const formControl = input.closest('.form-control');
+      const value = input.value.trim();
 
-    if (formControl?.classList?.contains('invalid')) {
-      formControl.classList.remove('invalid');
-    }
-  });
+      // Extract validator function name (supports both func= and custom= formats)
+      const match = (entry.smythValidate || entry.validate)?.match(/(?:func|custom)=(\w+)/);
+      const validatorFunc = match && (window as any)[match[1]];
+
+      // Validate and update UI
+      if (value && validatorFunc) {
+        const isValid = await Promise.resolve(validatorFunc(value));
+        formControl?.classList.toggle('invalid', !isValid);
+      } else if (!value && (entry.validate?.includes('required') || entry.required)) {
+        formControl?.classList.add('invalid');
+      }
+    });
+  }
 
   let labelElement = null;
   if (label /*&& displayType !== 'inline'*/) {
