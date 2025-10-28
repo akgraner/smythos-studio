@@ -469,6 +469,7 @@ export class APIEndpoint extends Component {
       if (prop === 'name') {
         const oldName = oldValue;
         const newName = newValue;
+        //!\\ don't enable this line for now, it may introduce a breaking change
         //const newOutputName = `_.${newName}`;
         const newOutputName = newName;
         const inputName = inputDiv.getAttribute('smt-name');
@@ -504,23 +505,6 @@ export class APIEndpoint extends Component {
         }
       }
     });
-
-    this.addEventListener('inputEditorReady', (dialog) => {
-      //try to find the triggerBinding field by name
-      const triggerBinding = dialog.querySelector('.form-box [name="triggerBinding"]');
-      if (!triggerBinding) return;
-
-      const connectedToTriggers = this.workspace.agent.data.connections
-        .filter((c) => c.targetId === this.uid)
-        .map((c) => c.sourceId);
-      if (connectedToTriggers.length > 0) {
-        triggerBinding.classList.remove('hidden');
-        triggerBinding.setAttribute('data-triggers', connectedToTriggers.join(','));
-      } else {
-        triggerBinding.classList.add('hidden');
-        triggerBinding.removeAttribute('data-triggers');
-      }
-    });
     await delay(50);
     this.advancedModeActions(this.isOnAdvancedMode);
   }
@@ -546,6 +530,7 @@ export class APIEndpoint extends Component {
 
     const outputDiv: any = await super.addOutput(
       outputParent,
+      //!\\ don't enable this line for now, it may introduce a breaking change
       //`_.${name}`,
       name,
       {
