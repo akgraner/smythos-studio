@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import {
@@ -266,36 +266,67 @@ export const useAgentChatContext = (
   }, []);
 
   // ============================================================================
-  // CONTEXT VALUE ASSEMBLY
+  // CONTEXT VALUE ASSEMBLY (Memoized for Performance)
   // ============================================================================
 
-  const chatContextValue = {
-    // File handling
-    files,
-    uploadingFiles,
-    isUploadInProgress,
-    isMaxFilesUploaded,
-    handleFileChange,
-    handleFileDrop,
-    removeFile,
-    clearFiles,
-    uploadError,
-    clearError,
+  /**
+   * Memoized context value to prevent unnecessary re-renders
+   * Only recreates when dependencies actually change
+   * This is critical for performance in long conversations
+   */
+  const chatContextValue = useMemo(
+    () => ({
+      // File handling
+      files,
+      uploadingFiles,
+      isUploadInProgress,
+      isMaxFilesUploaded,
+      handleFileChange,
+      handleFileDrop,
+      removeFile,
+      clearFiles,
+      uploadError,
+      clearError,
 
-    // Chat state
-    isGenerating,
-    isInputProcessing,
-    isRetrying: false, // Not implemented in new hook yet
-    messagesHistory: sharedMessagesHistory,
-    inputPlaceholder: queryInputPlaceholder,
-    inputDisabled,
+      // Chat state
+      isGenerating,
+      isInputProcessing,
+      isRetrying: false, // Not implemented in new hook yet
+      messagesHistory: sharedMessagesHistory,
+      inputPlaceholder: queryInputPlaceholder,
+      inputDisabled,
 
-    // Chat actions
-    sendMessage,
-    retryLastMessage,
-    stopGenerating,
-    clearChatSession,
-  };
+      // Chat actions
+      sendMessage,
+      retryLastMessage,
+      stopGenerating,
+      clearChatSession,
+    }),
+    [
+      // File handling dependencies
+      files,
+      uploadingFiles,
+      isUploadInProgress,
+      isMaxFilesUploaded,
+      handleFileChange,
+      handleFileDrop,
+      removeFile,
+      clearFiles,
+      uploadError,
+      clearError,
+      // Chat state dependencies
+      isGenerating,
+      isInputProcessing,
+      sharedMessagesHistory,
+      queryInputPlaceholder,
+      inputDisabled,
+      // Chat action dependencies
+      sendMessage,
+      retryLastMessage,
+      stopGenerating,
+      clearChatSession,
+    ],
+  );
 
   // ============================================================================
   // RETURN VALUE

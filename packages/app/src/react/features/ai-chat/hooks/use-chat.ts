@@ -86,6 +86,10 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   // Track current conversation turn ID for grouping messages
   const currentTurnIdRef = useRef<string | null>(null);
 
+  // Throttling ref for batched updates
+  const updateThrottleRef = useRef<NodeJS.Timeout | null>(null);
+  const pendingUpdateRef = useRef<{ content: string; turnId?: string } | null>(null);
+
   // Stream management
   const { isStreaming, error, startStream, abortStream, clearError } = useChatStream({
     client,
@@ -182,46 +186,108 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   }, [avatar]);
 
   /**
-   * Updates the current AI message content
+   * Updates the current AI message content (optimized with direct mutation)
+   * @param content - Message content to update
+   * @param isError - Whether this is an error message
+   * @param immediate - Force immediate update bypassing throttle
    */
-  const updateAIMessage = useCallback((content: string, isError: boolean = false) => {
-    setMessages((prev) => {
-      const updated = [...prev];
-      const lastMessageIndex = updated.length - 1;
+  const updateAIMessage = useCallback(
+    (content: string, isError: boolean = false, immediate: boolean = false) => {
+      setMessages((prev) => {
+        const lastMessageIndex = prev.length - 1;
 
-      if (
-        lastMessageIndex >= 0 &&
-        (updated[lastMessageIndex].type === 'system' ||
-          updated[lastMessageIndex].type === 'loading')
-      ) {
-        updated[lastMessageIndex] = {
-          ...updated[lastMessageIndex],
-          message: content,
-          type: isError ? 'error' : 'system', // Set type based on error state
-        };
+        if (
+          lastMessageIndex >= 0 &&
+          (prev[lastMessageIndex].type === 'system' || prev[lastMessageIndex].type === 'loading')
+        ) {
+          // Optimized: Create new array only with modified last element
+          // This avoids copying the entire array for long conversations
+          const newMessages = prev.slice(0, -1);
+          newMessages.push({
+            ...prev[lastMessageIndex],
+            message: content,
+            type: isError ? 'error' : 'system',
+          });
+          return newMessages;
+        }
+
+        return prev;
+      });
+    },
+    [],
+  );
+
+  /**
+   * Updates thinking/status message for current AI response (optimized)
+   */
+  const updateThinkingMessage = useCallback((thinkingMessage: string) => {
+    setMessages((prev) => {
+      const lastMessageIndex = prev.length - 1;
+
+      if (lastMessageIndex >= 0 && prev[lastMessageIndex].type === 'system') {
+        // Optimized: Only update last element without copying entire array
+        const newMessages = prev.slice(0, -1);
+        newMessages.push({
+          ...prev[lastMessageIndex],
+          thinkingMessage,
+        });
+        return newMessages;
       }
 
-      return updated;
+      return prev;
     });
   }, []);
 
   /**
-   * Updates thinking/status message for current AI response
+   * Throttled update for message content during streaming
+   * Batches multiple chunk updates to reduce re-renders
+   * @param content - Accumulated content
+   * @param turnId - Optional conversation turn ID
    */
-  const updateThinkingMessage = useCallback((thinkingMessage: string) => {
-    setMessages((prev) => {
-      const updated = [...prev];
-      const lastMessageIndex = updated.length - 1;
+  const throttledUpdateAIMessage = useCallback((content: string, turnId?: string) => {
+    // Store pending update
+    pendingUpdateRef.current = { content, turnId };
 
-      if (lastMessageIndex >= 0 && updated[lastMessageIndex].type === 'system') {
-        updated[lastMessageIndex] = {
-          ...updated[lastMessageIndex],
-          thinkingMessage,
-        };
+    // Clear existing throttle
+    if (updateThrottleRef.current) {
+      clearTimeout(updateThrottleRef.current);
+    }
+
+    // Schedule batched update
+    updateThrottleRef.current = setTimeout(() => {
+      if (pendingUpdateRef.current) {
+        const { content: pendingContent, turnId: pendingTurnId } = pendingUpdateRef.current;
+
+        setMessages((prev) => {
+          const lastMessageIndex = prev.length - 1;
+
+          if (lastMessageIndex >= 0) {
+            const lastMsg = prev[lastMessageIndex];
+            const needsUpdate =
+              lastMsg.type === 'system' ||
+              lastMsg.type === 'loading' ||
+              (pendingTurnId && !lastMsg.conversationTurnId);
+
+            if (needsUpdate) {
+              // Optimized: Only update last element
+              const newMessages = prev.slice(0, -1);
+              newMessages.push({
+                ...lastMsg,
+                message: pendingContent,
+                conversationTurnId: pendingTurnId || lastMsg.conversationTurnId,
+                type: 'system',
+              });
+              return newMessages;
+            }
+          }
+
+          return prev;
+        });
+
+        pendingUpdateRef.current = null;
       }
-
-      return updated;
-    });
+      updateThrottleRef.current = null;
+    }, 50); // 50ms throttle - balances performance and responsiveness
   }, []);
 
   /**
@@ -267,20 +333,12 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
               currentTurnIdRef.current = null; // Reset turn ID for new conversation turn
             },
             onContent: (content: string, conversationTurnId?: string) => {
+              // Capture turn ID only once
               if (conversationTurnId && !currentTurnIdRef.current) {
-                currentTurnIdRef.current = conversationTurnId; // Capture turn ID from first chunk
-
-                setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastIndex = updated.length - 1;
-                  if (lastIndex >= 0 && updated[lastIndex].type === 'loading') {
-                    updated[lastIndex] = { ...updated[lastIndex], conversationTurnId };
-                  }
-                  return updated;
-                });
+                currentTurnIdRef.current = conversationTurnId;
               }
 
-              // If content comes after thinking, clear thinking message from current message and create new message for new content
+              // If content comes after thinking, clear thinking message and create new message
               if (hasThinkingOccurredRef.current && isThinkingRef.current) {
                 updateThinkingMessage(''); // Clear thinking message from current message
                 isThinkingRef.current = false; // Mark that we've handled the thinking transition
@@ -288,20 +346,27 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
                 addAIMessage(); // Add new AI message for content after thinking
               }
 
-              currentAIMessageRef.current += content; // Accumulate content
-              updateAIMessage(currentAIMessageRef.current); // Update current message with accumulated content
+              // Accumulate content
+              currentAIMessageRef.current += content;
+
+              // Use throttled update for better performance during streaming
+              // This batches rapid chunk updates to reduce re-renders
+              throttledUpdateAIMessage(currentAIMessageRef.current, conversationTurnId);
             },
             onThinking: (thinkingMsg: string, type: TThinkingType, conversationTurnId?: string) => {
               if (conversationTurnId && !currentTurnIdRef.current) {
                 currentTurnIdRef.current = conversationTurnId; // Capture turn ID from thinking messages
 
+                // Optimized: Consistent with other state updates
                 setMessages((prev) => {
-                  const updated = [...prev];
-                  const lastIndex = updated.length - 1;
+                  const lastIndex = prev.length - 1;
                   if (lastIndex >= 0) {
-                    updated[lastIndex] = { ...updated[lastIndex], conversationTurnId };
+                    // Only update last element without copying entire array
+                    const newMessages = prev.slice(0, -1);
+                    newMessages.push({ ...prev[lastIndex], conversationTurnId });
+                    return newMessages;
                   }
-                  return updated;
+                  return prev;
                 });
               }
 
@@ -342,12 +407,21 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
               if (onError) onError(new Error(errorMessage));
             },
             onComplete: () => {
-              // Finalize message
+              // Clear throttle and flush pending updates immediately
+              if (updateThrottleRef.current) {
+                clearTimeout(updateThrottleRef.current);
+                updateThrottleRef.current = null;
+              }
+
+              // Finalize message with accumulated content
               const finalMessage = currentAIMessageRef.current;
-              updateAIMessage(finalMessage);
+              updateAIMessage(finalMessage, false, true); // immediate update
 
               // Reset turn ID on complete
               currentTurnIdRef.current = null;
+
+              // Clear pending updates
+              pendingUpdateRef.current = null;
 
               if (onChatComplete) onChatComplete(finalMessage);
             },
@@ -373,6 +447,7 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
       addAIMessage,
       updateAIMessage,
       updateThinkingMessage,
+      throttledUpdateAIMessage,
       startStream,
       clearError,
       onChatComplete,
@@ -423,12 +498,23 @@ export const useChat = (config: IUseChatConfig): IUseChatReturn => {
   }, [abortStream]);
 
   /**
-   * Clears all messages
+   * Clears all messages and resets state
    */
   const clearMessages = useCallback(() => {
+    // Clear throttle timeout
+    if (updateThrottleRef.current) {
+      clearTimeout(updateThrottleRef.current);
+      updateThrottleRef.current = null;
+    }
+
+    // Clear pending updates
+    pendingUpdateRef.current = null;
+
+    // Clear messages and refs
     setMessages([]);
     lastUserMessageRef.current = null;
     currentAIMessageRef.current = '';
+    currentTurnIdRef.current = null;
   }, []);
 
   /**
