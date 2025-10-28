@@ -293,15 +293,20 @@ export function setCodeEditor(
     });
 
     if (hasDataTempVarsTrue) {
-      const aceContentElement = document?.querySelector('.ace_content') as HTMLElement;
+      const aceContentElement = (editor?.container as HTMLElement | null)?.querySelector(
+        '.ace_content',
+      ) as HTMLElement | null;
 
-      // inject bracket selection event to the ace editor element
-      addBracketSelection(aceContentElement);
-
-      aceContentElement.setAttribute('data-template-vars', 'true');
+      if (aceContentElement) {
+        // inject bracket selection event to the ace editor element
+        addBracketSelection(aceContentElement);
+        aceContentElement.setAttribute('data-template-vars', 'true');
+      }
     }
     if (isReadOnly) {
-      const aceContentElement = document?.querySelector('.ace_content');
+      const aceContentElement = (editor?.container as HTMLElement | null)?.querySelector(
+        '.ace_content',
+      ) as HTMLElement | null;
       if (aceContentElement) {
         aceContentElement.setAttribute('readonly', 'readonly');
       }

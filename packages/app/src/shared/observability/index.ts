@@ -34,25 +34,32 @@ let observabilityInstance: IObservabilityProvider | null = null;
  * or returns a no-op implementation for community edition.
  */
 function getObservabilityProvider(): IObservabilityProvider {
-  if (observabilityInstance) {
+  try {
+    if (observabilityInstance) {
+      return observabilityInstance;
+    }
+
+    // Try to get provider from enterprise plugin
+    const registeredPlugins = plugins.getPluginsByTarget(
+      PluginTarget.ObservabilityProvider,
+      PluginType.Config,
+    );
+
+    if (registeredPlugins.length > 0 && registeredPlugins[0].type === PluginType.Config) {
+      const provider = registeredPlugins[0].config as IObservabilityProvider;
+      observabilityInstance = provider;
+      return provider;
+    }
+
+    // Fall back to no-op implementation (default for community edition)
+    observabilityInstance = new NoOpObservabilityProvider();
+    return observabilityInstance;
+  } catch (error) {
+    // If anything fails, return no-op provider to prevent app breakage
+    console.warn('Failed to get observability provider, using no-op fallback:', error);
+    observabilityInstance = new NoOpObservabilityProvider();
     return observabilityInstance;
   }
-
-  // Try to get provider from enterprise plugin
-  const registeredPlugins = plugins.getPluginsByTarget(
-    PluginTarget.ObservabilityProvider,
-    PluginType.Config,
-  );
-
-  if (registeredPlugins.length > 0 && registeredPlugins[0].type === PluginType.Config) {
-    const provider = registeredPlugins[0].config as IObservabilityProvider;
-    observabilityInstance = provider;
-    return provider;
-  }
-
-  // Fall back to no-op implementation (default for community edition)
-  observabilityInstance = new NoOpObservabilityProvider();
-  return observabilityInstance;
 }
 
 /**
@@ -82,10 +89,15 @@ export const Observability = {
    * ```
    */
   observeInteraction: (eventName: string, properties?: Record<string, unknown>) => {
-    getObservabilityProvider().observeInteraction(
-      eventName,
-      properties as ObservabilityEventProperties,
-    );
+    try {
+      getObservabilityProvider().observeInteraction(
+        eventName,
+        properties as ObservabilityEventProperties,
+      );
+    } catch (error) {
+      // Silently fail to prevent breaking the application
+      console.warn('Failed to observe interaction:', eventName, error);
+    }
   },
 
   /**
@@ -94,16 +106,28 @@ export const Observability = {
    */
   userIdentity: {
     identifyUser: (userId: string, properties?: Record<string, unknown>) => {
-      getObservabilityProvider().identifyUser({
-        userId,
-        properties: properties as ObservabilityEventProperties,
-      });
+      try {
+        getObservabilityProvider().identifyUser({
+          userId,
+          properties: properties as ObservabilityEventProperties,
+        });
+      } catch (error) {
+        console.warn('Failed to identify user:', userId, error);
+      }
     },
     setUserProperties: (properties: Record<string, unknown>) => {
-      getObservabilityProvider().setUserProperties(properties as ObservabilityEventProperties);
+      try {
+        getObservabilityProvider().setUserProperties(properties as ObservabilityEventProperties);
+      } catch (error) {
+        console.warn('Failed to set user properties:', error);
+      }
     },
     clearUserIdentity: () => {
-      getObservabilityProvider().clearUserIdentity();
+      try {
+        getObservabilityProvider().clearUserIdentity();
+      } catch (error) {
+        console.warn('Failed to clear user identity:', error);
+      }
     },
   },
 
@@ -113,19 +137,44 @@ export const Observability = {
    */
   features: {
     getFeatureFlag: (featureName: string) => {
-      return getObservabilityProvider().getFeatureFlag(featureName);
+      try {
+        return getObservabilityProvider().getFeatureFlag(featureName);
+      } catch (error) {
+        console.warn('Failed to get feature flag:', featureName, error);
+        return undefined;
+      }
     },
     isFeatureEnabled: (featureName: string) => {
-      return getObservabilityProvider().isFeatureEnabled(featureName);
+      try {
+        return getObservabilityProvider().isFeatureEnabled(featureName);
+      } catch (error) {
+        console.warn('Failed to check if feature is enabled:', featureName, error);
+        return false;
+      }
     },
     getFeatureFlagPayload: (featureName: string) => {
-      return getObservabilityProvider().getFeatureFlagPayload(featureName);
+      try {
+        return getObservabilityProvider().getFeatureFlagPayload(featureName);
+      } catch (error) {
+        console.warn('Failed to get feature flag payload:', featureName, error);
+        return undefined;
+      }
     },
     reloadFeatureFlags: () => {
-      getObservabilityProvider().reloadFeatureFlags();
+      try {
+        getObservabilityProvider().reloadFeatureFlags();
+      } catch (error) {
+        console.warn('Failed to reload feature flags:', error);
+      }
     },
     onFeatureFlagsReady: (callback: () => void) => {
-      getObservabilityProvider().onFeatureFlagsReady(callback);
+      try {
+        getObservabilityProvider().onFeatureFlagsReady(callback);
+      } catch (error) {
+        console.warn('Failed to register feature flags ready callback:', error);
+        // Execute callback anyway to prevent blocking
+        callback();
+      }
     },
   },
 };

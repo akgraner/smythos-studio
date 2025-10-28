@@ -638,7 +638,7 @@ function updateWorkspaceEmbodiments(agent) {
 
   if (btnAgentLLM) {
     btnAgentLLM.onclick = () => {
-      // Observability.userBehavior.recordInteraction('agentLLM_embodiment_click', {
+      // Observability.observeInteraction('agentLLM_embodiment_click', {
       //   position: 'top right of builder inside dropdown',
       // });
       openLLMEmbodiment(workspace, openEmbodimentDialog);
@@ -792,7 +792,7 @@ export async function openEmbodimentDialog(content, actions = {}, title, tooltip
 }
 
 export async function openChatGPTEmbodiment() {
-  // Observability.userBehavior.recordInteraction('chatgpt_embodiment_click', { position: 'top right of builder inside dropdown' });
+  // Observability.observeInteraction('chatgpt_embodiment_click', { position: 'top right of builder inside dropdown' });
   const { dev: testDomain, prod: prodDomain, scheme } = builderStore.getState().agentDomains;
 
   if (!testDomain && !prodDomain) {
@@ -848,7 +848,7 @@ export async function openChatGPTEmbodiment() {
 }
 
 export async function openPostmanEmbodiment() {
-  // Observability.userBehavior.recordInteraction('postman_embodiment_click', { position: 'top right of builder inside dropdown' });
+  // Observability.observeInteraction('postman_embodiment_click', { position: 'top right of builder inside dropdown' });
 
   const { dev: testDomain, prod: prodDomain, scheme } = builderStore.getState().agentDomains;
 
@@ -906,7 +906,7 @@ export async function openPostmanEmbodiment() {
 }
 
 export async function openAlexaEmbodiment() {
-  Observability.userBehavior.recordInteraction('alexa_embodiment_click', {
+  Observability.observeInteraction('alexa_embodiment_click', {
     position: 'top right of builder inside dropdown',
   });
   const { dev: testDomain, prod: prodDomain, scheme } = builderStore.getState().agentDomains;
@@ -1109,17 +1109,7 @@ export async function openAlexaEmbodiment() {
     actions,
     EMBODIMENT_DESCRIPTIONS.alexa.title,
     EMBODIMENT_DESCRIPTIONS.alexa.tooltipTitle,
-  ).then(() => {
-    console.log('openEmbodimentDialog');
-    const talkToAgentWrapper = document.querySelector(
-      '#alexa-embodiment-wrapper #talk-to-agent-wrapper',
-    );
-    const isProd = window.location.hostname.includes('smythos.com');
-
-    if (talkToAgentWrapper && isProd) {
-      talkToAgentWrapper.classList.add('hidden');
-    }
-  });
+  );
 
   // on prod domain change, update the url
   builderStore.subscribe(
@@ -1146,7 +1136,7 @@ export async function openAlexaEmbodiment() {
 }
 
 export async function openChatbotEmbodiment() {
-  // Observability.userBehavior.recordInteraction('chatbot_embodiment_click', { position: 'top right of builder inside dropdown' });
+  // Observability.observeInteraction('chatbot_embodiment_click', { position: 'top right of builder inside dropdown' });
   const { dev: testDomain, scheme } = builderStore.getState().agentDomains;
 
   const modalBox: HTMLElement = document.querySelector('.modalBox');
@@ -1264,7 +1254,7 @@ export async function openChatbotEmbodiment() {
 }
 
 export async function openAPIEmbodiment() {
-  // Observability.userBehavior.recordInteraction('api_embodiment_click', { position: 'top right of builder inside dropdown' });
+  // Observability.observeInteraction('api_embodiment_click', { position: 'top right of builder inside dropdown' });
   const { dev: testDomain, scheme } = builderStore.getState().agentDomains;
   console.log('test domain found,', testDomain, 'Store:', builderStore.getState());
   const modalBox: HTMLElement = document.querySelector('.modalBox');
@@ -1332,7 +1322,7 @@ export async function openAPIEmbodiment() {
 }
 
 export async function openMCPEmbodiment() {
-  Observability.userBehavior.recordInteraction('mcp_embodiment_click', {
+  Observability.observeInteraction('mcp_embodiment_click', {
     position: 'top right of builder inside dropdown',
   });
   const { dev: testDomain, prod: prodDomain, scheme } = builderStore.getState().agentDomains;
@@ -1448,7 +1438,7 @@ export async function openMCPEmbodiment() {
 }
 
 async function openFormPreviewEmbodiment() {
-  // Observability.userBehavior.recordInteraction('form_preview_embodiment_click', { position: 'top right of builder inside dropdown' });
+  // Observability.observeInteraction('form_preview_embodiment_click', { position: 'top right of builder inside dropdown' });
   const modalBox: HTMLElement = document.querySelector('.modalBox');
   if (modalBox) {
     modalBox.style.width = '800px';

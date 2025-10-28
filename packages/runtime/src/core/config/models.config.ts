@@ -17,12 +17,6 @@ interface BaseModelConfig {
   tokens: number;
   completionTokens: number;
   enabled: boolean;
-  keyOptions: {
-    tokens: number;
-    completionTokens: number;
-    maxReasoningTokens?: number;
-    enabled: boolean;
-  };
   credentials: string;
   interface?: string;
   default?: boolean;

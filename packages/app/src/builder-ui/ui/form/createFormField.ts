@@ -133,7 +133,44 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     case 'textarea':
     case 'TEXTAREA':
       {
-        const textareaResult = createTextArea(entry);
+        // Get current content type from component data or sidebar (for backward compatibility)
+        let contentType = '';
+        try {
+          const contentTypeSelect = document.querySelector('#contentType') as HTMLSelectElement;
+          contentType = contentTypeSelect?.value || '';
+        } catch (e) {
+          // If no content type select found, try to get from component data
+          const currentComponent = (window as any).Component?.curComponentSettings;
+          contentType = currentComponent?.data?.contentType || '';
+        }
+
+        // Only create vault condition for the 'body' field in APICall component
+        // The contentType is bound to the body field, while other fields are independent
+        let vaultCondition = undefined;
+        const isBodyField = entry.name === 'body' || entry.id === 'body';
+        
+        if (isBodyField) {
+          vaultCondition = {
+            property: 'contentType',
+            value: 'application/json',
+            getValue: () => {
+              try {
+                const select = document.querySelector('#contentType') as HTMLSelectElement;
+                return select?.value || '';
+              } catch {
+                const currentComponent = (window as any).Component?.curComponentSettings;
+                return currentComponent?.data?.contentType || '';
+              }
+            }
+          };
+        }
+        // For other fields with data-vault attribute, vault button will show by default
+
+        const textareaResult = createTextArea({
+          ...entry,
+          contentType: contentType,
+          vaultCondition: vaultCondition
+        });
         
         // Handle both return types: direct textarea or object with textarea and container
         if (typeof textareaResult === 'object' && 'container' in textareaResult) {
@@ -447,15 +484,26 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     window['__FIELD_TEMPLATE_VARIABLES__'][entry?.name] = variables;
   }
 
-  // Hide error message when user starts typing if the field is invalid
-  formElement.addEventListener('keyup', (e) => {
-    const _this = e.target as HTMLElement;
-    const formControl = _this.closest('.form-control');
+  // Real-time validation - only clear error when field becomes valid
+  if ((entry.validate?.includes('custom') || entry.smythValidate?.includes('func=')) && formElement.tagName !== 'SELECT') {
+    formElement.addEventListener('input', async (e: Event) => {
+      const input = e.target as HTMLInputElement;
+      const formControl = input.closest('.form-control');
+      const value = input.value.trim();
 
-    if (formControl?.classList?.contains('invalid')) {
-      formControl.classList.remove('invalid');
-    }
-  });
+      // Extract validator function name (supports both func= and custom= formats)
+      const match = (entry.smythValidate || entry.validate)?.match(/(?:func|custom)=(\w+)/);
+      const validatorFunc = match && (window as any)[match[1]];
+
+      // Validate and update UI
+      if (value && validatorFunc) {
+        const isValid = await Promise.resolve(validatorFunc(value));
+        formControl?.classList.toggle('invalid', !isValid);
+      } else if (!value && (entry.validate?.includes('required') || entry.required)) {
+        formControl?.classList.add('invalid');
+      }
+    });
+  }
 
   let labelElement = null;
   if (label /*&& displayType !== 'inline'*/) {
@@ -629,7 +677,14 @@ export default function createFormField(entry, displayType = 'block', entryIndex
     span.classList.add('invalid_feedback');
     // Use textContent instead of innerHTML for validation messages (no HTML needed)
     span.textContent = entry.validateMessage;
-    div.appendChild(span);
+
+    // For expandable textareas, append the error message inside the wrapper
+    // so it's a sibling to the textarea element (which gets the .invalid class)
+    if (textareaWrapper) {
+      textareaWrapper.appendChild(span);
+    } else {
+      div.appendChild(span);
+    }
   }
 
   formElement.dispatchEvent(new Event('created'));

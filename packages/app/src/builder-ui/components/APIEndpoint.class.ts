@@ -526,16 +526,19 @@ export class APIEndpoint extends Component {
   }
 
   public async addInput(parent: any, name: any, inputProperties: any = {}): Promise<any> {
-    if (this.isOnAdvancedMode) {
+    const isRenderingAgent = this.workspace.locked; // if the agent is being rendered, the lock will be true
+    if (
+      this.isOnAdvancedMode ||
+      this.properties.defaultOutputs.includes(name) ||
+      isRenderingAgent
+    ) {
       const result = await super.addInput(parent, name, inputProperties);
       this.updateFormPreviewButton();
       return result;
     }
-    //if (this.properties.defaultOutputs.includes(name)) return super.addInput(parent, name);
 
     const inputDiv: any = await super.addInput(parent, name, inputProperties);
     const outputParent = parent.parentElement.querySelector('.output-container');
-    const inputProps = this.properties.inputProps?.find((c) => c.name === name);
 
     // Get the default value from input properties or existing attributes
     const defaultValue =
@@ -591,8 +594,8 @@ export class APIEndpoint extends Component {
   }
 
   public async addOutput(parent: any, name: any, outputProperties: any = {}): Promise<any> {
-    if (this.isOnAdvancedMode) return super.addOutput(parent, name, outputProperties);
-    if (this.properties.defaultOutputs.includes(name))
+    const isRenderingAgent = this.workspace.locked; // if the agent is being rendered, the lock will be true
+    if (this.isOnAdvancedMode || this.properties.defaultOutputs.includes(name) || isRenderingAgent)
       return super.addOutput(parent, name, outputProperties);
 
     return null;

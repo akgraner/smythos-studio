@@ -1344,7 +1344,8 @@ export class Component extends EventEmitter {
           class: 'stg-input stg-name',
           value: name,
           readonly: defaultEP || templateDefaultEP,
-          validate: 'required custom=isValidInputName',
+          validate: 'required',
+          smythValidate: 'func=isValidInputName',
           validateMessage:
             'Name is required and can only contain letters, numbers, and underscores.',
         },

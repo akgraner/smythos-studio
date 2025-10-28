@@ -1,9 +1,13 @@
-import { generateOAuthModalHTML } from '@src/builder-ui/helpers/oauth/oauth-modal.helper';
+import {
+  generateOAuthModalHTML,
+  generateOAuthModalLoadingSkeleton,
+} from '@src/builder-ui/helpers/oauth/oauth-modal.helper';
 import { twEditValuesWithCallback } from '@src/builder-ui/ui/tw-dialogs';
 import { errorToast, successToast } from '@src/shared/components/toast';
 import { getConnectionOauthInfo } from '@src/shared/helpers/oauth/oauth-api.helper';
 import { OAuthServicesRegistry } from '@src/shared/helpers/oauth/oauth-services.helper';
 import { generateOAuthId, mapInternalToServiceName } from '@src/shared/helpers/oauth/oauth.utils';
+import { hasVaultKeys, resolveVaultKeys } from '@src/shared/helpers/oauth/vault-key-resolver';
 import type { OAuthConnection } from './oauth.types';
 
 export class UIHelper {
@@ -97,26 +101,74 @@ export class UIHelper {
     const isNone = !currentValue || currentValue === 'None';
     const currentConnection = !isNone ? connections[currentValue] : null;
     const currentSettings = currentConnection?.auth_settings;
-    const currentOauthInfo = getConnectionOauthInfo(currentSettings, currentValue) || {};
+    let currentOauthInfo = getConnectionOauthInfo(currentSettings, currentValue) || {};
     const currentName = currentSettings?.name || '';
-    const currentService = currentSettings
+    let currentService = currentSettings
       ? mapInternalToServiceName(currentOauthInfo.service)
       : 'None';
-    const currentPlatform = currentOauthInfo.platform || '';
+    let currentPlatform = currentOauthInfo.platform || '';
 
-    const formHTML = generateOAuthModalHTML(
-      currentName,
-      currentPlatform,
-      currentService,
-      currentOauthInfo,
-    );
+    // Check if we need to resolve vault keys
+    const needsVaultResolution = !isNone && hasVaultKeys(currentOauthInfo);
+
+    // If vault keys need resolution, show loading skeleton initially
+    let initialFormHTML = needsVaultResolution
+      ? generateOAuthModalLoadingSkeleton()
+      : generateOAuthModalHTML(currentName, currentPlatform, currentService, currentOauthInfo);
+
+    let dialogElement: HTMLElement | null = null;
 
     await twEditValuesWithCallback(
       {
         title: isNone ? 'Add OAuth Connection' : 'Edit OAuth Connection',
-        content: formHTML,
-        onDOMReady: (dialog) => {
-          this.setupModalHandlers(dialog, currentOauthInfo);
+        content: initialFormHTML,
+        onDOMReady: async (dialog) => {
+          dialogElement = dialog;
+
+          // If we need to resolve vault keys, do it now
+          if (needsVaultResolution) {
+            try {
+              // Resolve vault keys
+              currentOauthInfo = await resolveVaultKeys(currentOauthInfo);
+              currentPlatform = currentOauthInfo.platform || '';
+
+              // Generate the actual form HTML with resolved values
+              const resolvedFormHTML = generateOAuthModalHTML(
+                currentName,
+                currentPlatform,
+                currentService,
+                currentOauthInfo,
+              );
+
+              // Find the content container and update it
+              const contentContainer = dialog.querySelector('.tw-dialog-content-container');
+              if (contentContainer) {
+                contentContainer.innerHTML = resolvedFormHTML;
+              }
+
+              // Setup handlers after content is loaded
+              this.setupModalHandlers(dialog, currentOauthInfo);
+            } catch (error) {
+              console.error('Error resolving vault keys:', error);
+              errorToast('Failed to load connection details. Please try again.', 'Error', 'alert');
+
+              // Show form anyway with placeholders
+              const fallbackHTML = generateOAuthModalHTML(
+                currentName,
+                currentPlatform,
+                currentService,
+                currentOauthInfo,
+              );
+              const contentContainer = dialog.querySelector('.tw-dialog-content-container');
+              if (contentContainer) {
+                contentContainer.innerHTML = fallbackHTML;
+              }
+              this.setupModalHandlers(dialog, currentOauthInfo);
+            }
+          } else {
+            // No vault keys, setup handlers immediately
+            this.setupModalHandlers(dialog, currentOauthInfo);
+          }
         },
         actions: [
           {
