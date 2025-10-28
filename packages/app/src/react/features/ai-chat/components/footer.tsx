@@ -3,7 +3,6 @@ import {
   ChatInputRef,
   ErrorToast,
   ScrollToBottomButton,
-  WarningInfo,
 } from '@react/features/ai-chat/components';
 import { FC, RefObject } from 'react';
 
@@ -30,13 +29,14 @@ export const Footer: FC<FooterProps> = (props) => {
   } = props;
 
   return (
-    <div className="w-full max-w-4xl">
+    <div className="w-full max-w-4xl pt-2.5">
       {uploadError.show && <ErrorToast message={uploadError.message} onClose={clearError} />}
       <div className="relative">
         {showScrollButton && <ScrollToBottomButton onClick={() => scrollToBottom(true)} />}
         <ChatInput ref={chatInputRef} submitDisabled={submitDisabled} />
       </div>
-      <WarningInfo infoMessage={CHAT_WARNING_INFO} />
+
+      <h6 className="py-4 text-center text-xs text-gray-500">{CHAT_WARNING_INFO}</h6>
     </div>
   );
 };
