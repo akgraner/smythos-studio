@@ -952,13 +952,15 @@ export class APIEndpoint extends Component {
     // Sync default values after redraw
     setTimeout(() => this.syncAllDefaultValues(), 100);
   }
-
   checkConnValidity(info: any) {
     console.log('checkConnValidity', info);
     const sourceDomComponent = info.source.closest('.component');
     const targetDomComponent = info.target.closest('.component');
     if (!sourceDomComponent || !targetDomComponent) return false;
-    if (!sourceDomComponent.classList.contains('agent-card')) {
+    if (
+      targetDomComponent.id === this._uid &&
+      !sourceDomComponent.classList.contains('agent-card')
+    ) {
       alert(
         'Unsupported Connection',
         'Skills can only be connected to the agent card',
