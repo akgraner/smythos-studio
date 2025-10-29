@@ -8,14 +8,9 @@
     "provider": "OpenAI",
     "features": ["text", "tools", "image", "reasoning", "search", "document"],
     "tags": ["New", "Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 400000,
-      "completionTokens": 128000,
-      "enabled": true
-    },
+    "tokens": 400000,
+    "completionTokens": 128000,
+    "enabled": true,
     "credentials": "vault",
     "interface": "responses"
   },
@@ -25,14 +20,9 @@
     "provider": "OpenAI",
     "features": ["text", "tools", "image", "reasoning", "search", "document"],
     "tags": ["New", "Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 400000,
-      "completionTokens": 128000,
-      "enabled": true
-    },
+    "tokens": 400000,
+    "completionTokens": 128000,
+    "enabled": true,
     "credentials": "vault",
     "interface": "responses",
     "default": true
@@ -43,14 +33,9 @@
     "provider": "OpenAI",
     "features": ["text", "tools", "image", "reasoning", "document"],
     "tags": ["New", "Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 400000,
-      "completionTokens": 128000,
-      "enabled": true
-    },
+    "tokens": 400000,
+    "completionTokens": 128000,
+    "enabled": true,
     "credentials": "vault",
     "interface": "responses"
   },
@@ -60,14 +45,9 @@
     "provider": "OpenAI",
     "features": ["text", "image", "document"],
     "tags": ["New", "Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 400000,
-      "completionTokens": 128000,
-      "enabled": true
-    },
+    "tokens": 400000,
+    "completionTokens": 128000,
+    "enabled": true,
     "credentials": "vault",
     "interface": "responses"
   },
@@ -77,15 +57,10 @@
     "provider": "Anthropic",
     "features": ["text", "image", "tools", "reasoning"],
     "tags": ["New", "Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 200000,
-      "completionTokens": 32000,
-      "maxReasoningTokens": 32000,
-      "enabled": true
-    },
+    "tokens": 200000,
+    "completionTokens": 32000,
+    "maxReasoningTokens": 32000,
+    "enabled": true,
     "credentials": "vault"
   },
   "gemini-2.5-pro": {
@@ -94,14 +69,9 @@
     "provider": "GoogleAI",
     "features": ["text", "image", "audio", "video", "document", "tools", "reasoning"],
     "tags": ["Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 1048576,
-      "completionTokens": 65536,
-      "enabled": true
-    },
+    "tokens": 1048576,
+    "completionTokens": 65536,
+    "enabled": true,
     "credentials": "vault"
   },
   "gemini-2.5-flash": {
@@ -110,14 +80,9 @@
     "provider": "GoogleAI",
     "features": ["text", "image", "audio", "video", "document", "tools", "reasoning"],
     "tags": ["New", "Personal"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 1048576,
-      "completionTokens": 65536,
-      "enabled": true
-    },
+    "tokens": 1048576,
+    "completionTokens": 65536,
+    "enabled": true,
     "credentials": "vault"
   },
   "deepseek-ai/DeepSeek-R1": {
@@ -126,14 +91,9 @@
     "provider": "TogetherAI",
     "features": ["text"],
     "tags": ["Personal", "TogetherAI"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 128000,
-      "completionTokens": 32768,
-      "enabled": true
-    },
+    "tokens": 128000,
+    "completionTokens": 32768,
+    "enabled": true,
     "baseURL": "https://api.together.xyz/v1",
     "credentials": "vault"
   },
@@ -143,14 +103,9 @@
     "provider": "TogetherAI",
     "features": ["text"],
     "tags": ["Personal", "TogetherAI"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 131072,
-      "completionTokens": 8192,
-      "enabled": true
-    },
+    "tokens": 131072,
+    "completionTokens": 8192,
+    "enabled": true,
     "baseURL": "https://api.together.xyz/v1",
     "credentials": "vault"
   },
@@ -160,14 +115,9 @@
     "provider": "Groq",
     "features": ["text", "image", "tools"],
     "tags": ["Personal", "Groq"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 131072,
-      "completionTokens": 16384,
-      "enabled": true
-    },
+    "tokens": 131072,
+    "completionTokens": 16384,
+    "enabled": true,
     "credentials": "vault"
   },
   "qwen/qwen3-32b": {
@@ -176,14 +126,9 @@
     "provider": "Groq",
     "features": ["text", "reasoning"],
     "tags": ["Personal", "Groq"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 131072,
-      "completionTokens": 40960,
-      "enabled": true
-    },
+    "tokens": 131072,
+    "completionTokens": 40960,
+    "enabled": true,
     "credentials": "vault"
   },
   "grok-4": {
@@ -192,14 +137,9 @@
     "provider": "xAI",
     "features": ["text", "tools", "search"],
     "tags": ["Personal", "xAI"],
-    "tokens": 0,
-    "completionTokens": 0,
-    "enabled": false,
-    "keyOptions": {
-      "tokens": 256000,
-      "completionTokens": 8192,
-      "enabled": true
-    },
+    "tokens": 256000,
+    "completionTokens": 8192,
+    "enabled": true,
     "baseURL": "https://api.x.ai/v1",
     "credentials": "vault"
   },
@@ -209,10 +149,7 @@
     "provider": "OpenAI",
     "features": ["image-generation"],
     "tags": ["Personal", "OpenAI"],
-    "enabled": false,
-    "keyOptions": {
-      "enabled": true
-    },
+    "enabled": true,
     "credentials": "vault"
   },
   "gemini-2.5-flash-image": {
@@ -221,10 +158,7 @@
     "provider": "GoogleAI",
     "features": ["image-generation"],
     "tags": ["New", "Personal", "GoogleAI"],
-    "enabled": false,
-    "keyOptions": {
-      "enabled": true
-    },
+    "enabled": true,
     "credentials": "vault",
     "interface": "generateContent"
   },
@@ -234,10 +168,7 @@
     "provider": "GoogleAI",
     "features": ["image-generation"],
     "tags": ["Personal", "GoogleAI"],
-    "enabled": false,
-    "keyOptions": {
-      "enabled": true
-    },
+    "enabled": true,
     "credentials": "vault"
   },
   "imagen-4": {
@@ -246,10 +177,7 @@
     "provider": "GoogleAI",
     "features": ["image-generation"],
     "tags": ["Personal", "GoogleAI"],
-    "enabled": false,
-    "keyOptions": {
-      "enabled": true
-    },
+    "enabled": true,
     "credentials": "vault"
   }
 }
