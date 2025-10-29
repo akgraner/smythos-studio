@@ -156,6 +156,7 @@ function DeployAgentModal({ userInfo, deploymentSidebarCtx }) {
           introMessage: chatbotEmbodiment.properties?.introMessage || '',
           isFullScreen: chatbotEmbodiment.properties?.isFullScreen || false,
           allowFileAttachments: chatbotEmbodiment.properties?.allowFileAttachments || false,
+          enableDebugLogs: chatbotEmbodiment.properties?.enableDebugLogs || false,
         },
       }
     : undefined;
