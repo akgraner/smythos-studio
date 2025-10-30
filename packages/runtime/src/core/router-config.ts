@@ -6,6 +6,7 @@ import { processAgentRequest as agentRunnerProcessAgentRequest } from '@agent-ru
 
 import debuggerAgentLoader from '@debugger/middlewares/agentLoader.mw';
 import modelsRouter from '@debugger/routes/models/router';
+import smythfsRouter from '@debugger/routes/smythfs/router';
 import {
   createSseConnection as debuggerCreateSseConnection,
   getDebugSession as debuggerGetDebugSession,
@@ -45,6 +46,7 @@ export function configureAgentRouters(app: Express, runtimeConfig?: RuntimeConfi
 
   // Mount common routes that should be available in all server configurations
   app.use('/models', modelsRouter);
+  app.use('/smythfs', smythfsRouter);
 
   // Configure based on routing strategy and enabled services
   const debuggerEnabled = config.services.debugger.enabled;
