@@ -2183,7 +2183,8 @@ input[data-vault-exclusive='true']:disabled {
   padding: 0 !important;
 }
 
-.code-body-container #ace-editor-styles {
+.code-body-container #ace-editor-styles,
+#body-section-container #ace-editor-styles {
   border-top: 0px !important;
 }
 
@@ -2206,11 +2207,13 @@ input[data-vault-exclusive='true']:disabled {
   padding-left: 8px !important;
 }
 
-.code-imports .ace_gutter-cell {
+.code-imports .ace_gutter-cell,
+#imports-section-container .ace_gutter-cell {
   color: #ebebeb !important;
 }
 
-.code-imports .ace_gutter-active-line {
+.code-imports .ace_gutter-active-line,
+#imports-section-container .ace_gutter-active-line {
   color: #dcdcdc !important;
 }
 
