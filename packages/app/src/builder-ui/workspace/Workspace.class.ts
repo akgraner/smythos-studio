@@ -248,14 +248,20 @@ export class Workspace extends EventEmitter {
 
       if (conflict) this.jsPlumbInstance.deleteConnection(info.connection);
 
-      const agentCardValid = AgentCard.checkConnValidity(info);
-      if (!agentCardValid) this.jsPlumbInstance.deleteConnection(info.connection);
+      // const agentCardValid = AgentCard.checkConnValidity(info);
+      // if (!agentCardValid) this.jsPlumbInstance.deleteConnection(info.connection);
 
       //! SHOULDN'T WE ABORT EARLY IF THERE WAS A CONFLICT!!?? I feel like it aborts and works correctly
       //! but cannot detect how and where does it abort if a conflict or non-valid conn was detected
 
       const sourceComponent = info.source.closest('.component')?._control;
       const targetComponent = info.target.closest('.component')?._control;
+
+      const validSourceConn = sourceComponent?.checkConnValidity(info);
+      if (!validSourceConn) this.jsPlumbInstance.deleteConnection(info.connection);
+
+      const validTargetConn = targetComponent?.checkConnValidity(info);
+      if (!validTargetConn) this.jsPlumbInstance.deleteConnection(info.connection);
 
       sourceComponent?.emit(
         'connectionAttached',
@@ -767,7 +773,17 @@ export class Workspace extends EventEmitter {
     } catch (error) {
       this._saving = false;
       console.error('Error', error);
+      if (error?.errorCode === 'LOCKED_AGENT' || error?.errorCode === 'LOCKED_AGENT_HANDLED') {
+        this.updateAgentSaveStatus('View Only', 'alert');
+        return null;
+      }
+
       if (typeof error?.error === 'string') {
+        if (error.error.includes('409') || error.error.toLowerCase().includes('lock')) {
+          this.updateAgentSaveStatus('View Only', 'alert');
+          return null;
+        }
+
         if (error.error.includes('403')) {
           errorToast('You are not authorized to save or create agent');
         } else {
@@ -858,7 +874,14 @@ export class Workspace extends EventEmitter {
         return true;
       }
     } catch (error) {
-      errorToast(error.message ?? 'Deleting Failed');
+      if (
+        error?.errorCode !== 'LOCKED_AGENT' &&
+        error?.errorCode !== 'LOCKED_AGENT_HANDLED' &&
+        !error?.error?.includes('409') &&
+        !error?.error?.toLowerCase?.()?.includes('lock')
+      ) {
+        errorToast(error.message ?? 'Deleting Failed');
+      }
       return false;
     }
   }
@@ -1382,16 +1405,7 @@ export class Workspace extends EventEmitter {
         );
       }
     } else {
-      //handle the special case of triggers connecting to APIEndpoints
-
-      if (
-        sourceComponent.classList.contains('Trigger') &&
-        targetComponent.classList.contains('APIEndpoint')
-      ) {
-        targetEndpoint = targetComponent.querySelector(`.endpoint-connection`);
-      } else {
-        targetEndpoint = [...targetComponent.querySelectorAll(`.input-endpoint`)][targetEndpointID];
-      }
+      targetEndpoint = [...targetComponent.querySelectorAll(`.input-endpoint`)][targetEndpointID];
     }
 
     // @ts-ignore
@@ -1799,7 +1813,14 @@ export class Workspace extends EventEmitter {
       hideOverlay();
       this._loading = false;
       console.error('Error', error);
-      errorToast('Loading failed');
+      if (
+        error?.errorCode !== 'LOCKED_AGENT' &&
+        error?.errorCode !== 'LOCKED_AGENT_HANDLED' &&
+        !error?.error?.includes('409') &&
+        !error?.error?.toLowerCase?.()?.includes('lock')
+      ) {
+        errorToast('Loading failed');
+      }
     }
   }
 

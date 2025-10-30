@@ -1,3 +1,4 @@
+import { LLMRegistry } from '../../shared/services/LLMRegistry.service';
 import { LLMFormController } from '../helpers/LLMFormController.helper';
 import { createBadge } from '../ui/badges';
 import { IconArrowRight, IconConfigure } from '../ui/icons';
@@ -43,6 +44,8 @@ export class LLMAssistant extends Component {
   }
 
   protected async init() {
+    const allowedContextTokens = LLMRegistry.getAllowedContextTokens(this.defaultModel);
+
     this.settings = {
       model: {
         type: 'select',
@@ -56,52 +59,11 @@ export class LLMAssistant extends Component {
         dropdownHeight: 350, // In pixels
 
         events: {
-          change: (e) => {
-            if (!e.target.value) return;
-            const modelInfo = document.querySelector('#right-sidebar #modelInfo');
-            modelInfo.innerHTML = this.renderModelInfo(e.target.value);
+          change: async (event) => {
+            const currentElement = event.target as HTMLSelectElement;
+            LLMFormController.updateContextSize(currentElement);
           },
         },
-
-        //#region // ! DEPRECATED, will be removed in the future
-        // loading: true,
-        // actions: [
-        //   {
-        //     label: 'Custom Model',
-        //     icon: 'fa-regular fa-plus',
-        //     id: 'customModelAddButton',
-        //     classes: 'custom_model_add_btn',
-        //     shouldDisplay: async () => {
-        //       try {
-        //         const shouldDisplay = await customModelHelper.shouldDisplayAddButton();
-
-        //         return shouldDisplay;
-        //       } finally {
-        //         // * This is a quick solution to show the spinner using the 'loading' attribute and remove it here after checking if the button should be displayed or not
-        //         const modelElm = document.getElementById('model');
-        //         const formGroupElm = modelElm?.closest('.form-group');
-        //         const spinnerElm = formGroupElm?.querySelector('.field-spinner');
-        //         spinnerElm?.remove();
-        //       }
-        //     },
-        //     afterCreation: () => {
-        //       const model = document.getElementById('model');
-        //       const modelWrapperElm = model?.closest('.select.smt-input-select');
-        //       const dropdownIconElm = modelWrapperElm?.querySelector(
-        //         '.dropdown-toggle',
-        //       ) as HTMLElement;
-
-        //       if (dropdownIconElm) {
-        //         dropdownIconElm.style.right = '115px';
-        //       }
-        //     },
-        //     events: {
-        //       click: (event) => customModelHelper.addButtonClickHandler(this, event),
-        //     },
-        //   },
-        // ],
-        //#endregion
-
         actions: [
           {
             label: 'Configure more models',
@@ -126,12 +88,6 @@ export class LLMAssistant extends Component {
           },
         ],
       },
-      modelInfo: {
-        type: 'div',
-        cls: 'model-info',
-        label: 'Model Info',
-        html: this.renderModelInfo.bind(this),
-      },
 
       behavior: {
         type: 'textarea',
@@ -143,6 +99,24 @@ export class LLMAssistant extends Component {
         value: 'You are a helpful assistant that helps people with their questions',
         attributes: { 'data-template-vars': 'true' },
         help: 'Set the assistant’s tone, rules, and actions so replies fit the intended use case. <a href="https://smythos.com/docs/agent-studio/components/advanced/llm-assistant/?utm_source=studio&utm_medium=tooltip&utm_campaign=llm-assistant&utm_content=behavior#step-2-define-the-behavior" target="_blank" class="text-blue-600 hover:text-blue-800">See behaviour examples</a>',
+        tooltipClasses: 'w-56 ',
+        arrowClasses: '-ml-11',
+      },
+
+      maxContextTokens: {
+        type: 'div',
+        html: `<strong class="px-2">Context window size: <span class="tokens_num">${
+          allowedContextTokens ? allowedContextTokens.toLocaleString() : 'Unknown'
+        }</span> tokens</strong>`,
+        cls: 'mb-0',
+        attributes: {
+          'data-supported-models':
+            'OpenAI,Anthropic,GoogleAI,Groq,xAI,TogetherAI,VertexAI,Bedrock,Perplexity,cohere,Ollama',
+        },
+        section: 'Advanced',
+        help: 'The total context window size includes both the request prompt length and output completion length.',
+        class: 'px-4 mb-0 bg-gray-50',
+        tooltipIconClasses: '-ml-1 -mt-1 float-none',
         tooltipClasses: 'w-56 ',
         arrowClasses: '-ml-11',
       },
@@ -201,32 +175,6 @@ export class LLMAssistant extends Component {
     this._ready = true;
   }
 
-  private renderModelInfo(modelId = this.data.model) {
-    let html = '';
-    const LLMModels = window['__LLM_MODELS__'];
-
-    if (LLMModels) {
-      const model = LLMModels[modelId];
-      if (model) {
-        html += `<ul>`;
-
-        html += `<li><b>Provider: </b> ${model?.llm ? model.llm : 'Unknown'}</li>`;
-        html += `<li><b>Context Window Size: </b> ${model?.tokens ? model.tokens : 'Unknown'}</li>`;
-        html += `<li><b>Maximum Output Tokens: </b> ${
-          model?.completionTokens ? model.completionTokens : 'Unknown'
-        }</li>`;
-        html += `</ul>`;
-
-        // Hide the API Key message for custom LLMs since they do not require it.
-        if (!model.hasKey && !model.isCustomLLM) {
-          html +=
-            '<hr/><p>The capabilities of this model are limited, enter an API Key to raise the limits</p>';
-        }
-      }
-    }
-
-    return html;
-  }
   protected async run() {
     this.addEventListener('settingsOpened', this.handleSettingsOpened.bind(this));
   }
