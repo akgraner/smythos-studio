@@ -100,7 +100,7 @@ export interface ChatbotEmbodimentData {
   allowedDomains: string[];
   isFullScreen?: boolean;
   allowFileAttachments?: boolean;
-  enableDebugLogs?: boolean;
+  enableMetaMessages?: boolean;
 
   colors: {
     botBubbleColors: {

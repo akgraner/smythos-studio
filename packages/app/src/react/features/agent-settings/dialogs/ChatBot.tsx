@@ -112,7 +112,7 @@ const ChatBotDialog = ({
     allowedDomains: [],
     isFullScreen: false,
     allowFileAttachments: false,
-    enableDebugLogs: false,
+    enableMetaMessages: false,
   };
 
   useEffect(() => {
@@ -675,12 +675,12 @@ const ChatBotDialog = ({
                                   <div className="relative flex items-center">
                                     <Field
                                       type="checkbox"
-                                      id="enableDebugLogs"
-                                      name="enableDebugLogs"
+                                      id="enableMetaMessages"
+                                      name="enableMetaMessages"
                                       className="w-4 h-4 bg-gray-100 border-gray-300 rounded peer appearance-none focus:outline-none box-shadow-none"
-                                      checked={props.values?.enableDebugLogs || false}
+                                      checked={props.values?.enableMetaMessages || false}
                                       onChange={(e) => {
-                                        props.setFieldValue('enableDebugLogs', e.target.checked);
+                                        props.setFieldValue('enableMetaMessages', e.target.checked);
                                       }}
                                     />
                                     <svg
@@ -697,10 +697,10 @@ const ChatBotDialog = ({
                                     </svg>
                                   </div>
                                   <label
-                                    htmlFor="enableDebugLogs"
+                                    htmlFor="enableMetaMessages"
                                     className="ml-2 text-sm font-normal text-[#1E1E1E]"
                                   >
-                                    Enable debug logs
+                                    Enable Meta Messages
                                   </label>
                                 </div>
                               </div>

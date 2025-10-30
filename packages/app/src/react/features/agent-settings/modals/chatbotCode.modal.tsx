@@ -15,14 +15,14 @@ type EmbodimentData = {
     // Add other properties as needed
     isFullScreen?: boolean;
     allowFileAttachments?: boolean;
-    enableDebugLogs?: boolean;
+    enableMetaMessages?: boolean;
   };
 };
 
 const ChatbotCodeSnippetModal = (props: Props) => {
   const isFullScreen = props.embodimentData?.properties?.isFullScreen;
   const allowFileAttachments = props.embodimentData?.properties?.allowFileAttachments;
-  const enableDebugLogs = props.embodimentData?.properties?.enableDebugLogs;
+  const enableMetaMessages = props.embodimentData?.properties?.enableMetaMessages;
   const isUsingFullScreen = Boolean(isFullScreen);
   function getFullDomain(domain) {
     // Check if the domain already includes http:// or https://
@@ -46,7 +46,7 @@ const ChatbotCodeSnippetModal = (props: Props) => {
             isChatOnly: ${isUsingFullScreen},
             ${isUsingFullScreen ? 'containerId: "smythos-chatbot-container",' : ''}
             allowAttachments: ${allowFileAttachments},
-            enableDebugLogs: ${enableDebugLogs},
+            enableMetaMessages: ${enableMetaMessages},
             // ... additional settings ...
             introMessage: '${
               props.embodimentData && props.embodimentData.properties
