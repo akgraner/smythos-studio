@@ -26,6 +26,9 @@ async function getUserLLMModels(req: Request) {
         const aliasOptions = JSON.parse(JSON.stringify(LLMModels[modelTpl.alias] || {}));
         delete aliasOptions.hidden; //do not override hide option because we may want to hide the original model but keep the alias
 
+        // We keep some of the original model information in the alias model to clearly show which model uses which alias.
+        // In the list, we display the original model label with the alias as a tag.
+        // However, when running the component, we properly use the alias model information.
         const aliasOverrides = {
           label: modelTpl.label,
           modelId: modelTpl.modelId,
