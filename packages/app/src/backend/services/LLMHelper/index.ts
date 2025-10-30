@@ -18,13 +18,21 @@ async function getUserLLMModels(req: Request) {
     const keys: any = await vault.get({ team, scope: ['global'] }, req);
     const enabledSmythOSProviders = await _getEnabledSmythOSProviders(req);
 
-    for (let modelId in LLMModels) {
-      let modelTpl = JSON.parse(JSON.stringify(LLMModels[modelId]));
+    for (let modelEntryId in LLMModels) {
+      let modelTpl = JSON.parse(JSON.stringify(LLMModels[modelEntryId]));
 
       if (modelTpl.alias) {
         const aliasOptions = JSON.parse(JSON.stringify(LLMModels[modelTpl.alias] || {}));
         delete aliasOptions.hidden; //do not override hide option because we may want to hide the original model but keep the alias
-        modelTpl = { ...modelTpl, ...aliasOptions }; //override the model config with the alias config
+
+        const aliasOverrides = {
+          label: modelTpl.label,
+          modelId: modelTpl.modelId,
+          tags: modelTpl.tags,
+        };
+
+        modelTpl = { ...modelTpl, ...aliasOptions, ...aliasOverrides }; //override the model config with the alias config
+        modelTpl.tags.push('alias: ' + modelTpl.alias);
       }
 
       // get the key options
@@ -40,17 +48,17 @@ async function getUserLLMModels(req: Request) {
       }
 
       let enabled =
-        typeof LLMModels[modelId].enabled === 'function'
-          ? LLMModels[modelId].enabled({ user: req.user, team: req._team })
+        typeof LLMModels[modelEntryId].enabled === 'function'
+          ? LLMModels[modelEntryId].enabled({ user: req.user, team: req._team })
           : modelTpl.enabled;
 
       // Skip legacy models for users with built-in model access to avoid confusion
-      if (_hasBuiltInModels(req) && modelId.startsWith('legacy/')) {
+      if (_hasBuiltInModels(req) && modelEntryId.startsWith('legacy/')) {
         enabled = false;
       }
 
       // V2: only applicable for GenAI LLM and SmythOS models
-      if (modelId.startsWith('smythos/')) {
+      if (modelEntryId.startsWith('smythos/')) {
         enabled = enabled && enabledSmythOSProviders.includes(modelTpl?.provider?.toLowerCase());
       }
 
@@ -60,11 +68,11 @@ async function getUserLLMModels(req: Request) {
       }
 
       // Hide DALL-E models from users with builtin models
-      if (_hasBuiltInModels(req) && modelId.startsWith('dall-e')) {
+      if (_hasBuiltInModels(req) && modelEntryId.startsWith('dall-e')) {
         enabled = false;
       }
 
-      if (!enabled || modelTpl.hidden || (!modelTpl?.components && !modelTpl?.features)) {
+      if (!enabled || (!modelTpl?.components && !modelTpl?.features)) {
         continue;
       }
 
@@ -74,10 +82,9 @@ async function getUserLLMModels(req: Request) {
       }
 
       delete modelTpl.enabled;
-      delete modelTpl.hidden;
       delete modelTpl.alias;
 
-      models[modelId] = modelTpl;
+      models[modelEntryId] = modelTpl;
     }
   } catch (error) {
     console.error('Error getting User LLMs', error?.message);
