@@ -2630,9 +2630,6 @@ export function createDebugInjectDialog(
       });
     }
 
-    // Call the function to handle first debug session
-    handleFirstDebugSession();
-
     debugInputs[component.uid] = {
       inputs: {},
     };
