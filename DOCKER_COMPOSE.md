@@ -78,8 +78,8 @@ docker compose logs -f
 
 Once all services are healthy:
 
-- **Main Application**: http://localhost (or your configured APP_URL)
-- **Runtime Server**: http://dev.agent.oss.smyth.ai (or your configured RUNTIME_URL)
+- **Main Application**: http://localhost:6060 (or your configured APP_URL)
+- **Runtime Server**: http://dev.agent.oss.smyth.ai:6060 (or your configured RUNTIME_URL)
 
 
 
