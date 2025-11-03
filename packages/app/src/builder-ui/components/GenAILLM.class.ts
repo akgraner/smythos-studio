@@ -101,7 +101,15 @@ export class GenAILLM extends Component {
     // TODO: set warning if the model is not available
 
     //remove undefined models
-    this.modelOptions = modelOptions.filter((e) => e);
+    this.modelOptions = modelOptions.filter((item) => {
+      if (!item) return false;
+
+      // Keep the currently selected model even if it's hidden
+      if (item?.value === model) return true;
+
+      // Otherwise, filter out hidden models
+      return !item?.hidden;
+    });
 
     this.setModelParams(model);
 
@@ -1546,13 +1554,21 @@ export class GenAILLM extends Component {
       selectElem.addOption(option.value, option.text, false); // Don't auto-select during addition
     });
 
-    // Always reset to the model's default when switching models
-    const defaultValue = this.getDefaultReasoningEffortForModel(model, options);
-    selectElem.val(defaultValue);
+    // Preserve user's existing selection if it's valid for this model's options
+    // Otherwise, use the model's default value
+    const existingValue = this.data.reasoningEffort;
+    const isValidOption = options.some((opt) => opt.value === existingValue);
+
+    const valueToSet = isValidOption
+      ? existingValue
+      : this.getDefaultReasoningEffortForModel(model, options);
+
+    selectElem.val(valueToSet);
   }
 
   /**
    * Get the appropriate default reasoning effort value for a given model
+   * Always returns the first option as the default
    */
   private getDefaultReasoningEffortForModel(
     model: string,
@@ -1560,27 +1576,8 @@ export class GenAILLM extends Component {
   ): string {
     if (options.length === 0) return '';
 
-    const modelLower = model.toLowerCase();
-
-    // GPT-5-pro only supports 'high' reasoning effort
-    if (modelLower.includes('gpt-5-pro')) {
-      return 'high';
-    }
-
-    // Default values for different model types
-    if (
-      modelLower.includes('gpt') ||
-      modelLower.includes('openai') ||
-      modelLower.includes('smythos/gpt')
-    ) {
-      // For other GPT models, prefer 'medium' as a balanced default
-      return options.find((opt) => opt.value === 'medium')?.value || options[0].value;
-    } else if (modelLower.includes('qwen')) {
-      // For Qwen models, prefer 'default' over 'none'
-      return options.find((opt) => opt.value === 'default')?.value || options[0].value;
-    }
-
-    // For any other models, use the first available option
+    // Always use the first available option as the default
+    // Because with higher reasoning effort, GPT-5 models cannot provide the expected output if the maximum output tokens are insufficient for the reasoning process.
     return options[0].value;
   }
 

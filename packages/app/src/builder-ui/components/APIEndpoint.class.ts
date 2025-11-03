@@ -3,7 +3,7 @@ import { debounce } from 'lodash-es';
 import { EMBODIMENT_DESCRIPTIONS } from '../../shared/constants/general';
 import EventEmitter from '../EventEmitter.class';
 import { openEmbodimentDialog } from '../pages/builder/agent-settings';
-import { confirm } from '../ui/dialogs';
+import { alert, confirm } from '../ui/dialogs';
 import { renderEndpointFormPreviewSidebar } from '../ui/react-injects';
 import { delay } from '../utils';
 import { Component } from './Component.class';
@@ -469,6 +469,9 @@ export class APIEndpoint extends Component {
       if (prop === 'name') {
         const oldName = oldValue;
         const newName = newValue;
+        //!\\ don't enable this line for now, it may introduce a breaking change
+        //const newOutputName = `_.${newName}`;
+        const newOutputName = newName;
         const inputName = inputDiv.getAttribute('smt-name');
         const outputName = outputDiv.getAttribute('smt-name');
 
@@ -477,9 +480,9 @@ export class APIEndpoint extends Component {
           inputDiv.querySelector('.name').innerText = newName;
         }
 
-        if (outputName != newName) {
-          outputDiv.setAttribute('smt-name', newName);
-          outputDiv.querySelector('.name').innerText = newName;
+        if (outputName != newOutputName) {
+          outputDiv.setAttribute('smt-name', newOutputName);
+          outputDiv.querySelector('.name').innerText = newOutputName;
 
           // Update the expression attribute to use the new name
           if (outputDiv?.hasAttribute('smt-expression')) {
@@ -502,22 +505,24 @@ export class APIEndpoint extends Component {
         }
       }
     });
-
     await delay(50);
     this.advancedModeActions(this.isOnAdvancedMode);
   }
 
   public async addInput(parent: any, name: any, inputProperties: any = {}): Promise<any> {
-    if (this.isOnAdvancedMode) {
+    const isRenderingAgent = this.workspace.locked; // if the agent is being rendered, the lock will be true
+    if (
+      this.isOnAdvancedMode ||
+      this.properties.defaultOutputs.includes(name) ||
+      isRenderingAgent
+    ) {
       const result = await super.addInput(parent, name, inputProperties);
       this.updateFormPreviewButton();
       return result;
     }
-    if (this.properties.defaultOutputs.includes(name)) return super.addInput(parent, name);
 
     const inputDiv: any = await super.addInput(parent, name, inputProperties);
     const outputParent = parent.parentElement.querySelector('.output-container');
-    const inputProps = this.properties.inputProps?.find((c) => c.name === name);
 
     // Get the default value from input properties or existing attributes
     const defaultValue =
@@ -525,6 +530,8 @@ export class APIEndpoint extends Component {
 
     const outputDiv: any = await super.addOutput(
       outputParent,
+      //!\\ don't enable this line for now, it may introduce a breaking change
+      //`_.${name}`,
       name,
       {
         expression: `body.${name}`,
@@ -572,8 +579,8 @@ export class APIEndpoint extends Component {
   }
 
   public async addOutput(parent: any, name: any, outputProperties: any = {}): Promise<any> {
-    if (this.isOnAdvancedMode) return super.addOutput(parent, name, outputProperties);
-    if (this.properties.defaultOutputs.includes(name))
+    const isRenderingAgent = this.workspace.locked; // if the agent is being rendered, the lock will be true
+    if (this.isOnAdvancedMode || this.properties.defaultOutputs.includes(name) || isRenderingAgent)
       return super.addOutput(parent, name, outputProperties);
 
     return null;
@@ -944,5 +951,25 @@ export class APIEndpoint extends Component {
 
     // Sync default values after redraw
     setTimeout(() => this.syncAllDefaultValues(), 100);
+  }
+  checkConnValidity(info: any) {
+    console.log('checkConnValidity', info);
+    const sourceDomComponent =
+      info.source.closest('.component') || info.source.closest('.agent-card');
+    const targetDomComponent = info.target.closest('.component');
+    if (!sourceDomComponent || !targetDomComponent) return false;
+    if (
+      targetDomComponent.id === this._uid &&
+      !sourceDomComponent.classList.contains('agent-card')
+    ) {
+      alert(
+        'Unsupported Connection',
+        'Skills can only be connected to the agent card',
+        'OK',
+        'error',
+      );
+      return false;
+    }
+    return true;
   }
 }

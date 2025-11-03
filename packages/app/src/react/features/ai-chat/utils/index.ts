@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-vars, @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
+import { IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import config from '@src/builder-ui/config';
-import { FileWithMetadata } from '@src/react/shared/types/chat.types';
 
 type GenerateResponseInput = {
   agentId: string;
@@ -355,7 +355,7 @@ export const chatUtils = {
             'Content-Type': 'application/json',
             'X-AGENT-ID': input.agentId,
             'x-conversation-id': input.chatId,
-            'x-ai-agent': 'true',
+            'x-enable-meta-messages': 'true',
           },
           body: JSON.stringify({
             message: input.query,
@@ -598,7 +598,7 @@ export const chatUtils = {
   },
 };
 
-export const createFileFromText = (content: string): FileWithMetadata => {
+export const createFileFromText = (content: string): IMessageFile => {
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
   const name = `text-${timestamp}.txt`;
   const blob = new Blob([content], { type: 'text/plain' });

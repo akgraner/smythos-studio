@@ -1,4 +1,4 @@
-import { FileWithMetadata } from '@react/shared/types/chat.types';
+import { IMessageFile } from '@react/features/ai-chat/types/chat.types';
 import classNames from 'classnames';
 import { FC, useEffect, useMemo, useState } from 'react';
 import {
@@ -13,13 +13,12 @@ import {
 import { CloseIcon } from './icons';
 
 interface FileItemPreviewProps {
-  file: FileWithMetadata;
+  file: IMessageFile;
   onRemove?: () => void;
   isUploading?: boolean;
   fileKey?: string;
   isReadOnly?: boolean;
-  /** Indicates if the preview is being rendered inside a chat bubble */
-  inChatBubble?: boolean;
+  inChatBubble?: boolean; // Indicates if the preview is being rendered inside a chat bubble
 }
 
 const commonProps = { className: 'text-white', fontSize: 20 };

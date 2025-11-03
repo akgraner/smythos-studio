@@ -66,7 +66,8 @@ router.post('/stream', async (req, res) => {
   const token = req.user.accessToken;
   const agentId = req.headers['x-agent-id'];
   const conversationId = req.headers['x-conversation-id'];
-  const isAgentChat = req.headers['x-ai-agent'] === 'true';
+  const modelId = req.headers['x-model-id']; // Extract model ID for backend override
+  const enableMetaMessages = req.headers['x-enable-meta-messages'] === 'true';
 
   try {
     const result = await axios.post(
@@ -80,7 +81,8 @@ router.post('/stream', async (req, res) => {
           'x-agent-id': agentId,
           'x-conversation-id': conversationId,
           'x-smyth-team-id': teamId,
-          'x-ai-agent': isAgentChat,
+          'x-enable-meta-messages': enableMetaMessages,
+          ...(modelId ? { 'x-model-id': modelId } : {}), // Forward model ID if provided
         },
         responseType: 'stream',
       },
