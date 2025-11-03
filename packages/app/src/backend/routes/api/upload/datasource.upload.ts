@@ -27,8 +27,12 @@ const uploadMw = privateStorage.createUploadMw({
     //   .digest('hex')
     //   .slice(0, 16);
     const randomId = crypto.randomBytes(8).toString('hex'); // 16-char hex ID
+    const slug = file.originalname
+      .trim()
+      .replace(/\s+/g, '-')
+      .replace(/[^A-Za-z0-9._-]/g, '');
 
-    return `/datasources/teams/${teamId}/${randomId}--${file.originalname}`;
+    return `/datasources/teams/${teamId}/${randomId}--${slug}`;
   },
 
   metadata: (req, file) => {
