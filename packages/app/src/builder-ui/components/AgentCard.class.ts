@@ -882,7 +882,7 @@ export class AgentCard extends EventEmitter {
     });
   }
 
-  static checkConnValidity(info: any) {
+  checkConnValidity(info: any) {
     // if (!info.source.classList.contains('agent-card-connection')) return true;
     if (
       !info.target.classList.contains('agent-card-connection') &&

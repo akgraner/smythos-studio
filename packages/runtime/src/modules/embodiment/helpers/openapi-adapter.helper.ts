@@ -59,8 +59,8 @@ const agentDataConnector = new EmbodimentAgentDataConnector();
 /**
  * Constructs the server URL from domain using environment configuration
  */
-function constructServerUrl(domain: string): string {
-  if (domain === 'localhost') {
+function constructServerUrl(domain: string, useInternalDomain = false): string {
+  if (useInternalDomain) {
     return config.env.LOCAL_BASE_URL;
   }
   const serverUrlScheme = config.env.AGENT_DOMAIN_PORT && domain.includes(config.env.DEFAULT_AGENT_DOMAIN) ? 'http' : 'https';
@@ -99,6 +99,7 @@ async function getOpenAPIJSONById(
   version: string,
   aiOnly = false,
   addDefaultFileParsingAgent = false,
+  useInternalDomain = false,
 ): Promise<any> {
   try {
     if (!agentId) {
@@ -121,7 +122,7 @@ async function getOpenAPIJSONById(
     }
 
     console.log('constructing server url for domain: ', domain);
-    const serverUrl = constructServerUrl(domain);
+    const serverUrl = constructServerUrl(domain, useInternalDomain);
     console.log('server url constructed: ', serverUrl);
     const result = await agentDataConnector.getOpenAPIJSON(agentData, serverUrl, version, aiOnly);
     return result;
@@ -156,7 +157,7 @@ export async function getOpenAPIJSONForAI(domain: string, version: string, addDe
       console.log('getOpenAPIJSONForAI local domain changed to: ', _domain);
     }
 
-    return getOpenAPIJSONById(agentId, _domain, version, true, addDefaultFileParsingAgent);
+    return getOpenAPIJSONById(agentId, _domain, version, true, addDefaultFileParsingAgent, true);
   } catch (error) {
     return { error: error.message || 'OpenAPI generation failed' };
   }

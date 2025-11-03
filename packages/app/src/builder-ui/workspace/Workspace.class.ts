@@ -254,7 +254,8 @@ export class Workspace extends EventEmitter {
       //! SHOULDN'T WE ABORT EARLY IF THERE WAS A CONFLICT!!?? I feel like it aborts and works correctly
       //! but cannot detect how and where does it abort if a conflict or non-valid conn was detected
 
-      const sourceComponent = info.source.closest('.component')?._control;
+      const sourceComponent =
+        info.source.closest('.component')?._control || info.source.closest('.agent-card')?._control;
       const targetComponent = info.target.closest('.component')?._control;
 
       const validSourceConn = sourceComponent?.checkConnValidity(info);
