@@ -954,7 +954,8 @@ export class APIEndpoint extends Component {
   }
   checkConnValidity(info: any) {
     console.log('checkConnValidity', info);
-    const sourceDomComponent = info.source.closest('.component');
+    const sourceDomComponent =
+      info.source.closest('.component') || info.source.closest('.agent-card');
     const targetDomComponent = info.target.closest('.component');
     if (!sourceDomComponent || !targetDomComponent) return false;
     if (
