@@ -79,9 +79,9 @@ docker compose logs -f
 Once all services are healthy:
 
 - **Main Application**: http://localhost (or your configured APP_URL)
-- **Runtime Server**: http://runtime.localhost (or your configured RUNTIME_URL)
+- **Runtime Server**: http://dev.agent.oss.smyth.ai (or your configured RUNTIME_URL)
 
-> **⚠️ Localhost Subdomain Issue**: Only applies when using the default localhost domain configuration. Some operating systems might not automatically route `*.localhost` subdomains to the loopback address. If you can't access the subdomain URLs above please configure your own domains & DNS configuration.
+
 
 ## Docker Compose Architecture
 

@@ -38,7 +38,7 @@ const config = {
     API_SERVER: process.env.API_SERVER || `http://localhost:${process.env.RUNTIME_PORT}`,
     EMBODIMENT_SERVER_BASE_URL:
       process.env.EMBODIMENT_SERVER_BASE_URL ||
-      process.env.API_SERVER ||
+      process.env.RUNTIME_URL ||
       `http://localhost:${process.env.RUNTIME_PORT}`,
 
     SMYTH_API_BASE_URL: MW_BASE_URL,
