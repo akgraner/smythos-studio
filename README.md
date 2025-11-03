@@ -52,7 +52,7 @@ docker compose up -d
 
 ```
 
-**Access your application:** http://localhost
+**Access your application:** http://localhost:6060
 
 🐳 **Full Docker Setup**: See our [Docker Compose Guide](DOCKER_COMPOSE.md) for container deployment with automatic SSL, database, and caching.
 
